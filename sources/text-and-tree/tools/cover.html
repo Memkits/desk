@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><link rel="stylesheet" href="../v/video.css">
+<style>body{background:#F3F4F1}.L{position:absolute;left:250px;top:200px;width:820px}
+.ep{display:inline-block;font:700 34px var(--sans);background:var(--ink);color:#fff;padding:10px 22px;border-radius:10px}
+h1{font:900 170px/1.05 var(--serif);margin:30px 0 20px}.sub2{font:700 46px/1.35 var(--serif);color:var(--ink2)}
+.R{position:absolute;left:1010px;top:180px;width:620px;height:720px}
+.badge{margin-top:40px;display:inline-block;font:700 28px var(--sans);color:var(--vis);border:3px solid var(--vis);padding:8px 18px;border-radius:10px}</style>
+<body><div class="L"><span class="ep" id="ep"></span><h1>文本与树</h1><div class="sub2" id="st"></div><div class="badge">AI 整理 · 资料可查</div></div>
+<div class="R"><div class="code" style="position:absolute;left:0;top:0;width:620px;font-size:34px">total = price + tax * rate</div>
+<svg style="position:absolute;left:0;top:120px" width="620" height="420"><g stroke="#9DB3D3" stroke-width="4"><path d="M310 40 L150 150 M310 40 L470 150 M470 150 L370 270 M470 150 L570 270 M570 270 L500 380 M570 270 L620 380"/></g></svg>
+<div class="node op" style="left:310px;top:160px">=</div><div class="node" style="left:150px;top:270px">total</div><div class="node op" style="left:470px;top:270px">+</div><div class="node" style="left:370px;top:390px">price</div><div class="node op" style="left:570px;top:390px">*</div><div class="node" style="left:490px;top:500px">tax</div><div class="node" style="left:620px;top:500px">rate</div>
+<div class="blk" style="left:0;top:600px;background:#E08A2E;font-size:26px;white-space:nowrap">设 total 为 <i>price</i> ＋ <i>tax × rate</i></div></div>
+<script>const E={1:['上集','调查：五波编辑尝试<br>与可视化的四次转向'],2:['中集','对比与规律：<br>七十年里反复出现的八件事'],3:['下集','AI 与预测：<br>谁来编辑这棵树？']}[new URLSearchParams(location.search).get('ep')||1];document.getElementById('ep').textContent=E[0];document.getElementById('st').innerHTML=E[1];</script></body></html>
