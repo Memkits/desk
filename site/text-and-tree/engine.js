@@ -7,8 +7,9 @@
     1: ['框架', '前史', '第一波', '第二波', '第三波', '第四波', '第五波', '可视化', '小结'],
     2: ['对比', '规律', '小结'],
     3: ['现状', '新方案', '判断', '风险', '建议', '结尾'],
+    4: ['坐标', '模板', 'Lisp', '积木', '投影', '框架', '树编辑器', '类型洞', '拼块', '拉链', '语音', '对比', '结尾'],
   };
-  const PARTNAME = { 1: '上集 · 调查', 2: '中集 · 对比与规律', 3: '下集 · AI 与预测' };
+  const PARTNAME = { 1: '上集 · 调查', 2: '中集 · 对比与规律', 3: '下集 · AI 与预测', 4: '番外 · 编辑器怎么编辑' };
   let cur = null;   // { sc, anims, ticks, root }
 
   function splitCues(text) {
@@ -25,6 +26,7 @@
   function renderTop(sc) {
     if (!sc.chapter) { topEl.style.visibility = 'hidden'; return; }
     topEl.style.visibility = 'visible';
+    topEl.className = 'top ep' + sc.ep;
     const items = NAV[sc.ep];
     topEl.innerHTML = `<div class="ep"><b>${sc.title.split(' ')[0]}</b>${PARTNAME[sc.ep]} · ${sc.title.split(' ').slice(1).join(' ')}</div>
       <div class="map">${items.map(n => `<span class="${n === sc.chapter ? 'on' : ''}">${n}</span>`).join('<i></i>')}</div>`;

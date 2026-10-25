@@ -1,7 +1,7 @@
 """合成：python3 assemble.py <ep> → final/设计规范_上集.mp4 + .srt"""
 import sys, json, os, glob, subprocess, wave, numpy as np
 ep = sys.argv[1]; TL = json.load(open(f'tl_e{ep}.json')); A = json.load(open('audio.json'))
-os.makedirs('final', exist_ok=True); name = {'1': '文本与树_上集_调查', '2': '文本与树_中集_对比与规律', '3': '文本与树_下集_AI与预测'}[ep]
+os.makedirs('final', exist_ok=True); name = {'1': '文本与树_上集_调查', '2': '文本与树_中集_对比与规律', '3': '文本与树_下集_AI与预测', '4': '文本与树_番外_结构化编辑器怎么编辑'}[ep]
 vids = sorted(glob.glob(f'out/e{ep}/*.mp4'))
 assert len(vids) == len(TL['scenes']), (len(vids), len(TL['scenes']))
 open(f'out/e{ep}/list.txt', 'w').write(''.join(f"file '{os.path.basename(v)}'\n" for v in vids))

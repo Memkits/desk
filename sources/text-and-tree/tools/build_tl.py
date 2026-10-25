@@ -1,9 +1,9 @@
 """由台词和（若已有）配音时长生成 tl_e1.js / tl_e2.js。没有配音时按字数估计（--stub）。"""
 import json, os, sys, glob, hashlib
-S = json.load(open(os.environ.get('SCRIPT', '../../sources/text-and-tree/script.json')))
+S = json.load(open('../script.json'))
 A = json.load(open('audio.json')) if os.path.exists('audio.json') else {}
 LEAD, TAIL, FIRST, GAP, END = 1.2, 2.5, 1.0, .55, 1.2
-for ep in (1, 2, 3):
+for ep in (1, 2, 3, 4):
     t = LEAD; scenes = []
     for s in [x for x in S if x['ep'] == ep]:
         bs = []; lt = FIRST

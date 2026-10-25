@@ -1,13 +1,14 @@
 import json
-T={ep:json.load(open(f'tl_e{ep}.json')) for ep in (1,2,3)}
+T={ep:json.load(open(f'tl_e{ep}.json')) for ep in (1,2,3,4)}
 def ch(ep): return '\n'.join(f"{int(s['start']//60):02d}:{int(s['start']%60):02d} {s['title'].split(' ',1)[1] if s['chapter'] else '开场'}" for s in T[ep]['scenes']).replace('00:01 开场','00:00 开场')
 dur={ep:f"{T[ep]['total']/60:.0f}" for ep in T}
-md=f"""# 文本与树：代码结构化编辑与可视化的得失与未来（三集）
+md=f"""# 文本与树：代码结构化编辑与可视化的得失与未来（三集 + 番外）
 
 ## 标题
 - 上集：【文本与树·上】七十年五波尝试：为什么程序员不直接编辑语法树？
 - 中集：【文本与树·中】结构化编辑与代码可视化的八条规律
 - 下集：【文本与树·下】AI 来了，谁来编辑这棵树？八个判断
+- 番外：【文本与树·番外】结构化编辑器到底怎么编辑？十个编辑器的操作演示
 
 备选：
 - 从 Lisp 到 AI 智能体：代码结构化编辑与可视化简史
@@ -30,6 +31,10 @@ md=f"""# 文本与树：代码结构化编辑与可视化的得失与未来（�
 已经发生的六件事，新方案与旧想法的对照，八个附可信度与观察指标的判断，可能走偏的地方，以及给工具作者的建议。
 {ch(3)}
 
+### 番外 · 结构化编辑器怎么编辑（约 {dur[4]} 分钟）
+用“怎么定位、怎么输入、怎么改结构”三个观察点，逐个演示十个编辑器的实际操作：康奈尔程序合成器的模板与短语、Interlisp 的树上命令、paredit 的吞吐括号、积木拖拽、MPS 的单元格与后缀变换、Stride 框架、Calcit Editor 的键盘树编辑、Hazel 的类型洞、tylr 的拼块选择、Pantograph 的一孔上下文，以及 Cursorless 的语音指代。画面中的按键与代码片段是为说明操作而简化重画的示意，不是各编辑器的截图录屏（Scratch 与 Calcit Editor 的截图除外），具体按键以各项目文档为准。
+{ch(4)}
+
 ## 主要资料
 - Waters 1982《Program editors should not abandon text oriented commands》
 - Berger 等，FSE 2016，投影式编辑效率对照实验（MPS）
@@ -37,10 +42,12 @@ md=f"""# 文本与树：代码结构化编辑与可视化的得失与未来（�
 - Merino 等，软件可视化评估系统综述
 - Green & Petre，认知维度框架
 - Hazelnut（POPL 2017）、Pantograph（POPL 2025）、Typed holes + LLM（OOPSLA 2024）、Type-Constrained Code Generation（PLDI 2025）
+- Teitelbaum & Reps 1981《The Cornell Program Synthesizer》；Interlisp 参考手册；paredit 文档；JetBrains MPS 文档；Kölling 等关于 Stride 框架编辑的论文
+- Moon, Blinn, Omar · tylr（TyDe 2022）；Cursorless 文档
 - Darklang 状态更新（2024）；calcit-lang/calcit 结构编辑器文档
 - 图片：Wikimedia Commons（作者与授权见画面）；Calcit Editor / Hovenia 截图来自项目 README
 
 ## 标签
-编程语言, 结构化编辑, 代码可视化, 投影式编辑, 语法树, Lisp, Scratch, LabVIEW, tree-sitter, LSP, AI编程, 编程史
+编程语言, 结构化编辑, 代码可视化, 投影式编辑, 语法树, Lisp, Scratch, LabVIEW, tree-sitter, LSP, AI编程, 编程史, Hazel, MPS, paredit, Cursorless
 """
 open('final/标题与描述.md','w').write(md); print(md[:400])

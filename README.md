@@ -6,7 +6,7 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 
 | 目录 | 内容 |
 | --- | --- |
-| `site/text-and-tree/` | 《文本与树》三集视频的场景代码，`?ep=1/2/3`；稿子、字幕、工具在 `sources/text-and-tree/` |
+| `site/text-and-tree/` | 《文本与树》三集加番外的场景代码，`?ep=1/2/3/4`；稿子、字幕、工具在 `sources/text-and-tree/` |
 | `site/structural-editing/` | 《文本与树》：代码结构化编辑与代码可视化的调研提纲（三集视频），配 Wikimedia Commons 图片与项目截图 |
 | `site/lingao/` | 《临高启明 · 地图上的八年》视频的场景代码、卫星底图与照片素材，可在浏览器中播放 |
 | `site/design-system/` | 《设计规范》两集视频的场景代码，`?ep=1` 上集、`?ep=2` 下集 |
