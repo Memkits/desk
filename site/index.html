@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Desk · 资料与视频页面</title>
+<style>
+:root{--bg:#f2f3f0;--card:#fff;--ink:#1c2026;--ink2:#5a616b;--rule:#d8dbd4;--acc:#1f5fa8}
+@media (prefers-color-scheme:dark){:root{--bg:#14171b;--card:#1c2026;--ink:#e7e9ec;--ink2:#a2aab4;--rule:#2f353d;--acc:#7fb0ef}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "Noto Sans SC","PingFang SC",system-ui,sans-serif;padding:48px max(16px,env(safe-area-inset-left,0px)) 80px}
+.wrap{max-width:1040px;margin:0 auto}
+h1{font:900 clamp(30px,5vw,46px)/1.2 "Noto Serif SC","Songti SC",serif;margin:0 0 8px}
+.lead{color:var(--ink2);margin:0 0 32px;max-width:60ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+.item{background:var(--card);border:1px solid var(--rule);display:flex;flex-direction:column}
+.item img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000}
+.item div{padding:14px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.item h2{margin:0;font:700 20px "Noto Serif SC",serif}
+.item p{margin:0;color:var(--ink2);font-size:15px}
+.item nav{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:auto;padding-top:8px}
+.item a{color:var(--acc);font-weight:600;text-decoration:none}.item a:hover{text-decoration:underline}
+.foot{margin-top:40px;font-size:14px;color:var(--ink2)}
+</style>
+<div class="wrap">
+<h1>Desk</h1>
+<p class="lead">AI 协作制作的讲解视频与调研资料的网页版本。视频页面就是生成视频时逐帧渲染的同一套代码，在浏览器里可以直接播放、拖动（无配音，字幕同步）；视频文件本身不放在这里。</p>
+<div class="grid">
+<article class="item"><img src="structural-editing/img/calcit_expr.jpg" alt=""><div><h2>文本与树</h2><p>代码结构化编辑与代码可视化：五波尝试的得失、对比表、规律与 AI 背景下的判断。三集视频的提纲与调研。</p><nav><a href="structural-editing/index.html">打开提纲</a></nav></div></article>
+<article class="item"><img src="lingao/cover.png" alt=""><div><h2>临高启明 · 地图上的八年</h2><p>1628–1636 年小说中的工程、建筑与航线，卫星图今昔对照。AI 整理，未经逐章核实。</p><nav><a href="lingao/index.html">播放页面</a></nav></div></article>
+<article class="item"><img src="design-system/cover-1.png" alt=""><div><h2>设计规范 · 两集</h2><p>上集讲心理学原理与方法论，下集讲搭建一套设计规范：颜色、排版、动效、装饰与治理。</p><nav><a href="design-system/index.html?ep=1">上集 · 原理</a><a href="design-system/index.html?ep=2">下集 · 搭建</a></nav></div></article>
+</div>
+<p class="foot">图片来源与授权见各页面标注。源码与稿子：<a href="https://github.com/Memkits/desk">github.com/Memkits/desk</a></p>
+</div>
+</html>

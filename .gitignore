@@ -1,0 +1,14 @@
+node_modules/
+dist/
+html/
+# 视频与中间产物不入库
+*.mp4
+*.wav
+*.pcm
+**/audio/
+**/out/
+**/pv/
+**/logs/
+**/final/
+audio.json
+.DS_Store

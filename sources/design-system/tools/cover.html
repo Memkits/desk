@@ -1,0 +1,39 @@
+<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="../v/base.css"><link rel="stylesheet" href="../v/video.css">
+<style>
+body{background:var(--paper)}
+.wrap{position:absolute;left:240px;top:120px;width:1440px;height:840px}.lt{position:absolute;left:0;top:190px;width:820px}
+.k1{display:inline-block;font-size:34px;font-weight:700;padding:10px 24px;border-radius:12px;background:var(--ink);color:#fff;letter-spacing:.06em}
+h1{font-size:150px;line-height:1.05;margin:26px 0 18px;font-weight:900;letter-spacing:.02em}
+h2{font-size:52px;margin:0;font-weight:700;color:var(--ink2)}
+.chips{display:flex;gap:14px;margin-top:40px;flex-wrap:wrap}.chips span{font-size:30px;font-weight:700;padding:10px 22px;border-radius:999px;color:#fff}
+.vis{position:absolute;right:0;top:0;width:620px;height:840px}
+</style>
+<script src="../v/lib.js"></script>
+<body>
+<div class="wrap">
+  <div class="lt"><span class="k1" id="ep"></span>
+  <h1>设计规范</h1>
+  <h2 id="sub"></h2>
+  <div class="chips" id="chips"></div><div style="margin-top:44px;font-size:30px;color:var(--ink3)">专业设计师的方法论 · 每条结论标注证据强度</div></div>
+  <div class="vis" id="vis"></div>
+</div>
+<script>
+const ep = new URLSearchParams(location.search).get('ep') || '1';
+document.getElementById('ep').textContent = ep === '1' ? '上集 · 原理' : '下集 · 搭建';
+document.getElementById('sub').innerHTML = ep === '1' ? '从心理学，推出设计方法' : '令牌 · 组件 · 动效 · 着色器装饰';
+const ch = ep === '1' ? [['知觉', '--see'], ['记忆', '--read'], ['决策', '--decide'], ['动作与时间', '--act'], ['审美', '--confirm']] : [['颜色', '--see'], ['排版', '--read'], ['动效', '--decide'], ['装饰', '--act'], ['组件', '--confirm']];
+document.getElementById('chips').innerHTML = ch.map(([t, c]) => `<span style="background:var(${c})">${t}</span>`).join('');
+const v = document.getElementById('vis');
+if (ep === '1') {
+  v.innerHTML = `<svg width="620" height="840" viewBox="0 0 620 840"><circle cx="310" cy="420" r="250" fill="none" stroke="#CBC6BB" stroke-width="3" stroke-dasharray="3 12" stroke-linecap="round"/>${[[310, 140], [500, 300], [430, 540], [190, 540], [120, 300]].map(([x, y], i) => `<circle cx="${x}" cy="${y + 60}" r="92" fill="${['#2F5BEA', '#0E8A7E', '#B7791F', '#D1492E', '#7445D6'][i]}"/><text x="${x}" y="${y + 76}" text-anchor="middle" font-family="Inter,Noto Sans CJK SC" font-size="44" font-weight="800" fill="#fff">${STAGES[i]}</text>`).join('')}
+</svg>`;
+} else {
+  v.innerHTML = `<div style="position:absolute;inset:40px 0 40px 40px;border-radius:32px;overflow:hidden;background:radial-gradient(120% 90% at 80% 10%,#9DB2F7,#2F5BEA 55%,#1B2350);box-shadow:0 30px 80px rgba(30,20,0,.2)">
+   <div style="position:absolute;left:40px;right:40px;top:60px">${[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map(t => '').join('')}</div>
+   <div style="position:absolute;left:40px;right:40px;bottom:50px;display:flex;flex-direction:column;gap:16px">
+     <div style="height:84px;border-radius:18px;background:#fff;color:#1B2350;font-size:32px;font-weight:700;display:grid;place-items:center">预约 10:00 – 11:00</div>
+     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">${['#fff', 'rgba(255,255,255,.25)', 'rgba(255,255,255,.12)'].map((b, i) => `<div style="height:70px;border-radius:16px;background:${b};border:2px solid rgba(255,255,255,.6)"></div>`).join('')}</div>
+     <div style="font:500 26px var(--mono);color:#fff;opacity:.9">color.action.primary<br>motion.enter · 300 ms</div></div></div>`;
+}
+document.fonts.ready.then(() => window.done = true);
+</script></body>

@@ -1,0 +1,99 @@
+<title>文本与树</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* 布局：单栏长文 + 每章一条“年份 | 线索 | 事件”的时间轴，配图网格；两条线索用两种颜色区分 */
+:root{
+  --bg:#f3f4f1; --surface:#ffffff; --ink:#1b1f24; --ink2:#4a525c; --rule:#d6d9d3;
+  --edit:#1f5fa8; --vis:#b5651d; --both:#5b4a9e;
+  --display:"Noto Serif SC","Songti SC",serif; --body:"Noto Sans SC","PingFang SC",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--edit:#6fa8ef;--vis:#e3a062;--both:#a99be6;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--edit:#6fa8ef;--vis:#e3a062;--both:#a99be6;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:16px/1.75 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;padding-block:48px 80px}
+.mast{display:grid;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:28px}
+.mast .k{font:500 13px var(--mono);letter-spacing:.14em;color:var(--ink2);text-transform:uppercase}
+.mast h1{margin:0;font:900 clamp(34px,6vw,58px)/1.15 var(--display);text-wrap:balance}
+.mast h1 em{font-style:normal;color:var(--edit)} .mast h1 i{font-style:normal;color:var(--vis)}
+.mast p{margin:0;max-width:62ch;color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:18px;font-size:14px;color:var(--ink2)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0;background:var(--c)}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 20px;margin:24px 0 8px;font-size:15px}
+.toc a{color:var(--ink);text-decoration:none;display:flex;gap:10px;padding:4px 0;border-bottom:1px solid var(--rule)}
+.toc a span{font:500 13px var(--mono);color:var(--ink2);width:1.4em}
+.toc a:hover{color:var(--edit)}
+section{padding-top:56px}
+section header{display:flex;gap:16px;align-items:baseline;font:500 13px var(--mono);letter-spacing:.08em;color:var(--ink2)}
+section header .era{margin-left:auto}
+h2{margin:6px 0 10px;font:900 clamp(26px,4vw,36px)/1.25 var(--display);text-wrap:balance}
+h2 small{display:block;font:700 15px var(--body);color:var(--ink2);letter-spacing:.06em;margin-bottom:4px}
+.lead{max-width:64ch;margin:0 0 20px}
+.tl{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+.tl li{display:grid;grid-template-columns:92px 64px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+.tl li > div{min-width:0}
+.tl .yr{font:500 14px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink2)}
+.tl .tag{font-size:12px;font-weight:700;color:var(--c);border:1px solid var(--c);border-radius:3px;padding:0 6px;justify-self:start;line-height:1.7}
+.tl b{font-weight:700}.tl p{margin:2px 0 0;color:var(--ink2);font-size:15px}
+.t-edit{--c:var(--edit)} .t-vis{--c:var(--vis)} .t-both{--c:var(--both)}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-top:22px}
+figure{margin:0;background:var(--surface);border:1px solid var(--rule);display:flex;flex-direction:column}
+figure img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;max-width:100%}
+figcaption{padding:8px 10px 10px;font-size:14px;line-height:1.5}
+figcaption span{display:block;font-size:12px;color:var(--ink2);margin-top:2px;overflow-wrap:anywhere}
+.themes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:18px}
+.themes div{background:var(--surface);padding:16px 18px}
+.themes b{font:700 18px var(--display)} .themes p{margin:6px 0 0;font-size:15px;color:var(--ink2)}
+.plan{counter-reset:p;display:grid;gap:8px;padding:0;list-style:none;margin:16px 0 0}
+.plan li{display:grid;grid-template-columns:120px 1fr;gap:14px;padding:8px 0;border-bottom:1px solid var(--rule)}
+.plan li b{font:500 14px var(--mono);color:var(--ink2)}
+.note{margin-top:20px;padding:14px 18px;border-left:3px solid var(--vis);background:var(--surface);font-size:15px;color:var(--ink2)}
+.src{font-size:14px;color:var(--ink2)} .src a{color:var(--edit);overflow-wrap:anywhere}
+a:focus-visible{outline:2px solid var(--edit);outline-offset:2px}
+@media (max-width:560px){.tl li{grid-template-columns:70px 1fr}.tl li .tag{display:none}.plan li{grid-template-columns:1fr;gap:2px}}
+.part{margin-top:72px;padding:14px 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);font:900 clamp(22px,3.4vw,30px)/1.3 var(--display)}
+.part span{display:block;font:500 13px var(--mono);letter-spacing:.14em;color:var(--ink2);margin-bottom:4px}
+.axes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin:8px 0 16px}
+.axes div{background:var(--surface);padding:14px 16px}.axes b{font:700 18px var(--display)}.axes p{margin:4px 0 0;font-size:15px;color:var(--ink2)}
+.bet{margin:4px 0 6px;font-size:17px}.bet b{font:500 12px var(--mono);letter-spacing:.1em;color:var(--surface);background:var(--ink);padding:2px 8px;border-radius:3px;margin-right:10px;vertical-align:2px}
+.sys{margin:0 0 12px;font-size:14px;color:var(--ink2)}
+.gl{list-style:none;padding:0;margin:0;border-top:1px solid var(--rule)}
+.gl li{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule)}
+.gl li span{font-weight:700;font-size:14px;color:var(--c)}.gl li p{margin:0}
+.g-plus{--c:var(--edit)}.g-minus{--c:var(--vis)}.g-keep{--c:var(--both)}
+.srcs{font-size:13px;color:var(--ink2);margin:10px 0 0}
+a.ev{color:var(--edit);overflow-wrap:anywhere}
+.steps{list-style:none;padding:0;margin:0;display:grid;gap:0;border-top:1px solid var(--rule)}
+.steps li{display:grid;grid-template-columns:110px 110px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule)}
+.steps li b{font:700 17px var(--display)}.steps li span{font:500 13px var(--mono);color:var(--ink2)}.steps li p{margin:0;min-width:0}
+.tw{overflow-x:auto;border:1px solid var(--rule);background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font:500 12px var(--mono);letter-spacing:.06em;color:var(--ink2);background:var(--bg)}
+td:first-child{font-weight:700}
+.laws{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.laws div{background:var(--surface);padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.laws .ln{font:500 12px var(--mono);color:var(--ink2);letter-spacing:.08em}.laws b{font:700 20px var(--display)}.laws p{margin:2px 0;font-size:15px}.laws small{color:var(--ink2);font-size:13px}
+.tl li{grid-template-columns:92px 1fr}
+.preds{display:grid;gap:12px}
+.preds > div{background:var(--surface);border:1px solid var(--rule);padding:14px 18px}
+.ph{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:space-between}.ph b{font:700 19px var(--display)}
+.conf{font:500 12px var(--mono);padding:1px 8px;border-radius:3px;border:1px solid var(--c);color:var(--c)}
+.c-hi{--c:var(--edit)}.c-mid{--c:var(--both)}.c-lo{--c:var(--vis)}
+.preds p{margin:6px 0 4px;font-size:15px}.preds small{color:var(--ink2);font-size:13px}
+@media (max-width:560px){.steps li{grid-template-columns:1fr;gap:2px}.gl li{grid-template-columns:40px 1fr}.tl li{grid-template-columns:70px 1fr}}
+</style>
+<div class="wrap">
+<div class="mast">
+  <div class="k">视频提纲 · v4 · 调查 / 对比 / 规律 / 预测 · 2026-10-25</div>
+  <h1>文本与树：<em>结构化编辑</em>与<i>代码可视化</i>的得失和未来</h1>
+  <p>不按年代流水账，而按“每一波押注了什么、得到了什么、失去了什么”来组织；用一张对比表把三十个系统放在同一把尺子上，归纳出八条规律，最后在 AI 背景下给出八个带可信度的判断。</p>
+  <div class="legend"><span style="--c:var(--edit)">得 / 结构化编辑</span><span style="--c:var(--vis)">失 / 代码可视化</span><span style="--c:var(--both)">留下 / 交汇</span></div>
+</div>
+<nav class="toc"><a href="#frame"><span>0</span>四维框架</a><a href="#w1"><span>1</span>五波尝试</a><a href="#vis"><span>2</span>可视化四次转向</a><a href="#table"><span>3</span>对比表</a><a href="#laws"><span>4</span>八条规律</a><a href="#ai-now"><span>5</span>AI 现状</a><a href="#ai-new"><span>6</span>AI 新方案</a><a href="#predict"><span>7</span>八个判断</a><a href="#plan"><span>8</span>分集建议</a></nav>
+%%BODY%%
+<section id="sources"><header><span class="no">参考来源</span></header><p class="src">
+<a href="https://en.wikipedia.org/wiki/Structure_editor">Structure editor（Wikipedia）</a> · <a href="https://www.springerprofessional.de/doi/10.1145/988376.988380">Waters 1982</a> · <a href="https://gup.ub.gu.se/file/206790">Berger et al. FSE 2016</a> · <a href="https://drops.dagstuhl.de/entities/document/10.4230/OASIcs.SLATE.2024.5">Petro &amp; Porubän SLATE 2024</a> · <a href="https://www.terpconnect.umd.edu/~weintrop/papers/Weintrop&amp;Wilensky_2019_C&amp;E.pdf">Weintrop &amp; Wilensky 2019</a> · <a href="https://scg.unibe.ch/research/softvis-eval">Merino et al. 软件可视化评估综述</a> · <a href="https://en.wikipedia.org/wiki/Cognitive_dimensions_of_notations">认知维度</a> · <a href="https://blog.darklang.com/an-overdue-status-update/">Darklang 状态更新</a> · <a href="https://arxiv.org/abs/2409.00921">Typed holes + LLM（OOPSLA 2024）</a> · <a href="https://arxiv.org/abs/2504.09246">Type-Constrained Code Generation</a> · <a href="https://arxiv.org/html/2506.05010v1">ComfyUI-Copilot</a> · <a href="https://popl17.sigplan.org/details/POPL-2017-papers/2/Hazelnut-A-Bidirectionally-Typed-Structure-Editor-Calculus">Hazelnut</a> · <a href="https://popl25.sigplan.org/details/POPL-2025-popl-research-papers/28/Pantograph-A-Fluid-and-Typed-Structure-Editor">Pantograph</a> · <a href="https://github.com/yairchu/list-of-structural-editors">结构编辑器清单</a> · <a href="https://www.rw.cdl.uni-saarland.de/people/diehl/private/SoftVisVorles/slides/SVScript.pdf">Diehl 软件可视化讲义</a> · <a href="https://chris-granger.com/2012/04/12/light-table-a-new-ide-concept/">Light Table</a> · <a href="https://dynamicland.org/2024/Intro/">Dynamicland</a> · <a href="https://github.com/calcit-lang/calcit">calcit-lang/calcit</a> · <a href="https://github.com/calcit-lang/editor">calcit-lang/editor</a> · <a href="http://cirru.org">cirru.org</a>
+<br>图片：Wikimedia Commons，自由授权，作者与授权见各图说明。</p></section>
+</div>

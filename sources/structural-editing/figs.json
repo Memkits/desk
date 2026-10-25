@@ -1,0 +1,176 @@
+{
+ "flow1947": {
+  "src": "img/flow1947.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Flow_chart_of_Planning_and_coding_of_problems_for_an_electronic_computing_instrument,_1947.jpg",
+  "lic": "Public domain",
+  "by": "Goldstine, Herman Heine, and John Von Neumann."
+ },
+ "sketchpad": {
+  "src": "img/sketchpad.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:SketchpadDissertation-Fig1-2.tif",
+  "lic": "CC BY-SA 3.0",
+  "by": "Scanned by Kerry Rodden from original photograph by Ivan Sutherland"
+ },
+ "nls": {
+  "src": "img/nls.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:ON-Line_System_(NLS),_SRI_(1960-1970s)_-_three-button_mouse_and_chord_keyboard_-_Computer_History_Museum.jpg",
+  "lic": "CC BY 2.0",
+  "by": "Michael Hicks from Saint Paul, MN, USA"
+ },
+ "alto": {
+  "src": "img/alto.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Xerox_Alto_computer.jpg",
+  "lic": "CC BY-SA 4.0",
+  "by": "Maksym Kozlenko"
+ },
+ "st76": {
+  "src": "img/st76.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Smalltalk-76.png",
+  "lic": "CC0",
+  "by": "SUMIM.ST"
+ },
+ "altost": {
+  "src": "img/altost.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Alto-smalltalk.png",
+  "lic": "CC BY 4.0",
+  "by": "Damien.b"
+ },
+ "ns": {
+  "src": "img/ns.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Nassi-Shneiderman_diagram_-_InsertionSort.svg",
+  "lic": "CC BY-SA 3.0",
+  "by": "Stefan Birkner (squizzz)"
+ },
+ "cfg": {
+  "src": "img/cfg.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Some_types_of_control_flow_graphs.svg",
+  "lic": "CC BY-SA 4.0",
+  "by": "JMP EAX"
+ },
+ "sort": {
+  "src": "img/sort.gif",
+  "page": "https://commons.wikimedia.org/wiki/File:Sorting_stoogesort_anim.gif",
+  "lic": "CC0",
+  "by": "Simpsons contributor"
+ },
+ "treemap": {
+  "src": "img/treemap.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Disk_space_treemap_lg.png",
+  "lic": "CC BY-SA 3.0",
+  "by": "KeyMetricSoft"
+ },
+ "callgraph": {
+  "src": "img/callgraph.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Call_graph_of_extension_MediaWikiFarm.svg",
+  "lic": "CC BY-SA 2.5",
+  "by": "Seb35"
+ },
+ "uml": {
+  "src": "img/uml.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:UML_class_diagram_invoice.svg",
+  "lic": "CC0",
+  "by": "Frap"
+ },
+ "labview": {
+  "src": "img/labview.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:LabVIEW_Block_diagram.JPG",
+  "lic": "Public domain",
+  "by": "Labvi"
+ },
+ "pd": {
+  "src": "img/pd.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Pure_Data_with_many_patches_open_(showing_netpd_project).png",
+  "lic": "CC BY-SA 3.0",
+  "by": "Reduzent"
+ },
+ "etoys": {
+  "src": "img/etoys.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:EToys_on_OLPC-dual_mode_display.jpg",
+  "lic": "CC BY-SA 2.5",
+  "by": "OLPC user: Jacobolus"
+ },
+ "scratch": {
+  "src": "img/scratch.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Scratch_3.0_editor.png",
+  "lic": "CC BY-SA 2.0",
+  "by": "Screenshot is own work, Scratch is by MIT and other contributors"
+ },
+ "blockly": {
+  "src": "img/blockly.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Blockly_Conditions.png",
+  "lic": "CC BY-SA 4.0",
+  "by": "Dave Braunschweig"
+ },
+ "snap": {
+  "src": "img/snap.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Snap_4.0_Default_screen.png",
+  "lic": "CC BY-SA 4.0",
+  "by": "DancingPhilosopher"
+ },
+ "appinv": {
+  "src": "img/appinv.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Mit_app_inventor_2_beta2.png",
+  "lic": "CC0",
+  "by": "Florian Schäffer"
+ },
+ "nodered": {
+  "src": "img/nodered.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Node-RED_Example.png",
+  "lic": "CC BY-SA 4.0",
+  "by": "1-Byte"
+ },
+ "ue": {
+  "src": "img/ue.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Ue_bp.png",
+  "lic": "CC BY-SA 4.0",
+  "by": "Kuldhi"
+ },
+ "emacs": {
+  "src": "img/emacs.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Screenshot_of_GNU_Emacs_27.1_on_GNOME.png",
+  "lic": "CC BY-SA 4.0",
+  "by": "Fossdd"
+ },
+ "pharo": {
+  "src": "img/pharo.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Pharo_v10.png",
+  "lic": "CC BY-SA 4.0",
+  "by": "Mhss"
+ },
+ "gource": {
+  "src": "img/gource.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:Gourcedatafromwiki-nasa-grc-atf-kms-ptc_(2022-01-09).jpg",
+  "lic": "CC BY-SA 4.0",
+  "by": "Revansx"
+ },
+ "codecharta": {
+  "src": "img/codecharta.jpg",
+  "page": "https://commons.wikimedia.org/wiki/File:CodeCharta_Software_Map_1.png",
+  "lic": "CC BY-SA 4.0",
+  "by": "Roki68199"
+ },
+ "calcit_expr": {
+  "src": "img/calcit_expr.jpg",
+  "page": "https://github.com/calcit-lang/editor",
+  "lic": "项目 README 截图",
+  "by": "Cirru / calcit-lang"
+ },
+ "calcit_defs": {
+  "src": "img/calcit_defs.jpg",
+  "page": "https://github.com/calcit-lang/editor",
+  "lic": "项目 README 截图",
+  "by": "Cirru / calcit-lang"
+ },
+ "hovenia_doc": {
+  "src": "img/hovenia_doc.jpg",
+  "page": "https://github.com/Cirru/hovenia-editor",
+  "lic": "项目 README 截图",
+  "by": "Cirru / calcit-lang"
+ },
+ "hovenia_demo": {
+  "src": "img/hovenia_demo.jpg",
+  "page": "https://github.com/Cirru/hovenia-editor",
+  "lic": "项目 README 截图",
+  "by": "Cirru / calcit-lang"
+ }
+}
