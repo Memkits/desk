@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"><rect width="800" height="450" fill="#14171b"/>
+<text x="40" y="62" fill="#e7e9ec" font-family="Noto Serif SC,serif" font-size="34" font-weight="900">JIT 与 AOT · 峰值几何平均</text>
+<text x="40" y="92" fill="#a7afb9" font-family="Noto Sans SC,sans-serif" font-size="16">相对 Rust 的耗时倍数（对数刻度，10 个案例）</text>
+<text x="40" y="134" fill="#e7e9ec" font-family="Noto Sans SC,sans-serif" font-size="17">Rust</text>
+<rect x="170" y="110" width="40" height="36" rx="3" fill="#e3a062"/>
+<text x="220" y="134" fill="#e7e9ec" font-family="JetBrains Mono,monospace" font-size="16">1×</text>
+<text x="40" y="182" fill="#e7e9ec" font-family="Noto Sans SC,sans-serif" font-size="17">Bun</text>
+<rect x="170" y="158" width="138" height="36" rx="3" fill="#6fa8ef"/>
+<text x="318" y="182" fill="#e7e9ec" font-family="JetBrains Mono,monospace" font-size="16">1.9×</text>
+<text x="40" y="230" fill="#e7e9ec" font-family="Noto Sans SC,sans-serif" font-size="17">V8</text>
+<rect x="170" y="206" width="146" height="36" rx="3" fill="#6fa8ef"/>
+<text x="326" y="230" fill="#e7e9ec" font-family="JetBrains Mono,monospace" font-size="16">2×</text>
+<text x="40" y="278" fill="#e7e9ec" font-family="Noto Sans SC,sans-serif" font-size="17">LuaJIT</text>
+<rect x="170" y="254" width="174" height="36" rx="3" fill="#6fa8ef"/>
+<text x="354" y="278" fill="#e7e9ec" font-family="JetBrains Mono,monospace" font-size="16">2.4×</text>
+<text x="40" y="326" fill="#e7e9ec" font-family="Noto Sans SC,sans-serif" font-size="17">LuaJIT -joff</text>
+<rect x="170" y="302" width="392" height="36" rx="3" fill="#5b6573"/>
+<text x="572" y="326" fill="#e7e9ec" font-family="JetBrains Mono,monospace" font-size="16">10×</text>
+<text x="40" y="374" fill="#e7e9ec" font-family="Noto Sans SC,sans-serif" font-size="17">Lua 5.4</text>
+<rect x="170" y="350" width="443" height="36" rx="3" fill="#5b6573"/>
+<text x="623" y="374" fill="#e7e9ec" font-family="JetBrains Mono,monospace" font-size="16">14×</text>
+<text x="40" y="422" fill="#e7e9ec" font-family="Noto Sans SC,sans-serif" font-size="17">V8 jitless</text>
+<rect x="170" y="398" width="526" height="36" rx="3" fill="#5b6573"/>
+<text x="706" y="422" fill="#e7e9ec" font-family="JetBrains Mono,monospace" font-size="16">24×</text>
+</svg>
