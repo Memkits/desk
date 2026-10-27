@@ -1,0 +1,629 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>代数作用</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#f3f4f1;--surface:#fff;--ink:#1b1f24;--ink2:#4a525c;--rule:#d6d9d3;--acc:#1f5fa8;--acc2:#b5651d;
+--display:"Noto Serif SC","Songti SC",serif;--body:"Noto Sans SC","PingFang SC",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--body);padding:0 16px}
+.wrap{max-width:980px;margin:0 auto;padding:48px 0 80px}
+.mast{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:8px}
+.mast .k{font:500 13px var(--mono);letter-spacing:.08em;color:var(--acc2)}
+h1{font:900 clamp(30px,5vw,48px)/1.2 var(--display);margin:8px 0}
+.meta{color:var(--ink2);font-size:14px}
+h2{font:600 26px/1.3 var(--display);margin:48px 0 12px;padding-top:12px;border-top:1px solid var(--rule)}
+a{color:var(--acc)}
+.tbl{overflow-x:auto;margin:16px 0;background:var(--surface);border:1px solid var(--rule);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.5}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-weight:700;background:color-mix(in srgb,var(--acc) 8%,transparent);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+code{font:500 .9em var(--mono)}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.6}
+strong{color:var(--ink)}
+.foot{margin-top:56px;color:var(--ink2);font-size:14px;border-top:1px solid var(--rule);padding-top:16px}
+img{max-width:100%;background:#fff;border-radius:8px;border:1px solid var(--rule)}
+.vid{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.vid a{padding:6px 14px;border:1px solid var(--acc);border-radius:8px;text-decoration:none}
+</style></head><body><div class="wrap">
+<header class="mast"><div class="k">ALGEBRAIC EFFECTS</div><h1>代数作用：历史、功能与实现</h1><div class="meta">2026-10-27 · AI 协作整理（Claude）</div></header>
+<p><strong>代数作用（algebraic effects）加上作用处理器（effect handlers）</strong>，是一种把“要做什么”和“怎么做”分开的控制流机制：代码用 <code>perform</code> 发出一个请求，调用栈上方最近的处理器决定怎么响应，并且拿到“剩下的计算”（续延，continuation），可以恢复它、丢弃它，甚至恢复多次。最直观的理解是<strong>可以恢复的异常</strong>。这一个机制能统一异常、可变状态、生成器、async/await、回溯搜索、依赖注入和测试替身。</p>
+<p>它的理论来自 Plotkin 与 Power（2001–2003）和 Plotkin 与 Pretnar（2009）；研究语言 Eff、Koka、Frank、Effekt、Unison 把它做成了语言特性；2022 年的 OCaml 5 第一次把它放进一门工业语言的运行时；WebAssembly 的栈切换提案用同一套思想设计，目前处于 Phase 3。实现上有三条路：把程序改写成续延传递风格（CPS）、在运行时切换调用栈（纤程）、把处理器当参数传下去（证据传递）。OCaml 5 的实测是：不用作用的程序平均只慢约 1%，一次 perform 加恢复在十几纳秒量级。</p>
+<h2>一分钟看懂</h2>
+<p>先看异常。<code>throw</code> 把控制权交给调用栈上方最近的 <code>catch</code>，中间的栈帧全部被丢掉，再也回不去。代数作用只改了一点：<strong>处理器拿到一个对象 <code>k</code>，代表“从 perform 那一点往后的全部计算”</strong>。调用 <code>k(值)</code>，程序就带着这个值回到 perform 的位置接着跑。</p>
+<p>下面用一种接近 JavaScript 的伪代码说明（JS 本身没有这个特性）：</p>
+<pre><code>function greet() {
+  const name = perform AskName();      // 发出请求，暂停在这里
+  return &quot;你好，&quot; + name;
+}
+
+try {
+  print(greet());
+} handle (AskName, k) {               // 拿到请求和“剩下的计算” k
+  k(&quot;阿杰&quot;);                          // 带着值回到 perform 处继续
+}
+// 输出：你好，阿杰
+</code></pre>
+<p>要点有三个：</p>
+<ul>
+<li><strong>调用方不知道谁来回答。</strong> <code>greet</code> 只声明“我需要一个名字”，是从配置读、从网络取，还是在测试里写死，由外层的处理器决定。</li>
+<li><strong>中间的函数不用改。</strong> 如果 <code>greet</code> 是被十层函数间接调用的，这十层都不用加参数、也不用标成 async。</li>
+<li><strong>处理器控制了“之后”。</strong> 它可以立刻恢复（像一次函数调用）、先把 <code>k</code> 存起来过一会儿再恢复（像 async/await）、不恢复（像异常），或者用不同的值恢复多次（像回溯搜索）。</li>
+</ul>
+<p>同一个例子在 OCaml 5.3 里是真实可运行的代码（取自 OCaml 手册）：</p>
+<pre><code>open Effect
+open Effect.Deep
+
+type _ Effect.t += Xchg : int -&gt; int t      (* 声明一个作用：给一个 int，换回一个 int *)
+
+let comp1 () = perform (Xchg 0) + perform (Xchg 1)
+
+let () =
+  let r = try comp1 () with
+    | effect (Xchg n), k -&gt; continue k (n + 1)   (* 处理：拿到 n，用 n+1 恢复 *)
+  in print_int r                                    (* 1 + 2 = 3 *)
+</code></pre>
+<p>这里 <code>continue k (n + 1)</code> 就是“带着值回去”。两次 perform 分别拿到 1 和 2，结果是 3。</p>
+<h2>历史渊源</h2>
+<p>代数作用不是凭空出现的，它是三条线索的汇合。</p>
+<p><img alt="代数作用的来源 · 1988–2025 年的 17 个节点" src="img/timeline.png" /></p>
+<p><strong>第一条：续延与控制流。</strong> 续延是“程序接下来要做的全部事情”，在 1960–70 年代就被用来描述跳转和异常。Scheme 的 <code>call/cc</code> 把它做成了可以拿在手里的值，但它抓的是“全部剩余计算”，很难组合。1988 年 Felleisen 提出可定界的续延：先在栈上放一个标记（prompt），只抓取到标记为止的那一段；1990 年 Danvy 与 Filinski 的 <code>shift/reset</code> 也是同一类。这就是后来作用处理器的“机器层”：处理器就是一个带名字的 prompt。另一个常被提起的先驱是 Common Lisp 的条件系统：处理器在不展开栈的情况下运行，由它选一个“重启点”让程序继续，已经很像“可以恢复的异常”，只是没有把续延交给处理器。</p>
+<p><strong>第二条：作用的语义理论。</strong> 1989 年 Moggi 用单子（monad）统一描述异常、状态、非确定性等“计算作用”，Wadler 把它带进了函数式编程，Haskell 的 IO 就是这样来的。但单子不容易组合，叠加几种作用要靠单子变换器。Plotkin 与 Power 在 2001–2003 年换了一个角度：大多数作用可以用<strong>一组操作加上它们满足的等式</strong>来刻画，比如状态就是 <code>get</code> 和 <code>put</code> 两个操作。“代数”这个词就来自这里：操作是代数的运算，等式是代数的公理。</p>
+<p>缺的一块是“处理”：异常可以被 catch，但当时的理论里没有对应的东西。Plotkin 与 Pretnar 的 ESOP 2009 论文补上了它：处理器给出这套操作的一个“解释”，把一段只会发出操作的计算，翻译成具体的结果。异常处理只是其中一个特例。从此「作用」和「处理器」成为一对。</p>
+<p><strong>第三条：语言与运行时。</strong></p>
+<ul>
+<li>2012 年 Bauer 与 Pretnar 做出 Eff，第一门以作用和处理器为核心的语言，用它写出了异常、状态、回溯、协作式多线程和概率选择。</li>
+<li>2013 年前后 Haskell 社区出现“可扩展作用”库，用自由单子模拟处理器，试图替代单子变换器。</li>
+<li>2015 年 Multicore OCaml 项目发现，作用处理器正好可以拿来写并发调度器，不必把特定的线程库做进语言。</li>
+<li>2017 年前后 Koka（微软研究院 Leijen）、Frank、Links 等语言把作用类型系统做成熟；2020 年 Effekt 把作用当成“能力”传递，让类型更轻。</li>
+<li>2019 年 Dan Abramov 的博客《Algebraic Effects for the Rest of Us》让前端社区知道了这个词，并把 React 的 Hooks 和 Suspense 解释成它的影子。</li>
+<li>2022 年 12 月 OCaml 5.0 发布，第一次在一门工业语言的正式运行时里提供作用处理器，并发调度交给 Eio 等库用它来写，而不把某一种线程模型写死在语言里；2025 年 1 月的 5.3 又加上了 <code>effect</code> 关键字语法。</li>
+<li>2023 年 GHC 9.6 加入 <code>prompt#</code> 和 <code>control0#</code> 等定界续延原语，给 Haskell 的作用库用；同年 WasmFX 论文把作用处理器做进 WebAssembly 的指令集，它演变成的栈切换提案目前处于 Phase 3。</li>
+</ul>
+<p>一句话概括：<strong>理论上它是“单子的可组合替代品”，机制上它是“带名字的定界续延”，工程上它是“可以恢复的异常”。</strong></p>
+<h2>核心概念</h2>
+<p><strong>作用（effect）与操作（operation）。</strong> 一个作用是一组操作的签名，每个操作写成“交出什么、换回什么”。状态是 <code>get : () → S</code> 和 <code>put : S → ()</code>；异常是 <code>raise : E → ⊥</code>（永远不返回）；非确定选择是 <code>flip : () → bool</code>；生成器是 <code>yield : T → ()</code>。签名只说“能做什么”，不说“怎么做”。</p>
+<p><strong>处理器（handler）。</strong> 处理器给每个操作一条处理规则，再加一条“返回规则”（被处理的计算正常结束时怎么包装结果）。同一组操作可以有很多处理器：状态可以用一个可变单元实现，也可以用“传递参数的函数”实现，还可以记录每次读写用来做审计。处理器没有认领的操作会继续向外转发，所以处理器可以一层层叠起来。</p>
+<p><strong>续延（continuation、resumption）。</strong> 处理规则拿到的 <code>k</code>，是“从 perform 到这个处理器为止”的那一段调用栈，封装成一个可以调用的值。它是定界的：处理器本身就是那个界。</p>
+<p><strong>“代数”是什么意思。</strong> 理论上，一个操作是“代数的”，指它和外面的计算上下文可以交换：“先做 op，再把结果交给后面的计算”，等于“把后面的计算推进 op 的每个可能结果里”。比如 <code>flip()</code> 有真、假两种结果，后面的计算就可以看成两个分支，处理器拿到的 k 正是“分支里的那段计算”。一个简单的判断标准是：操作的参数都是普通值，不是一段待执行的程序。<code>get</code>、<code>put</code>、<code>raise</code>、<code>flip</code> 都是代数的；<code>catch</code>、<code>local</code>（临时改一下环境再跑一段子计算）这类“收一段程序作参数”的操作就不是，叫高阶作用或作用域作用，是目前仍在研究的边界。另外，理论里的“等式”（比如连续两次 <code>put</code> 等于只留第二次）在实际语言里几乎都不检查，工程上说的“代数作用”，大多只指“操作加处理器”这套机制。</p>
+<p>几个常见的设计维度：</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>选项</th>
+<th>含义</th>
+<th>代表</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>深 / 浅</td>
+<td>深处理器</td>
+<td>恢复后，同一个处理器继续管后面的操作；相当于对计算树做一次折叠</td>
+<td>Koka、Eff、OCaml 的 <code>Effect.Deep</code></td>
+</tr>
+<tr>
+<td></td>
+<td>浅处理器</td>
+<td>只管第一个操作，恢复时要重新指定处理器；适合状态机、协议</td>
+<td>OCaml 的 <code>Effect.Shallow</code>、Frank</td>
+</tr>
+<tr>
+<td>恢复次数</td>
+<td>单次（one-shot）</td>
+<td><code>k</code> 最多恢复一次；实现可以直接切栈，不用复制</td>
+<td>OCaml 5（重复恢复会报错）、WasmFX</td>
+</tr>
+<tr>
+<td></td>
+<td>多次（multi-shot）</td>
+<td><code>k</code> 可以恢复多次；能写回溯、概率编程，但要复制或重算栈</td>
+<td>Koka、Eff、Effekt</td>
+</tr>
+<tr>
+<td>尾部恢复</td>
+<td>尾恢复（tail-resumptive）</td>
+<td>处理规则的最后一步就是 <code>k(v)</code>，等价于一次普通函数调用；编译器可以直接就地执行，不抓续延</td>
+<td>Koka 的主要优化对象</td>
+</tr>
+<tr>
+<td>类型</td>
+<td>有作用类型</td>
+<td>函数类型写明会发出哪些作用，漏处理在编译期发现</td>
+<td>Koka、Effekt、Unison、Eff</td>
+</tr>
+<tr>
+<td></td>
+<td>无作用类型</td>
+<td>类型里不出现作用；没人处理的 perform 在运行时报错</td>
+<td>OCaml 5</td>
+</tr>
+<tr>
+<td>处理器绑定</td>
+<td>动态绑定</td>
+<td>perform 找调用栈上最近的对应处理器</td>
+<td>大多数语言</td>
+</tr>
+<tr>
+<td></td>
+<td>词法绑定</td>
+<td>处理器作为“能力”传到用它的地方，避免被中间的同名处理器意外截住</td>
+<td>Effekt</td>
+</tr>
+</tbody>
+</table></div>
+<p>其中最影响实现的是<strong>单次 / 多次</strong>：只允许单次恢复，就能把续延当成一段可以接回去的栈，这是 OCaml 5 和 WasmFX 的选择；要支持多次恢复，就得复制栈，或者干脆把程序编译成续延传递风格。</p>
+<h2>具体功能</h2>
+<p>一个机制能顺手写出下面六类功能，区别只在于处理器<strong>怎么用 k</strong>。代码用 Koka（类型里写明作用）和 OCaml 5.3（运行时内置）。本文环境没有安装这两个编译器，代码按官方文档和常见教程整理，细节以它们的文档为准。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>处理器怎么用 k</th>
+<th>对应的传统特性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>异常</td>
+<td>不调用 k，直接给出结果</td>
+<td><code>try / catch</code></td>
+</tr>
+<tr>
+<td>配置与依赖注入</td>
+<td>立刻用一个值恢复一次</td>
+<td>全局变量、DI 容器、React Context</td>
+</tr>
+<tr>
+<td>可变状态</td>
+<td>立刻恢复，同时更新处理器里的变量</td>
+<td>可变变量、State 单子</td>
+</tr>
+<tr>
+<td>生成器</td>
+<td>把 k 存起来，等消费者要下一个值时再恢复</td>
+<td><code>yield</code>、迭代器</td>
+</tr>
+<tr>
+<td>协程与异步</td>
+<td>把 k 放进调度队列，I/O 就绪后再恢复</td>
+<td><code>async / await</code>、绿色线程</td>
+</tr>
+<tr>
+<td>回溯与概率</td>
+<td>用不同的值把 k 恢复多次，合并结果</td>
+<td>Prolog 的回溯、概率编程</td>
+</tr>
+</tbody>
+</table></div>
+<h3>异常：不恢复</h3>
+<pre><code>effect raise
+  ctl raise( msg : string ) : a
+
+fun safe-divide( x : int, y : int ) : raise int
+  if y == 0 then raise(&quot;div-by-zero&quot;) else x / y
+
+// 返回规则把正常结果包成 Just，异常分支不调用 resume
+fun raise-maybe( action : () -&gt; &lt;raise|e&gt; a ) : e maybe&lt;a&gt;
+  with handler
+    return(x)      Just(x)
+    ctl raise(msg) Nothing
+  action()
+</code></pre>
+<p>类型 <code>raise int</code> 说明 <code>safe-divide</code> 可能发出 raise；<code>raise-maybe</code> 处理掉它之后，类型里就只剩下了其他作用 <code>e</code>。漏处理会在编译期报错。</p>
+<h3>配置与依赖注入：立刻恢复</h3>
+<pre><code>effect val width : int                  // 一个“值”也可以是作用
+
+fun pretty-internal( line : string ) : width string
+  line.truncate(width)                   // 不用把 width 一层层传下来
+
+fun pretty-thin( d : doc ) : string
+  with val width = 40                    // 在这个范围里提供 width
+  pretty(d)
+</code></pre>
+<p>这就是“类型安全的依赖注入”：和全局变量不同，它有作用域；和逐层传参不同，中间函数不用改签名；和 DI 容器不同，忘了提供会在编译期发现。Koka 的 <code>with fun ask() 21</code> 是同一个意思：用一段实现“替换”掉操作。<strong>测试替身也是这样做的</strong>：业务代码发出 <code>http-get</code>、<code>now</code>、<code>random</code> 这样的操作，生产环境装真实的处理器，测试里装返回固定值的处理器，不需要 mock 框架。</p>
+<h3>生成器：把 k 存起来</h3>
+<pre><code>type tree = Leaf | Node of tree * int * tree
+type _ Effect.t += Yield : int -&gt; unit Effect.t
+
+(* 普通的递归遍历，只是在访问节点时发出 Yield *)
+let rec walk = function
+  | Leaf -&gt; ()
+  | Node (l, x, r) -&gt; walk l; perform (Yield x); walk r
+
+(* 处理器决定怎么消费：这里直接打印，然后恢复 *)
+let print_all t =
+  match walk t with
+  | () -&gt; ()
+  | effect (Yield x), k -&gt; print_int x; Effect.Deep.continue k ()
+</code></pre>
+<p>如果处理器不立刻恢复，而是把 <code>k</code> 连同 <code>x</code> 一起返回，调用方就得到一个“要一个给一个”的迭代器。递归遍历的代码一行不改，就从“内部迭代”变成了“外部迭代”，这在 JavaScript 里需要把每一层都改成 <code>function*</code> 和 <code>yield*</code>。</p>
+<h3>协程调度：把 k 放进队列</h3>
+<pre><code>type _ Effect.t += Fork  : (unit -&gt; unit) -&gt; unit Effect.t
+                 | Pause : unit Effect.t
+
+let run main =
+  let q = Queue.create () in
+  let next () = if not (Queue.is_empty q) then (Queue.pop q) () in
+  let rec spawn f =
+    match f () with
+    | () -&gt; next ()                                    (* 一个协程结束，换下一个 *)
+    | effect (Fork g), k -&gt;
+        Queue.push (fun () -&gt; Effect.Deep.continue k ()) q; spawn g
+    | effect Pause, k -&gt;
+        Queue.push (fun () -&gt; Effect.Deep.continue k ()) q; next ()
+  in
+  spawn main
+</code></pre>
+<p>不到二十行就是一个协作式调度器。把 <code>Pause</code> 换成“等这个文件描述符可读”，再接上 epoll 或 io_uring，就是 OCaml 的 Eio 这类库的做法。关键在于：<strong>业务代码里的 <code>read</code> 看起来是普通的同步调用</strong>，没有 async 标记一路传染到调用方。</p>
+<h3>回溯：把 k 恢复多次</h3>
+<pre><code>effect amb
+  ctl flip() : bool
+
+fun xor() : amb bool
+  val p = flip()
+  val q = flip()
+  (p || q) &amp;&amp; not(p &amp;&amp; q)
+
+// 两次恢复：一次给 False，一次给 True，把结果列表拼起来
+fun all-results( action : () -&gt; &lt;amb|e&gt; a ) : e list&lt;a&gt;
+  with handler
+    return(x)  [x]
+    ctl flip() resume(False) ++ resume(True)
+  action()
+
+// all-results(xor) == [False, True, True, False]
+</code></pre>
+<p><code>xor</code> 里的两次 <code>flip</code> 各分出两条路，处理器遍历了全部四种组合。把 <code>++</code> 换成“按概率加权”，就是一个概率编程语言的核心；换成“找到一个就停”，就是回溯搜索。这是多次恢复独有的能力，OCaml 5 的单次续延做不到。</p>
+<h3>组合</h3>
+<p>真正的好处在组合：一段代码可以同时发出 <code>raise</code>、<code>width</code>、<code>amb</code> 和日志操作，外层按任意顺序叠上对应的处理器。叠的顺序有语义：<code>raise</code> 在 <code>amb</code> 里面处理，一个分支失败只丢掉这个分支；在外面处理，一个分支失败就整体失败。用单子变换器也能表达这种区别，但要先写对变换器的堆叠顺序，而且业务代码往往要跟着改。</p>
+<h2>与其他机制对比</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>机制</th>
+<th>能做到的</th>
+<th>和代数作用的差别</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>异常</td>
+<td>中止并跳到外层</td>
+<td>只是“不调用 k”的特例；不能回去</td>
+</tr>
+<tr>
+<td>Lisp 条件与重启</td>
+<td>处理器在不展开栈时运行，选一个预先写好的重启点继续</td>
+<td>重启点要发信号的一方事先列出；处理器拿不到可以存起来的续延，写不了调度器或回溯</td>
+</tr>
+<tr>
+<td>call/cc</td>
+<td>抓取全部剩余计算</td>
+<td>没有边界，难以组合和实现；代数作用是“带名字、带类型的定界续延”</td>
+</tr>
+<tr>
+<td>单子与单子变换器</td>
+<td>表达力相当，作用写进类型</td>
+<td>要用 do 记法重写代码；叠加几种作用要排变换器顺序，并为每对作用写“提升”实例；代数作用把“做什么”和“在哪一层处理”分开</td>
+</tr>
+<tr>
+<td>回调与 Promise</td>
+<td>异步</td>
+<td>控制反转，代码被拆碎；作用让异步代码保持顺序写法</td>
+</tr>
+<tr>
+<td>async / await</td>
+<td>异步代码顺序写</td>
+<td>“函数着色”问题：一个函数变成 async，调用链上每一层都要改；只管异步这一种作用</td>
+</tr>
+<tr>
+<td>JS / Python 生成器</td>
+<td>暂停与恢复</td>
+<td>无栈：只能在生成器函数自己这一层暂停，嵌套要靠 <code>yield*</code> 逐层传递</td>
+</tr>
+<tr>
+<td>有栈协程（Lua、绿色线程、Java 虚拟线程）</td>
+<td>任意深度暂停</td>
+<td>和单次的作用处理器表达力接近；但只有一个“调度器”接收暂停，没有按操作名分发、没有处理器嵌套</td>
+</tr>
+<tr>
+<td>依赖注入容器</td>
+<td>替换实现</td>
+<td>运行时查表，漏配在运行时才发现；没有作用域和控制流能力</td>
+</tr>
+</tbody>
+</table></div>
+<p>两点值得单独说。</p>
+<p><strong>一、函数着色并没有消失，只是变得可以接受。</strong> 在 OCaml 5 这种不追踪作用的语言里，异步确实是“无色”的；在 Koka 这种追踪作用的语言里，类型还是会写出 <code>async</code>，但高阶函数对作用是多态的：同一个 <code>map</code> 既能跑纯函数也能跑异步函数，不用写两份。问题从“必须改代码”变成了“类型里多一个标签”。</p>
+<p><strong>二、和单子是一体两面。</strong> 理论上，每组代数操作都定义一个自由单子，处理器就是从它出发的解释；反过来，用可定界续延也能实现任意单子。差别在工程体验：单子要求代码显式地“在单子里写”，代数作用让代码保持直接风格。Haskell 社区这十年从 mtl 到 freer、polysemy、fused-effects、effectful，再到基于 GHC 定界续延原语的库，就是在这两端之间反复权衡表达力和性能。</p>
+<h2>类型系统</h2>
+<p>处理器的价值一半在运行时，一半在类型：如果类型里写明“这个函数会发出哪些作用”，编译器就能保证每个 perform 都有人处理，还能从类型上看出一个函数是不是纯的。各语言的做法不同。</p>
+<p><strong>Koka：行多态作用类型。</strong> 作用写成一个“行”，比如 <code>&lt;raise, console | e&gt;</code>，尾部的 <code>e</code> 是作用变量，表示“还可能有别的”。处理器从行里删掉自己处理的那一项。类型可以推断，高阶函数对作用是多态的：</p>
+<pre><code>fun map( xs : list&lt;a&gt;, f : (a) -&gt; e b ) : e list&lt;b&gt;
+  match xs
+    Cons(x, rxs) -&gt; Cons(f(x), map(rxs, f))
+    Nil -&gt; Nil
+</code></pre>
+<p><code>f</code> 有什么作用，<code>map</code> 就有什么作用。标成 <code>total</code> 的函数如果偷偷调用了 <code>run-system</code>，会直接编译失败。</p>
+<p><strong>Unison：能力（abilities）。</strong> 写法是在箭头上挂作用集合，如 <code>Nat -&gt;{Abort, IO} Nat</code>，处理器叫 ability handler。Unison 把这套机制用在分布式计算上：同一段程序可以装本地处理器跑测试，也可以装远程处理器在集群上跑。</p>
+<p><strong>Effekt：作用即能力。</strong> 在行多态里容易碰到一个问题：一个高阶函数内部用了某个作用，又恰好把调用方传进来的函数包在自己的处理器里面，就会意外截住对方的同名操作（称为“作用的意外捕获”，破坏抽象）。Effekt（OOPSLA 2020）的答案是把处理器看成一个“能力”对象，按词法作用域传到用它的地方，而不是在调用栈上动态查找。这样没有意外捕获，类型也更轻：大多数函数不必写作用变量。Koka 用 <code>mask</code> 等原语解决同一问题，学术界也有“隧道”（tunneling）等方案。</p>
+<p><strong>OCaml 5：不追踪作用。</strong> 作用是一个可扩展的变体类型 <code>Effect.t</code>，函数类型里不体现。没人处理的 perform 在运行时抛 <code>Effect.Unhandled</code>。这是为了不动现有的类型系统和生态；代价是安全性留给了程序员，所以 OCaml 里最常见的用法是由 Eio 这类库在内部使用，对外暴露普通的函数接口。类型化作用的方案仍在研究。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>语言</th>
+<th>作用写在哪里</th>
+<th>漏处理何时发现</th>
+<th>多态方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Koka</td>
+<td>函数类型的行 <code>&lt;raise, io \| e&gt;</code></td>
+<td>编译期</td>
+<td>行变量</td>
+</tr>
+<tr>
+<td>Unison</td>
+<td>箭头上的集合 <code>-&gt;{Abort}</code></td>
+<td>编译期</td>
+<td>能力变量</td>
+</tr>
+<tr>
+<td>Effekt</td>
+<td>需要的能力（可省略）</td>
+<td>编译期</td>
+<td>词法传递的能力</td>
+</tr>
+<tr>
+<td>Eff</td>
+<td>类型与作用的子类型关系</td>
+<td>编译期</td>
+<td>子类型</td>
+</tr>
+<tr>
+<td>OCaml 5</td>
+<td>不写</td>
+<td>运行时</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Haskell 库</td>
+<td>单子或类型级列表 <code>Eff '[State s, Error e]</code></td>
+<td>编译期</td>
+<td>类型类约束</td>
+</tr>
+</tbody>
+</table></div>
+<h2>内部实现</h2>
+<p>实现上要解决两件事：<strong>找到处理器</strong>，以及<strong>把“剩下的计算”变成一个可以恢复的对象</strong>。主流做法有四种。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>做法</th>
+<th>续延长什么样</th>
+<th>支持多次恢复</th>
+<th>不用作用时的代价</th>
+<th>代表</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运行时栈切换（纤程）</td>
+<td>一段可以摘下、再接回的调用栈</td>
+<td>否（除非复制栈）</td>
+<td>接近零</td>
+<td>OCaml 5、Wasm 栈切换、C 库 libmprompt</td>
+</tr>
+<tr>
+<td>CPS 变换</td>
+<td>一个闭包，程序里每一步都显式传递</td>
+<td>是</td>
+<td>高：到处分配闭包、间接调用</td>
+<td>js_of_ocaml、很多研究编译器</td>
+</tr>
+<tr>
+<td>单子翻译 + 证据传递</td>
+<td>只在真正发生 yield 时，沿调用链逐帧拼出来</td>
+<td>是</td>
+<td>低：每次调用后检查一个标志</td>
+<td>Koka（编译到 C）</td>
+</tr>
+<tr>
+<td>库层模拟</td>
+<td>自由单子的数据结构，或语言自带的生成器</td>
+<td>视实现</td>
+<td>中到高</td>
+<td>Haskell 作用库、JS 生成器方案</td>
+</tr>
+</tbody>
+</table></div>
+<h3>栈切换：OCaml 5 的做法</h3>
+<p><img alt="OCaml 5 的纤程 · perform 前后的调用栈" src="img/fiber.png" /></p>
+<p>每装一个处理器，被处理的计算就放到一个新的<strong>纤程</strong>（fiber）上跑。纤程是堆上的一小段栈，初始只有 16 个字，不够时整体复制到两倍大的新区域，并有缓存复用刚释放的栈。程序的调用栈就是一串纤程。perform 时，运行时沿着这串纤程往上找处理器，把中间那几段<strong>摘下来</strong>当作续延 k，处理器在父栈上运行；continue 时再接回去。整个过程不复制栈帧，所以快；也正因为不复制，只能恢复一次。</p>
+<p>PLDI 2021 的论文《Retrofitting Effect Handlers onto OCaml》给出了实测：</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>耗时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>分配一个纤程并切过去</td>
+<td>23 ns</td>
+</tr>
+<tr>
+<td>perform 并找到处理器</td>
+<td>5 ns</td>
+</tr>
+<tr>
+<td>continue 恢复续延</td>
+<td>11 ns</td>
+</tr>
+<tr>
+<td>从纤程返回并释放</td>
+<td>7 ns</td>
+</tr>
+</tbody>
+</table></div>
+<p>对完全不用作用的程序，54 个宏基准的几何平均只慢了约 1%，代码段变大 19%。用作用写的生成器遍历一棵深度 25 的二叉树，比手写的 CPS 版本慢 2.76 倍，比用并发单子写的版本快三倍多（8.69 倍对 2.76 倍）。设计上还有一条硬要求：调试器、性能分析器依赖的 DWARF 栈回溯必须仍然正确，所以纤程之间的链接要能被这些工具识别。</p>
+<h3>证据传递：Koka 的做法</h3>
+<p>Koka 编译到 C，没有办法切换栈，所以走了另一条路（Xie 与 Leijen，ICFP 2020、2021）：</p>
+<ul>
+<li><strong>证据传递。</strong> 当前有哪些处理器，作为一个“证据向量”隐式地传给每个函数。perform 不用顺着栈去找，直接在向量里查；作用类型是封闭的时候，连查找都是固定偏移。</li>
+<li><strong>尾恢复操作就地执行。</strong> 用 <code>fun</code> 声明的操作（处理规则最后一步就是恢复）不抓续延，直接在 perform 的位置调用处理函数，成本接近一次虚方法调用。作者认为绝大多数操作是这一类；例外主要是异步 I/O 和回溯。</li>
+<li><strong>其余操作“冒泡”。</strong> 程序被翻译成“多 prompt 单子”形式：每个调用返回后检查一个线程局部标志，如果正在 yield，就把当前帧的“剩余工作”追加到续延上，再继续向上返回，直到遇到匹配的处理器。正常路径只多一次分支判断。</li>
+<li><strong>续延是普通的闭包链</strong>，所以可以恢复多次；配合 Koka 的引用计数（Perceus），内存也能及时回收。</li>
+</ul>
+<p>代价是一个限制：续延只能在捕获它的那组处理器下恢复（“有作用域的恢复”），否则证据向量会对不上。</p>
+<h3>CPS：最通用、最贵</h3>
+<p>把整个程序改写成续延传递风格：每个函数多一个参数“算完之后要做什么”。这样 k 天然就是一个值，多次恢复也没问题，而且不需要运行时支持，可以编译到 JavaScript 这种没有栈控制的平台。缺点是即使不用作用也要付钱：到处分配闭包、到处间接调用，并且打乱了控制流，妨碍其他优化。有作用类型的语言可以做<strong>选择性 CPS</strong>，只改写可能发出作用的函数。</p>
+<h3>WebAssembly：把栈切换做进指令集</h3>
+<p>Wasm 不允许程序直接操作调用栈，编译到 Wasm 的语言只能用 CPS 或 Binaryen 的 Asyncify（把函数改写成可以保存和重放局部变量的样子）。WasmFX（OOPSLA 2023）提议直接加入单次、带类型的续延：<code>cont.new</code> 把一个函数变成可运行的栈，<code>suspend</code> 带着一个控制标签挂起到最近的处理器，<code>resume</code> 在一组处理分支下恢复。重复恢复会触发陷阱。这套设计演变成了目前 Phase 3 的栈切换提案，Chrome 在标志位后支持。</p>
+<p>论文里的 Wasmtime 原型在一个协程 Web 服务器基准上：二进制 0.8 KB（Asyncify 9.2 KB），内存相当，但运行时间是 Asyncify 的约 3.9 倍，作者归因于未优化的栈切换和宿主调用开销。OCaml 的 wasm_of_ocaml 目前支持 JSPI 和 CPS 两种方式实现作用，原生栈切换作为可选后端正在开发。</p>
+<h3>怎么选</h3>
+<ul>
+<li><strong>要同时保住旧代码的性能和工具链</strong>，并且主要用作用写并发：栈切换 + 单次恢复（OCaml 5 的选择）。</li>
+<li><strong>要多次恢复、要编译到 C 或 JS、有作用类型可用</strong>：单子翻译 + 证据传递（Koka 的选择）。</li>
+<li><strong>目标平台什么都没有</strong>：CPS，接受性能损失。</li>
+</ul>
+<h2>主流语言里的影子</h2>
+<p>大多数主流语言没有通用的作用处理器，但各自实现了其中一两个特例。看懂代数作用，就能看出这些特性为什么长这样、缺了什么。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>语言 / 库</th>
+<th>对应的特例</th>
+<th>实现方式</th>
+<th>缺什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>JavaScript / Python 生成器</td>
+<td>生成器、协程</td>
+<td>编译器把函数改成状态机（无栈）</td>
+<td>只暂停一层；不能复制生成器，写不了多次恢复</td>
+</tr>
+<tr>
+<td>JS / C# / Kotlin / Swift / Rust 的 async</td>
+<td>异步</td>
+<td>状态机或 CPS；调度器在语言外</td>
+<td>只管异步一种作用；函数着色</td>
+</tr>
+<tr>
+<td>redux-saga</td>
+<td>把副作用描述成数据，由中间件解释</td>
+<td>生成器 yield 出“作用对象”</td>
+<td>接近自由单子；只有一个解释器</td>
+</tr>
+<tr>
+<td>React Hooks / Suspense</td>
+<td>依赖注入、挂起重试</td>
+<td>全局“当前分发器”；Suspense 抛出 Promise，完成后<strong>重新渲染</strong></td>
+<td>不能从中断处恢复，只能重跑；Dan Abramov 自己也说这不是真正的代数作用</td>
+</tr>
+<tr>
+<td>Effect（TypeScript 库）、ZIO、cats-effect</td>
+<td>类型里写明错误和依赖</td>
+<td>单子风格的数据结构 + 运行时解释器</td>
+<td>要用单子写法组织代码；处理器不能拿到续延</td>
+</tr>
+<tr>
+<td>Java 虚拟线程（JDK 21）</td>
+<td>阻塞 I/O 自动挂起</td>
+<td>内部的单次定界续延，不对外开放</td>
+<td>只有 JDK 自己的调度器能用</td>
+</tr>
+<tr>
+<td>Go 的 goroutine</td>
+<td>阻塞自动挂起</td>
+<td>运行时管理的可增长栈</td>
+<td>处理器只有一个，就是 Go 的调度器</td>
+</tr>
+<tr>
+<td>Lua 协程、Python greenlet</td>
+<td>有栈协程</td>
+<td>独立的栈</td>
+<td>没有按操作名分发和处理器嵌套，可以自己在上面搭</td>
+</tr>
+<tr>
+<td>Common Lisp 条件系统</td>
+<td>可恢复的异常</td>
+<td>处理器在发信号的栈上方运行</td>
+<td>重启点要预先声明，拿不到续延</td>
+</tr>
+<tr>
+<td>Haskell 作用库</td>
+<td>完整的处理器</td>
+<td>自由单子、ReaderT IO，或 GHC 9.6 的定界续延原语</td>
+<td>各库在表达力和性能间取舍不同</td>
+</tr>
+<tr>
+<td>OCaml 5</td>
+<td>完整的处理器（单次）</td>
+<td>运行时纤程</td>
+<td>没有作用类型</td>
+</tr>
+</tbody>
+</table></div>
+<p>几点观察：</p>
+<ul>
+<li><strong>“语言加一个关键字”是主流路线。</strong> async、yield、throws 各自独立设计，组合时很别扭：异步生成器要专门的 <code>async function*</code>，Swift 要单独规定 <code>async throws</code> 的顺序。代数作用的视角是：这些都是同一个机制的实例。Rust 社区关于“关键字泛型”的讨论（让一个函数对 async、const 等泛型），就是在局部解决这个组合问题。</li>
+<li><strong>有栈协程只差一层。</strong> Java 虚拟线程、Go 的 goroutine、Lua 协程，底层和 OCaml 5 的纤程是同一类东西，只是处理器是固定的调度器。把“挂起之后交给谁”开放给用户，就是作用处理器。</li>
+<li><strong>前端的“代数作用”多是比喻。</strong> JS 无法保存调用栈，所以 React 采用了“抛出、等待、重新执行”；这要求组件是纯的、可以重跑的，也解释了 React 为什么那么强调纯函数。</li>
+</ul>
+<h2>局限与争议</h2>
+<p><strong>可读性：动态绑定的老问题。</strong> perform 交给“调用栈上最近的处理器”，读代码时未必看得出是哪一个，和动态作用域、全局变量是同一类问题。作用类型能保证“有人处理”，但不告诉你“谁在处理”。Effekt 的词法处理器是针对这点的改进。</p>
+<p><strong>资源安全。</strong> 续延如果一直不恢复，它引用的栈和里面未执行的 <code>finally</code> 就一直悬着。OCaml 手册要求每个续延最终要么 continue、要么 discontinue（在 perform 处抛异常以释放资源），但不强制检查。反过来，多次恢复会让一段打开文件、写套接字的代码被执行两遍，这是 OCaml 选择单次恢复的主要理由之一。</p>
+<p><strong>和可变状态、多次恢复混用时语义不直观。</strong> 一个局部可变变量在两次恢复之间是共享还是各自一份，取决于它存在栈上还是堆上；Koka 为此区分了 <code>var</code> 和 <code>ref</code>。</p>
+<p><strong>高阶作用。</strong> <code>catch</code>、<code>local</code>、“带超时地运行一段代码”这类操作不是代数的，用普通处理器表达不自然。研究界有作用域作用、潜在作用等扩展，尚无定论。</p>
+<p><strong>与已有生态的边界。</strong> 续延一般不能跨过 C 的栈帧（比如从 C 回调里 perform 到外层的 OCaml 处理器）；调试器、性能分析器要理解分段的栈；没有作用类型的语言里，忘装处理器只能在运行时发现。</p>
+<p><strong>类型的负担。</strong> 作用多态会让签名变长、报错变难读；这是 Koka、Effekt、Unison 一直在改进的地方，也是主流语言迟迟不引入的原因之一。</p>
+<h3>什么时候值得用</h3>
+<ul>
+<li><strong>写并发与 I/O 运行时。</strong> 这是目前最成熟的用法：OCaml 的 Eio 用它把直接风格的代码跑在 io_uring 上，不引入 async 标记。</li>
+<li><strong>生成器与流式处理。</strong> 把递归遍历变成外部迭代，不用改写遍历代码。</li>
+<li><strong>可测试的业务代码。</strong> 把时间、随机数、网络、数据库都写成操作，测试里换处理器；Unison 把它推到了分布式执行。</li>
+<li><strong>解释器与 DSL。</strong> 一段程序只描述“要做什么”，换一个处理器就是换一种解释：真实执行、模拟、记录、重放。</li>
+<li><strong>概率编程与搜索。</strong> 利用多次恢复枚举分支。Python 的概率编程库 Pyro 和 NumPyro 就把自己的核心机制称为“作用处理器”（poutine / handlers），用来实现采样、条件化和追踪。</li>
+</ul>
+<p>不太值得的场景：只是想少传几个参数（显式传参更清楚），或者团队的主力语言没有原生支持、只能靠生成器硬模拟。</p>
+<h2>参考资料</h2>
+<p><strong>理论与经典论文</strong></p>
+<ul>
+<li>Plotkin, Pretnar：<a href="https://arxiv.org/abs/1312.1399" target="_blank" rel="noopener">Handling Algebraic Effects</a>（LMCS 2013，初版 ESOP 2009）</li>
+<li>Bauer, Pretnar：<a href="https://arxiv.org/abs/1203.1539" target="_blank" rel="noopener">Programming with Algebraic Effects and Handlers</a>（Eff 语言，2012）</li>
+<li>历史部分的 Felleisen（1988）、Danvy 与 Filinski（1990）、Moggi（1989）、Wadler（1992）、Frank（POPL 2017）、Common Lisp 条件系统、Pyro 的作用处理器等条目依据常见文献整理，本文没有逐篇打开核对。</li>
+<li>剑桥大学 R277 课程讲义：<a href="https://www.cl.cam.ac.uk/teaching/2526/R277/slides-effect-handlers.pdf" target="_blank" rel="noopener">Effect Handlers</a></li>
+</ul>
+<p><strong>实现</strong></p>
+<ul>
+<li>Sivaramakrishnan 等：<a href="https://arxiv.org/abs/2104.00250" target="_blank" rel="noopener">Retrofitting Effect Handlers onto OCaml</a>（PLDI 2021）</li>
+<li>Xie, Leijen：<a href="https://www.microsoft.com/en-us/research/publication/effect-handlers-evidently" target="_blank" rel="noopener">Effect Handlers, Evidently</a>（ICFP 2020）</li>
+<li>Xie, Leijen：<a href="https://www.microsoft.com/en-us/research/uploads/prod/2021/08/genev-icfp21.pdf" target="_blank" rel="noopener">Generalized Evidence Passing for Effect Handlers</a>（ICFP 2021，Koka 编译到 C）</li>
+<li>Brachthäuser 等：<a href="https://se.cs.uni-tuebingen.de/publications/brachthaeuser20effects/" target="_blank" rel="noopener">Effects as Capabilities</a>（OOPSLA 2020，Effekt）</li>
+<li>Phipps-Costin 等：<a href="https://par.nsf.gov/servlets/purl/10483984" target="_blank" rel="noopener">Continuing WebAssembly with Effect Handlers</a>（OOPSLA 2023，WasmFX）</li>
+<li>GHC 提案：<a href="https://ghc-proposals.readthedocs.io/en/latest/proposals/0313-delimited-continuation-primops.html" target="_blank" rel="noopener">Delimited continuation primops</a>；<a href="https://zenn.dev/mod_poppo/articles/whats-new-in-ghc-9-6?locale=en" target="_blank" rel="noopener">GHC 9.6 新特性介绍</a></li>
+</ul>
+<p><strong>语言文档</strong></p>
+<ul>
+<li><a href="https://ocaml.org/manual/effects.html" target="_blank" rel="noopener">OCaml 手册：Effect handlers</a>；<a href="https://ocaml.org/changelog/2025-01-08-ocaml-530" target="_blank" rel="noopener">OCaml 5.3 发布说明</a></li>
+<li><a href="https://ocaml.org/backstage/2026-04-16-wasm-of-ocaml-what-changed-since-6-1" target="_blank" rel="noopener">wasm_of_ocaml 的进展（2026-04）</a>：栈切换提案状态与三种实现方式</li>
+<li><a href="https://www.unison-lang.org/docs/language-reference/abilities-and-ability-handlers" target="_blank" rel="noopener">Unison：Abilities and ability handlers</a></li>
+<li>Koka 操作关键字（<code>fun</code> / <code>ctl</code> / <code>val</code>）的整理：<a href="https://scrapbox.io/mrsekut-p/Koka%E3%81%AEoperation_keywords" target="_blank" rel="noopener">mrsekut 的笔记</a></li>
+</ul>
+<p><strong>介绍与评论</strong></p>
+<ul>
+<li>Dan Abramov：<a href="https://overreacted.io/algebraic-effects-for-the-rest-of-us" target="_blank" rel="noopener">Algebraic Effects for the Rest of Us</a>（2019）</li>
+<li>LWN：<a href="https://lwn.net/Articles/1033050" target="_blank" rel="noopener">Koka 语言评测</a></li>
+</ul>
+<p class="foot">Markdown 原文与视频稿件：<a href="https://github.com/Memkits/desk/tree/main/sources/algebraic-effects">sources/algebraic-effects</a>。<a href="../index.html">返回目录</a></p>
+</div></body></html>
