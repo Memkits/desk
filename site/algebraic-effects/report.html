@@ -28,7 +28,7 @@ strong{color:var(--ink)}
 img{max-width:100%;background:#fff;border-radius:8px;border:1px solid var(--rule)}
 .vid{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.vid a{padding:6px 14px;border:1px solid var(--acc);border-radius:8px;text-decoration:none}
 </style></head><body><div class="wrap">
-<header class="mast"><div class="k">ALGEBRAIC EFFECTS</div><h1>代数作用：历史、功能与实现</h1><div class="meta">2026-10-27 · AI 协作整理（Claude）</div></header>
+<header class="mast"><div class="k">ALGEBRAIC EFFECTS</div><h1>代数作用：历史、功能与实现</h1><nav class="vid" style="margin-top:14px"><a href="index.html?ep=1">视频 · 上集 来历与用法</a><a href="index.html?ep=2">视频 · 下集 类型与实现</a></nav><div class="meta">2026-10-27 · AI 协作整理（Claude）</div></header>
 <p><strong>代数作用（algebraic effects）加上作用处理器（effect handlers）</strong>，是一种把“要做什么”和“怎么做”分开的控制流机制：代码用 <code>perform</code> 发出一个请求，调用栈上方最近的处理器决定怎么响应，并且拿到“剩下的计算”（续延，continuation），可以恢复它、丢弃它，甚至恢复多次。最直观的理解是<strong>可以恢复的异常</strong>。这一个机制能统一异常、可变状态、生成器、async/await、回溯搜索、依赖注入和测试替身。</p>
 <p>它的理论来自 Plotkin 与 Power（2001–2003）和 Plotkin 与 Pretnar（2009）；研究语言 Eff、Koka、Frank、Effekt、Unison 把它做成了语言特性；2022 年的 OCaml 5 第一次把它放进一门工业语言的运行时；WebAssembly 的栈切换提案用同一套思想设计，目前处于 Phase 3。实现上有三条路：把程序改写成续延传递风格（CPS）、在运行时切换调用栈（纤程）、把处理器当参数传下去（证据传递）。OCaml 5 的实测是：不用作用的程序平均只慢约 1%，一次 perform 加恢复在十几纳秒量级。</p>
 <h2>一分钟看懂</h2>
