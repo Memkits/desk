@@ -1,0 +1,415 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>方解石</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#f3f4f1;--surface:#fff;--ink:#1b1f24;--ink2:#4a525c;--rule:#d6d9d3;--acc:#1f5fa8;--acc2:#b5651d;
+--display:"Noto Serif SC","Songti SC",serif;--body:"Noto Sans SC","PingFang SC",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--body);padding:0 16px}
+.wrap{max-width:980px;margin:0 auto;padding:48px 0 80px}
+.mast{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:8px}
+.mast .k{font:500 13px var(--mono);letter-spacing:.08em;color:var(--acc2)}
+h1{font:900 clamp(30px,5vw,48px)/1.2 var(--display);margin:8px 0}
+.meta{color:var(--ink2);font-size:14px}
+h2{font:600 26px/1.3 var(--display);margin:48px 0 12px;padding-top:12px;border-top:1px solid var(--rule)}
+a{color:var(--acc)}
+.tbl{overflow-x:auto;margin:16px 0;background:var(--surface);border:1px solid var(--rule);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.5}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-weight:700;background:color-mix(in srgb,var(--acc) 8%,transparent);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+code{font:500 .9em var(--mono)}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.6}
+strong{color:var(--ink)}
+.foot{margin-top:56px;color:var(--ink2);font-size:14px;border-top:1px solid var(--rule);padding-top:16px}
+img{max-width:100%;background:#fff;border-radius:8px;border:1px solid var(--rule)}
+.vid{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.vid a{padding:6px 14px;border:1px solid var(--acc);border-radius:8px;text-decoration:none}
+</style></head><body><div class="wrap">
+<header class="mast"><div class="k">CALCITE</div><h1>方解石：从原子到宏观性质</h1><nav class="vid" style="margin-top:14px"><a href="index.html?ep=1">视频 · 上集 从原子到双像</a><a href="index.html?ep=2">视频 · 下集 力、热与化学</a></nav><div class="meta">2026-10-28 · AI 协作整理（Claude）</div></header>
+<h2>结论先行</h2>
+<p>方解石（CaCO₃）几乎所有显眼的性质，都能追到同一个结构事实：<strong>平面三角形的碳酸根，全部平行地排成垂直于 c 轴的层，层与层之间由 Ca²⁺ 的离子键连接。</strong> 碳酸根内部是强的共价键（C–O 1.28 Å），组与组之间是较弱的 Ca–O 离子键（2.36 Å）。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>宏观性质</th>
+<th>数值</th>
+<th>微观成因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>双折射</td>
+<td>nₒ = 1.658、nₑ = 1.486（589 nm），Δn = 0.172</td>
+<td>平面 CO₃ 的电子云在平面内更容易极化，平行 c 轴方向更难；所有 CO₃ 平行，各向异性叠加而不抵消</td>
+</tr>
+<tr>
+<td>三组完全解理</td>
+<td>菱面体，两面夹角 74°55′ / 105°05′</td>
+<td>解理面只切断 Ca–O 离子键，不切断 C–O 共价键；该面电中性，表面能最低（约 0.57 J/m²）</td>
+</tr>
+<tr>
+<td>硬度低</td>
+<td>莫氏 3（定义点）</td>
+<td>软的方向由离子键和解理决定；弹性模量 C₁₁ = 149 GPa（层内）、C₃₃ = 85 GPa（跨层）</td>
+</tr>
+<tr>
+<td>热膨胀各向异性</td>
+<td>∥c 约 +25.6×10⁻⁶/K，⊥c 约 −3.7×10⁻⁶/K</td>
+<td>CO₃ 绕三次轴的摆动使层内收缩；CaO₆ 八面体变大使层间膨胀</td>
+</tr>
+<tr>
+<td>遇酸起泡、加热分解</td>
+<td>CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂；约 895 °C 时分解压达 1 atm</td>
+<td>碳酸根是弱酸根，接受质子后分解；加热时 C–O 与 Ca–O 的平衡被打破，放出 CO₂</td>
+</tr>
+<tr>
+<td>密度</td>
+<td>2.71 g/cm³（文石 2.93）</td>
+<td>Ca 六配位、较疏松；文石中 Ca 九配位、更紧密</td>
+</tr>
+<tr>
+<td>无压电性</td>
+<td>—</td>
+<td>空间群 R-3c 有对称中心；同理使红外与拉曼谱带互斥</td>
+</tr>
+</tbody>
+</table></div>
+<p>本文数值来自文末所列资料；标注“推算”的是由已知晶胞参数或公式计算得到的。</p>
+<h2>原子与成键</h2>
+<p>方解石由两种结构单元组成：球形、容易去掉两个电子的 Ca²⁺，和一个平面三角形、带两个负电荷的 CO₃²⁻。前者决定了离子键的部分，后者决定了各向异性。</p>
+<p><strong>钙离子。</strong> Ca 的电子排布是 [Ar] 4s²。两个 4s 电子脱离后留下稳定的氩型闭壳层，电子云是球对称的，而且很“硬”：极化率小，对光的响应几乎各向同性。它在晶体里主要提供正电荷和离子键。</p>
+<p><strong>碳酸根。</strong> 中心的 C 取 sp² 杂化，与三个 O 形成三个 σ 键，键角严格 120°（在方解石里由三次对称轴保证）。C 剩下的一个 p 轨道垂直于平面，和三个 O 的 p 轨道组成离域的 π 体系。用共振的语言说，有三个等价的结构，每个里只有一个 C=O 双键；实际的分子是三者的平均，每个 C–O 键级为 1⅓，每个 O 带约 −⅔ 的负电荷。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>量</th>
+<th>数值</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C–O 键长</td>
+<td>1.2815 Å（热运动修正后 1.290 Å）</td>
+<td>Effenberger 等 1981</td>
+</tr>
+<tr>
+<td>O–C–O 键角</td>
+<td>120°，对称性规定</td>
+<td>推算</td>
+</tr>
+<tr>
+<td>Ca–O 距离</td>
+<td>2.3598 Å，六配位八面体</td>
+<td>Effenberger 等 1981</td>
+</tr>
+<tr>
+<td>C–O 键级</td>
+<td>1⅓（三个共振结构平均）</td>
+<td>教科书</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>为什么这个形状很重要。</strong> 电子云在一个平面里铺开，外加电场沿平面方向时，电子可以在三个 O 之间大幅移动；电场垂直于平面时，移动空间小得多。三个 O 又互相极化：一个 O 被极化后产生的偶极场，会在平面内加强邻近 O 感受到的电场，在垂直方向则削弱。这就是 W. L. Bragg 1924 年解释双折射的出发点（见“双折射与光学”）。</p>
+<p><strong>同一条线索的旁证。</strong> C.V. Raman 1926 年指出：含平面 CO₃、NO₃ 基团的晶体（碳酸盐、硝酸盐）普遍强双折射，而含四面体 SO₄ 的硫酸盐双折射很弱——四面体的电子云近乎各向同性。</p>
+<h2>晶体结构</h2>
+<p>方解石可以想象成一个沿体对角线压扁的食盐结构：Ca 占 Na 的位置，CO₃ 占 Cl 的位置，那条体对角线就是 c 轴（也是光轴）。因为 CO₃ 是平的，立方对称被打破，只剩下绕 c 轴的三次对称。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>量</th>
+<th>数值</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>晶系 / 空间群</td>
+<td>三方，R-3c（167 号），点群 -3m</td>
+<td>Handbook of Mineralogy</td>
+</tr>
+<tr>
+<td>六方晶胞</td>
+<td>a = 4.9896 Å，c = 17.0610 Å，Z = 6，V = 367.85 Å³</td>
+<td>Effenberger 等 1981</td>
+</tr>
+<tr>
+<td>原子坐标（六方）</td>
+<td>Ca (0, 0, 0)；C (0, 0, ¼)；O (0.2568, 0, ¼)</td>
+<td>Effenberger 1981；Graf 1961</td>
+</tr>
+<tr>
+<td>原初菱面体晶胞</td>
+<td>a = 6.375 Å，α = 46.08°，含 2 个 CaCO₃</td>
+<td>推算</td>
+</tr>
+<tr>
+<td>解理菱面体（面心晶胞）</td>
+<td>a = 6.425 Å，α = 101.90°</td>
+<td>推算；Bragg 笔记 101°54′</td>
+</tr>
+<tr>
+<td>每个六方晶胞的原子</td>
+<td>6 Ca + 6 C + 18 O = 30</td>
+<td>推算</td>
+</tr>
+<tr>
+<td>密度</td>
+<td>实测 2.7102 g/cm³，计算 2.711</td>
+<td>Handbook of Mineralogy</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>层状排列。</strong> 沿 c 轴，Ca 层和 CO₃ 层交替。同一层的 CO₃ 朝向完全一致，相邻两个 CO₃ 层旋转 60°（对三角形等于反向），这就是空间群里的 c 滑移面。加上菱面体平移，六方晶胞的 17.06 Å 里有 6 个 CO₃ 层，层间距约 2.84 Å。</p>
+<p><strong>配位。</strong> 每个 Ca 被 6 个 O 包围，这 6 个 O 来自 6 个不同的 CO₃ 组（上层 3 个、下层 3 个），组成稍沿 c 轴拉长的八面体。每个 O 一边连 C（共价），一边连两个 Ca（离子）。</p>
+<p><strong>与文石的对比。</strong> 同样是 CaCO₃，文石是正交 Pmcn（a = 4.959、b = 7.968、c = 5.741 Å，Z = 4），Ca 是 9 配位（Ca–O 平均 2.528 Å），密度 2.93 g/cm³。文石是高压稳定相，地表下亚稳，约 300 °C 以上几天内转变为方解石。它的 CO₃ 也大致平行，所以同样强双折射（双轴负光性，nα 1.530、nβ 1.681、nγ 1.685）。</p>
+<p><strong>高压相变。</strong> 约 1.5–1.7 GPa 时方解石 I 转为 II，这是位移型相变：CO₃ 组旋转、Ca 微移，密度增加约 2.2%；约 2.0 GPa 处再转为方解石 III（Suito 等 2001）。</p>
+<h2>双折射与光学</h2>
+<p>方解石是常见矿物里双折射最强的之一：电场垂直于 c 轴时折射率 1.658，平行于 c 轴时只有 1.486，差 0.172。透过一块解理菱面体看字，会看到两个像。</p>
+<p><strong>微观成因。</strong> 折射率反映光的电场能把材料里的电子云推动多少（极化率）：推得越动，波走得越慢，n 越大。方解石里的电子主要在氧上，而所有 CO₃ 三角形都平行于同一个面。</p>
+<ul>
+<li>电场在三角形平面内（⊥ c）：电子云容易沿平面移动，三个 O 的偶极又互相加强，极化大 → nₒ = 1.658。</li>
+<li>电场沿 c 轴：电子云只能离开平面一点，三个 O 的偶极互相削弱，极化小 → nₑ = 1.486。</li>
+<li>因为所有 CO₃ 都平行，每个基团的各向异性直接叠加；如果它们随机朝向，就会抵消成各向同性。</li>
+<li>W. L. Bragg 1924 年（Proc. R. Soc. A 105:370）把每个 O 当作点偶极子，对晶格求局域场之和，定量算出了方解石和文石的主折射率。具体计算值未能核对原文，视频里只讲机制。</li>
+<li>从色散看，方解石的折射率可以用几个紫外吸收振子拟合（1535、1000、500 Å），双折射主要来自 1535 Å 振子的强各向异性（Ramachandran 1947）。</li>
+</ul>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>波长（nm）</th>
+<th>nₒ</th>
+<th>nₑ</th>
+<th>Δn</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>404.7</td>
+<td>1.6812</td>
+<td>1.4969</td>
+<td>0.184</td>
+</tr>
+<tr>
+<td>486.1</td>
+<td>1.6678</td>
+<td>1.4908</td>
+<td>0.177</td>
+</tr>
+<tr>
+<td>589.3</td>
+<td>1.6584</td>
+<td>1.4864</td>
+<td>0.172</td>
+</tr>
+<tr>
+<td>656.3</td>
+<td>1.6544</td>
+<td>1.4846</td>
+<td>0.170</td>
+</tr>
+<tr>
+<td>1064</td>
+<td>1.6423</td>
+<td>1.4797</td>
+<td>0.163</td>
+</tr>
+</tbody>
+</table></div>
+<p>由 Sellmeier 公式推算（PMOptics 给出的系数，589.3 nm 处与标准值 1.6584 / 1.4864 完全一致）。</p>
+<p><strong>波光学。</strong> 寻常光（o 光）的电场垂直于主截面（光轴与传播方向所在的平面），始终是 nₒ；非常光（e 光）的电场在主截面内，折射率随方向变化：</p>
+<pre><code class="language-latex">\frac{1}{n_e(\theta)^2} = \frac{\cos^2\theta}{n_o^2} + \frac{\sin^2\theta}{n_e^2}
+</code></pre>
+<p>惠更斯作图里，o 光的子波是球面，e 光的子波是扁球（在光轴方向与球面相切）。e 光的能流方向偏离波矢，最大走离角 6.26°（波矢与光轴成 41.9° 时，推算）。光垂直射入解理面时，光轴与法线成 44.6°，走离角 6.23°，两束出射光平行、间距约为厚度的 0.109 倍；e 像沿主截面、朝钝角方向偏移，转动晶体时它绕 o 像转圈。光轴就是穿过两个钝角顶点（三个 101.9° 面角交会处）的方向。</p>
+<p><strong>历史。</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>年份</th>
+<th>人物</th>
+<th>事件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1669</td>
+<td>Rasmus Bartholin</td>
+<td>描述冰洲石里的双像</td>
+</tr>
+<tr>
+<td>1690</td>
+<td>Christiaan Huygens</td>
+<td>《光论》：用球面和椭球子波解释双折射</td>
+</tr>
+<tr>
+<td>1808</td>
+<td>Étienne-Louis Malus</td>
+<td>透过方解石看卢森堡宫窗户反射的日光，发现反射光是偏振的</td>
+</tr>
+<tr>
+<td>1828</td>
+<td>William Nicol</td>
+<td>尼科尔棱镜：端面磨成 68°，对角切开用加拿大树胶（n 约 1.52–1.55）粘回，o 光全反射、e 光透过</td>
+</tr>
+<tr>
+<td>1924</td>
+<td>W. L. Bragg</td>
+<td>用偶极模型定量解释方解石与文石的折射率</td>
+</tr>
+<tr>
+<td>2011–2013</td>
+<td>Ropars 等</td>
+<td>维京“太阳石”假说的实验与 1592 年沉船里的方解石；仍是假说，“可能的用途不等于用过的证据”</td>
+</tr>
+</tbody>
+</table></div>
+<h2>力学</h2>
+<p>力学性质的关键是两类键的强弱差：C–O 共价键很强，几乎不变形；Ca–O 离子键较弱，变形和断裂都发生在这里。</p>
+<p><strong>解理。</strong> 在三个方向上完全解理，面与面夹角 74°55′（另一侧 105°05′），破碎后总是菱面体。解理面在形态学标记里是 {10-11}，在结构晶胞里是 {10-14}，即表面科学里常说的 (104) 面。</p>
+<ul>
+<li>这个面穿过 CO₃ 组之间，只切断 Ca–O 离子键，不切断任何 C–O 共价键。</li>
+<li>面上同时有 Ca 和 CO₃，整体电中性、无极性。</li>
+<li>DFT 算得表面能约 0.57 J/m²（文献值 0.59），是所算表面里最低的。</li>
+<li>对比垂直于 c 轴的 (001) 面：它只含 Ca 或只含 CO₃，是极性面，能量高，所以不解理。</li>
+</ul>
+<p><strong>硬度。</strong> 莫氏 3，就是莫氏硬度表里 3 的定义矿物，铜片能划动。硬度有各向异性（Taylor 1949，维氏，50 g 载荷）：垂直光轴的面 105，平行光轴的面 145，解理面 136。</p>
+<p><strong>弹性。</strong> 单位 GPa，Chen 等 2001（布里渊散射）：</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>C₁₁</th>
+<th>C₃₃</th>
+<th>C₄₄</th>
+<th>C₁₂</th>
+<th>C₁₃</th>
+<th>C₁₄</th>
+<th>体模量 K</th>
+<th>剪切模量 G</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>149.4</td>
+<td>85.2</td>
+<td>34.1</td>
+<td>57.9</td>
+<td>53.5</td>
+<td>−20.0</td>
+<td>76.1</td>
+<td>32.8</td>
+</tr>
+</tbody>
+</table></div>
+<p>C₁₁ 是沿层内方向压缩的刚度，C₃₃ 是沿 c 轴的刚度。层内有 CO₃ 的共价骨架在抵抗，跨层只有 Ca–O，所以前者大了近一倍。</p>
+<p><strong>机械孪晶。</strong> 受剪切时，方解石容易在 {01-18}（形态学 {01-12}，即“e 孪晶”）上形成孪晶，临界分切应力约 10 MPa。分子动力学显示它的机制是 Ca 的小位移加上 CO₃ 组的协同旋转。地质学家用岩石里方解石孪晶的方向和密度反推古应力。</p>
+<p><strong>密度。</strong> 2.71 g/cm³，比石英（2.65）稍大，比文石（2.93）小。</p>
+<h2>化学、热学与光谱</h2>
+<p>这一组性质都围绕碳酸根：它作为一个整体振动、摆动，接受质子，高温下分解出 CO₂。</p>
+<p><strong>遇酸起泡。</strong> CaCO₃ + 2H⁺ → Ca²⁺ + H₂O + CO₂↑。CO₃²⁻ 是弱酸（碳酸）的根，容易接受 H⁺ 变成 H₂CO₃，再分解成水和 CO₂。野外用 5% 稀盐酸区分方解石和白云石：方解石块体就明显起泡，白云石要磨成粉末才起泡。</p>
+<p><strong>溶解与岩溶。</strong> 25 °C 时 log Kₛₚ = −8.48，即 Kₛₚ ≈ 3.3×10⁻⁹（Plummer &amp; Busenberg 1982）。水里溶了 CO₂ 以后，CaCO₃ + H₂CO₃ → Ca²⁺ + 2HCO₃⁻，溶解度大增，这就是溶洞的来历；反应逆向（CO₂ 逸出）则沉积出石钟乳。方解石的溶解度随温度升高而下降（逆溶解度）。</p>
+<p><strong>热分解。</strong> CaCO₃ → CaO + CO₂，ΔH° = +177.8 kJ/mol。平衡 CO₂ 压力可以写成 P ≈ 4.083×10⁷·exp(−20474/T) atm，达到 1 atm 约在 1168 K（约 895 °C，推算）；工业煅烧通常在 900–950 °C。</p>
+<p><strong>热膨胀的各向异性。</strong> 室温附近，平行 c 轴 +25.6×10⁻⁶/°C，沿 a 轴 −3.7×10⁻⁶/°C，而且 a 轴一直到 900 °C 都是负的（Rao 1968，Markgraf &amp; Reeder 1985）。原因：加热时 CO₃ 绕三次轴的摆动变大，层内方向的平均投影变短；同时 CaO₆ 八面体变大（Ca–O 平均约 15.9×10⁻⁶/°C），把层间撑开。热导率也各向异性：∥c 5.53、⊥c 4.65 W/(m·K)（273 K）。</p>
+<p><strong>振动光谱。</strong> 孤立 CO₃²⁻（D₃h）有四种内振动：</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>模式</th>
+<th>形状</th>
+<th>拉曼（cm⁻¹）</th>
+<th>红外（cm⁻¹）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ν₁</td>
+<td>对称伸缩，三个 O 同时进出</td>
+<td>1086.5（最强）</td>
+<td>理论上无活性</td>
+</tr>
+<tr>
+<td>ν₂</td>
+<td>面外弯曲，C 上下跳</td>
+<td>无</td>
+<td>875（很强）</td>
+</tr>
+<tr>
+<td>ν₃</td>
+<td>反对称伸缩</td>
+<td>1436（弱）</td>
+<td>1427（最强）</td>
+</tr>
+<tr>
+<td>ν₄</td>
+<td>面内弯曲</td>
+<td>712</td>
+<td>713</td>
+</tr>
+<tr>
+<td>晶格模</td>
+<td>平移 / 摆动</td>
+<td>156、282</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>R-3c 有对称中心，所以拉曼活性和红外活性互斥：ν₁ 只在拉曼谱里强，ν₂ 只在红外谱里出现。同一个对称中心也让方解石没有压电性（对比石英）。</p>
+<p><strong>荧光与颜色。</strong> 纯方解石无色透明。颜色和发光来自杂质：Mn²⁺ 是主要激活剂，阴极发光峰在 580–640 nm（橙红），低于 1 ppm 就能检出，Fe²⁺ 会猝灭发光；在紫外灯下可发红、蓝、黄等荧光。</p>
+<h2>视频提纲</h2>
+<p>建议分两集，每集约 8 分钟。上集从原子搭到晶体，再讲双折射；下集用同一个晶体模型讲力、热和化学。动画是这期的重点：晶体用真实原子坐标构建的 3D 模型（画布逐帧渲染），电子云和光波用逐帧计算的画布或 WebGPU 着色器，数值和出处放在画面上的“细节”卡片里，旁白保持概念优先。</p>
+<p><strong>上集 · 从原子到双像</strong></p>
+<ol>
+<li>开场：一块解理菱面体压在文字上，字变成两个；转动晶体，一个像绕另一个转。引出问题：这是原子层面的哪个事实造成的？（3D 渲染的透明菱面体 + 光线追踪）</li>
+<li>钙离子：电子壳层从内到外亮起，两个 4s 电子离开，留下球对称、紧致的闭壳电子云（径向密度曲线 + 二维密度图）。</li>
+<li>碳酸根：sp² 杂化轨道展开成 120°，与三个 O 形成 σ 键；垂直的 p 轨道连成离域 π 云；三个共振结构轮流闪现，最后叠成键级 1⅓、每个 O 带 −⅔ 的平均图。展示电子密度的等值面：一张“扁平的饭团”。</li>
+<li>从食盐到方解石：NaCl 立方晶格出现，沿体对角线压扁，Cl 替换成平放的 CO₃，Na 替换成 Ca；体对角线变成 c 轴。（3D，真实坐标）</li>
+<li>层与配位：沿 c 轴层层堆叠，相邻两层 CO₃ 旋转 60°；放大一个 Ca 的八面体配位；六方晶胞（5.0 × 17.1 Å）与解理菱面体的关系。</li>
+<li>极化：光的电场来回振荡，分别沿平面内和沿 c 轴；电子云的位移大小不同；三个 O 的偶极箭头互相加强或削弱（Bragg 1924）。得到 nₒ = 1.658、nₑ = 1.486。</li>
+<li>两种波：折射率椭球；惠更斯子波（球面与扁球）在晶体里传播；一束光垂直射入解理面后分成两束，e 光走离 6.2°；用偏振片分别挡住两个像。（波前的逐帧模拟）</li>
+<li>历史与应用：Bartholin 1669、Huygens 1690、Malus 1808、尼科尔棱镜 1828（o 光在树胶界面全反射的光路动画）、维京太阳石假说。</li>
+<li>小结与下集预告。</li>
+</ol>
+<p><strong>下集 · 力、热与化学</strong></p>
+<ol>
+<li>开场：一锤下去，碎成的全是小菱面体。</li>
+<li>解理：3D 晶格被 (104) 面切开，只有 Ca–O 键变红断开，CO₃ 完整保留；对比切 (001) 面，得到一面全是正电荷、一面全是负电荷的极性面。三组解理面的夹角 74°55′。</li>
+<li>硬度与弹性：用弹簧模型展示层内（C₁₁ = 149 GPa）与跨层（C₃₃ = 85 GPa）的刚度差；莫氏 3。</li>
+<li>机械孪晶：剪切下 CO₃ 协同旋转、晶格翻转成镜像；地质上的古应力计。</li>
+<li>热膨胀：加热时 CO₃ 绕三次轴摆动变大，层内反而收缩、层间膨胀（带刻度的晶胞动画）。</li>
+<li>分子振动与光谱：ν₁–ν₄ 四种振动的原子动画，对应拉曼与红外谱峰；对称中心导致的互斥规则，以及为什么没有压电性。</li>
+<li>遇酸与岩溶：H⁺ 靠近 CO₃、结合、分解出 CO₂ 气泡；溶洞与石钟乳的反应循环。</li>
+<li>热分解：加热到约 900 °C，CO₂ 离开，留下 CaO；平衡压力随温度的曲线。</li>
+<li>杂质与发光：Mn²⁺ 替换 Ca²⁺，橙红色阴极发光。</li>
+<li>总结：一张“结构 → 性质”的对应图。</li>
+</ol>
+<p>已按两集、大学低年级深度制作：公式和弹性常数放在画面卡片里，旁白只讲机制。</p>
+<h2>参考资料</h2>
+<p><strong>结构与基本数据</strong></p>
+<ul>
+<li><a href="https://www.handbookofmineralogy.org/pdfs/calcite.pdf" target="_blank" rel="noopener">Handbook of Mineralogy：Calcite</a>（晶胞、密度、光学、解理、孪晶、发光）</li>
+<li><a href="https://rruff.info/uploads/ZK156_233.pdf" target="_blank" rel="noopener">Effenberger, Mereiter &amp; Zemann 1981, Z. Kristallogr. 156:233</a>（原子坐标、C–O 与 Ca–O 键长）；<a href="https://qiserver.ugr.es/cod/9017359.html" target="_blank" rel="noopener">COD 9017359</a></li>
+<li><a href="https://soilsfacstaff.cals.wisc.edu/facstaff/barak/virtual_museum/calcite/calcite_data.html" target="_blank" rel="noopener">Calcite 数据页（Graf 1961 坐标）</a>；<a href="https://gamgi.tecnico.ulisboa.pt/tutorials/calcite_page1.html" target="_blank" rel="noopener">GAMGI 教程</a></li>
+<li><a href="https://ocw.tau.edu.ng/courses/earth-atmospheric-and-planetary-sciences/12-108-structure-of-earth-materials-fall-2004/lecture-notes/lecture10.pdf" target="_blank" rel="noopener">MIT 12.108 讲义：碳酸盐结构</a>；<a href="https://arxiv.org/pdf/2408.04036" target="_blank" rel="noopener">arXiv 2408.04036（CO₃ 层的朝向）</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Calcite" target="_blank" rel="noopener">Wikipedia：Calcite</a>；<a href="https://library.leeds.ac.uk/special-collections/research-spotlight/2071" target="_blank" rel="noopener">Leeds：Bragg 笔记本</a></li>
+<li><a href="https://mail.webmineral.com/data/Aragonite.shtml" target="_blank" rel="noopener">Webmineral：Aragonite</a>；<a href="https://pubs.rsc.org/en/content/articlehtml/2012/ra/c1ra00568e" target="_blank" rel="noopener">文石结构（RSC Adv. 2012）</a></li>
+</ul>
+<p><strong>光学</strong></p>
+<ul>
+<li><a href="https://physics.sierracollege.edu/DemoRoom/Optics/6H%20Polarization/6h35_10.htm" target="_blank" rel="noopener">Sierra College 演示：折射率</a>；<a href="https://pmoptics.com/calcite.html" target="_blank" rel="noopener">PMOptics：Calcite Sellmeier</a>；<a href="https://crystran.com/optical-materials/calcite-caco3" target="_blank" rel="noopener">Crystran 数据</a></li>
+<li><a href="https://www.nature.com/articles/113446a0" target="_blank" rel="noopener">Nature 1924：Bragg 关于折射率的报告</a>；<a href="https://repository.ias.ac.in/52684" target="_blank" rel="noopener">Raman 1926 与 Ramachandran 1947（IAS 存档）</a>、<a href="https://repository.ias.ac.in/34797" target="_blank" rel="noopener">Ramachandran</a></li>
+<li><a href="https://www.polarization.com/history/history.html" target="_blank" rel="noopener">Polarization.com：偏振光历史</a>；<a href="https://skullsinthestars.com/2025/04/12/nicol-invents-a-polarizing-prism-1828/" target="_blank" rel="noopener">Nicol 棱镜（1828）</a>；<a href="https://en.wikipedia.org/wiki/Iceland_spar" target="_blank" rel="noopener">Iceland spar</a></li>
+<li><a href="https://www.nature.com/articles/nmat3188" target="_blank" rel="noopener">Nature Materials 2011：维京太阳石</a>；<a href="https://jomarchant.com/251/the-mythical-sunstone" target="_blank" rel="noopener">太阳石与 1592 年沉船</a></li>
+<li><a href="https://www.not.iac.es/instruments/alfosc/polarimetry/general.html" target="_blank" rel="noopener">NOT 望远镜：方解石偏振分束</a>；<a href="https://www.pmoptics.com/files/Beam_Displacer.pdf" target="_blank" rel="noopener">光束位移器</a></li>
+</ul>
+<p><strong>力学、热学、化学、光谱</strong></p>
+<ul>
+<li><a href="https://www.gep.ncu.edu.tw/storage/thesis/2001/thesis_1392601237.pdf" target="_blank" rel="noopener">Chen 等 2001，弹性常数</a>；<a href="https://pubs.usgs.gov/publication/70010572" target="_blank" rel="noopener">Peselnick &amp; Robie 1962</a>；<a href="https://rruff.info/doclib/MinMag/Volume_28/28-206-718.pdf" target="_blank" rel="noopener">Taylor 1949，硬度各向异性</a></li>
+<li><a href="https://pubs.rsc.org/en/content/articlehtml/2020/ra/d0ra02471f" target="_blank" rel="noopener">方解石表面能 DFT（RSC Adv. 2020）</a>；<a href="https://pubs.rsc.org/en/content/articlehtml/2015/cp/c5cp03370e" target="_blank" rel="noopener">孪晶的分子动力学（PCCP 2015）</a>；<a href="https://www2.jpgu.org/meeting/2016/session/PDF/S-CG63/SCG63-17_e.pdf" target="_blank" rel="noopener">孪晶古应力计（JpGU 2016）</a></li>
+<li><a href="https://msaweb.org/AmMin/AM70/AM70_590.pdf" target="_blank" rel="noopener">Markgraf &amp; Reeder 1985，高温结构</a>；<a href="https://rruff.info/rruff_1.0/uploads/AM86_997.pdf" target="_blank" rel="noopener">Suito 等 2001，高压相变</a>；<a href="https://idus.us.es/bitstream/handle/11441/134522/1/Limestone%20calcination.pdf?sequence=1" target="_blank" rel="noopener">石灰石煅烧动力学</a></li>
+<li><a href="https://usgs.gov/publications/solubilities-calcite-aragonite-and-vaterite-co2-h2o-solutions-between-0-and-90degc-and" target="_blank" rel="noopener">Plummer &amp; Busenberg 1982，溶解度</a>；<a href="https://geo.libretexts.org/Bookshelves/Geology/Mineralogy_(Perkins_et_al.)/03%3A_Mineral_Properties/3.09%3A_Reaction_to_Dilute_Hydrochloric_Acid" target="_blank" rel="noopener">稀盐酸测试</a></li>
+<li><a href="https://www.sshade.eu/data/BANDLIST_RAMAN_Calcite/details" target="_blank" rel="noopener">SSHADE：拉曼谱带</a>、<a href="https://www.sshade.eu/data/BANDLIST_ABS_Calcite/details" target="_blank" rel="noopener">红外谱带</a>；<a href="https://rruff.info/uploads/MM71_493.pdf" target="_blank" rel="noopener">阴极发光（Mineral. Mag. 71）</a>；<a href="https://it.iucr.org/Ab/ch7o1v0001/sgtable7o1o167" target="_blank" rel="noopener">国际晶体学表：R-3c</a></li>
+</ul>
+<p>未能核对的：Bragg 1924 原文的具体计算值；“纯方解石不发荧光”及 Pb²⁺ 敏化的细节。</p><p class="foot">Markdown 原文与视频稿件：<a href="https://github.com/Memkits/desk/tree/main/sources/calcite">sources/calcite</a>。<a href="../index.html">返回目录</a></p>
+</div></body></html>
