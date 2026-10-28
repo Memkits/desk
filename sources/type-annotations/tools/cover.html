@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><style>
+body{margin:0;width:1920px;height:1080px;background:#F2F3EF;font-family:"Inter","Noto Sans CJK SC",sans-serif;color:#11161C;overflow:hidden;position:relative}
+.L{position:absolute;left:250px;top:170px}
+.ep{display:inline-block;font:700 34px sans-serif;background:#11161C;color:#fff;padding:10px 22px;border-radius:10px}
+h1{font:900 170px/1.05 "Noto Serif CJK SC",serif;margin:24px 0 0;white-space:nowrap}
+.st{font:700 60px/1.3 "Noto Serif CJK SC",serif;color:#3D4650;margin-top:10px}
+.badge{margin-top:36px;display:inline-block;border:3px solid #5B4A9E;color:#5B4A9E;border-radius:12px;padding:10px 20px;font-size:28px;font-weight:700}
+.R{position:absolute;left:1040px;top:480px;width:640px}
+.code{font:500 30px/1.55 "DejaVu Sans Mono",monospace;background:#1D2128;color:#E8E6DF;border-radius:18px;padding:26px 32px;white-space:pre}
+.code .kw{color:#F0B86E}.code .hl{background:rgba(255,215,90,.2)}.code .k{color:#C9B6FF;font-weight:700}
+.t{padding:16px 22px;border-radius:14px;color:#fff;font-size:30px;font-weight:700;margin-bottom:12px}
+.t small{display:block;font-size:20px;font-weight:400;opacity:.85}
+</style><body>
+<div class="L"><span class="ep" id="ep"></span><h1>类型标注</h1><div class="st" id="st"></div><div class="badge" id="bd"></div></div>
+<div class="R" id="R"></div>
+<script>
+const ep=+(new URLSearchParams(location.search).get('ep')||1);
+const E={1:['上集','风格与来历','三条主线 · 从 Fortran 到 Rust'],2:['下集','代价与取舍','解析 · 泛型 · 推断 · 动态语言']}[ep];
+document.getElementById('ep').textContent=E[0];document.getElementById('st').textContent=E[1];document.getElementById('bd').textContent=E[2];
+const R=document.getElementById('R');
+if(ep===1)R.innerHTML=`<div class="code"><span class="kw">int</span> n;            <span style="color:#8A929B">// C</span>
+<span class="kw">var</span> n: <span class="k">Integer</span>;   <span style="color:#8A929B">// Pascal</span>
+<span class="kw">let</span> n: <span class="k">i32</span>;       <span style="color:#8A929B">// Rust</span>
+f :: <span class="k">Int -> Int</span>  <span style="color:#8A929B">-- Haskell</span></div>`;
+else R.innerHTML=`<div class="code">a, b = w <span class="hl">&lt;</span> x, y <span class="hl">&gt;</span> (z)
+<span style="color:#8A929B">// 比较？还是泛型调用？</span>
+
+<span class="kw">func</span> Map<span class="k">[T, U any]</span>(…)
+"5".parse<span class="k">::&lt;i32&gt;</span>()</div>`;
+</script></body></html>
