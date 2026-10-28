@@ -1,0 +1,590 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Web 的颜色</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#f3f4f1;--surface:#fff;--ink:#1b1f24;--ink2:#4a525c;--rule:#d6d9d3;--acc:#1f5fa8;--acc2:#b5651d;
+--display:"Noto Serif SC","Songti SC",serif;--body:"Noto Sans SC","PingFang SC",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--body);padding:0 16px}
+.wrap{max-width:980px;margin:0 auto;padding:48px 0 80px}
+.mast{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:8px}
+.mast .k{font:500 13px var(--mono);letter-spacing:.08em;color:var(--acc2)}
+h1{font:900 clamp(30px,5vw,48px)/1.2 var(--display);margin:8px 0}
+.meta{color:var(--ink2);font-size:14px}
+h2{font:600 26px/1.3 var(--display);margin:48px 0 12px;padding-top:12px;border-top:1px solid var(--rule)}
+a{color:var(--acc)}
+.tbl{overflow-x:auto;margin:16px 0;background:var(--surface);border:1px solid var(--rule);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.5}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-weight:700;background:color-mix(in srgb,var(--acc) 8%,transparent);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+code{font:500 .9em var(--mono)}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.6}
+strong{color:var(--ink)}
+.foot{margin-top:56px;color:var(--ink2);font-size:14px;border-top:1px solid var(--rule);padding-top:16px}
+img{max-width:100%;background:#fff;border-radius:8px;border:1px solid var(--rule)}
+.vid{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.vid a{padding:6px 14px;border:1px solid var(--acc);border-radius:8px;text-decoration:none}
+</style></head><body><div class="wrap">
+<header class="mast"><div class="k">COLOR ON THE WEB</div><h1>Web 平台的颜色：屏幕、规范与设备</h1><nav class="vid" style="margin-top:14px"><a href="index.html?ep=1">视频 · 上集 屏幕与表示</a><a href="index.html?ep=2">视频 · 下集 HDR、设备与推动者</a></nav><div class="meta">2026-10-28 · AI 协作整理（Claude）</div></header>
+<h2>结论先行</h2>
+<p>Web 的颜色在 2016–2025 年间从“只有 sRGB”变成了“与设备无关的色彩空间 + 广色域 + 开始支持 HDR”。驱动力是硬件先变、规范和浏览器追赶：Apple 在 2015–2016 年把 Mac 和 iPhone 换成 Display P3 屏幕，CSS 当时却规定颜色只在 sRGB 里（WebKit 博客原话），于是 WebKit 先动手。</p>
+<ul>
+<li><strong>三次跳变。</strong> 1996 年的 sRGB 让网页颜色第一次有了明确含义；2023 年 5 月三大浏览器都支持 CSS Color 4（lab、lch、oklab、oklch、color()），广色域成为 Baseline；2025 年起 <code>dynamic-range-limit</code>、HDR 图片（ISO 21496-1 增益图）和 WebGPU HDR 画布让 HDR 走进网页。</li>
+<li><strong>表示方式的转向。</strong> 从“给显示器的三个 0–255 数字”变成“指明色彩空间的坐标”。<code>#ff0000</code> 和 <code>color(display-p3 1 0 0)</code> 是两种红，后者在 P3 屏上更饱和。</li>
+<li><strong>感知均匀成了默认。</strong> 2021 年 CSSWG 决定用 Oklab 做非传统颜色的默认插值空间、用 OKLCH 做色域映射；它来自游戏开发者 Björn Ottosson 2020 年底的一篇博客。Tailwind CSS v4（2025-01）把整套默认调色板换成了 oklch。</li>
+<li><strong>推动者是一个小圈子。</strong> W3C 的 Chris Lilley、规范编辑 Lea Verou 与 Tab Atkins、Chrome 的 Christopher Cameron、WebKit 团队，加上 BBC、Dolby、Adobe、Google Android 这些影像标准方；设计工具（Sketch、Figma）和 CSS 框架把成果带给大量开发者。</li>
+<li><strong>还没解决的。</strong> 色域映射算法仍在讨论（浏览器长期直接裁剪）；WCAG 3 的对比度算法未定；Firefox 默认仍不对未标注内容做色彩管理；WebXR 规范里只有 sRGB，没有广色域或 HDR。</li>
+</ul>
+<p><img alt="Web 颜色的两条线 · 1996–2026" src="img/timeline.png" /></p>
+<p>左边的硬件与影像标准在 2015–2017 年密集变化，右边的 CSS 直到 2021–2023 年才集中跟上；HDR 则在 2025 年前后同时出现在两边。</p>
+<h2>屏幕特性</h2>
+<p>一块屏幕能显示什么颜色，由四件事决定：三个原色的位置（色域）、白点、传递曲线（数值怎么变成亮度）、以及亮度范围和位深。网页上的一个颜色值，只有说清楚是哪个空间里的坐标，系统才能把它换算到这块屏幕上。</p>
+<p><strong>人眼与参照系。</strong> CIE 1931 根据 1920 年代 Wright 与 Guild 的配色实验定义了 XYZ，是与设备无关的参照。xy 色度图里两种光的混合落在连线上，所以三原色屏幕的色域是一个三角形。xy 不是感知均匀的，1976 年的 CIELAB 试图修正，2020 年的 Oklab 又修正了 CIELAB 在蓝色区的色相偏移。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>色彩空间</th>
+<th>年份</th>
+<th>定义者</th>
+<th>原色 / 传递曲线</th>
+<th>占 CIE 1931 xy 面积</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sRGB</td>
+<td>1996（IEC 61966-2-1:1999）</td>
+<td>HP 与 Microsoft</td>
+<td>BT.709 原色、D65；分段曲线，约等于 gamma 2.2；参考亮度 80 cd/m²</td>
+<td>35.9%</td>
+</tr>
+<tr>
+<td>Display P3</td>
+<td>2015</td>
+<td>Apple</td>
+<td>DCI-P3 原色 + D65 + sRGB 曲线</td>
+<td>53.6%（DCI-P3）</td>
+</tr>
+<tr>
+<td>Rec.2020</td>
+<td>2012</td>
+<td>ITU-R</td>
+<td>630 / 532 / 467 nm 单色原色；10 或 12 位</td>
+<td>75.8%</td>
+</tr>
+<tr>
+<td>Rec.2100</td>
+<td>2016</td>
+<td>ITU-R</td>
+<td>Rec.2020 原色 + PQ（SMPTE ST 2084）或 HLG 两种 HDR 曲线</td>
+<td>同 Rec.2020</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>sRGB 的来历。</strong> 1996 年 11 月，HP 的 Michael Stokes、Ricardo Motta 和 Microsoft 的 Matthew Anderson、Srinivasan Chandrasekar 向 W3C 提交《A Standard Default Color Space for the Internet》。它把当时 CRT 显示器的平均特性写成了标准，所以是“不带配置文件时的默认假设”。</li>
+<li><strong>位深。</strong> 8 位是每通道 256 级，10 位是 1024 级。色域越大、亮度范围越大，相邻两级的差距越大，渐变就越容易出现色带；不少面板用 FRC（在两级之间快速切换）模拟 10 位。</li>
+<li><strong>HDR 与亮度。</strong> ITU-R BT.2408 把 HDR 里的“参考白”定在 203 cd/m²。Apple 的 EDR 把 SDR 白记为 1.0，超出 1.0 的部分叫“余量”（headroom）：iPhone XDR 约 8 倍，iPad Pro XDR 约 16 倍，Pro Display XDR（2019，峰值 1600 nits）在低亮度下可达约 400 倍。余量随环境和亮度设置变化，这是 HDR 在网页里难处理的根源。</li>
+<li><strong>面板技术。</strong> 2015 年前后量子点电视、HDR10 标准和 Apple 全线 P3 几乎同时出现；2021 年 iPad Pro 的 mini-LED（2596 个调光区，峰值 1600 nits）和 OLED 手机让 HDR 进入普通用户手里。</li>
+<li><strong>系统色彩管理。</strong> WebKit 从 OS X 10.11.3 / iOS 9.3 起对带配置文件的图片做色彩匹配，未标注内容当作 sRGB；Android 8.0（2017）让应用按 Activity 声明 <code>wideColorGamut</code>；Windows 11 22H2 的自动色彩管理把桌面合成器改为 FP16，把不认识色彩的应用从 sRGB 映射到屏幕色域。</li>
+</ul>
+<p>一个常见误解：Apple 说 P3 “饱和度高 25%”，是和 iPad Air 2 的比较，不是色域面积。按 xy 面积算，DCI-P3 约为 sRGB 的 1.5 倍。</p>
+<h2>CSS 颜色规范的变迁</h2>
+<p>CSS 颜色经历了四代：关键词和十六进制（CSS1）、更便于人写的 sRGB 写法（Color 3）、与设备无关的色彩空间（Color 4）、颜色运算与 HDR（Color 5 和 Color HDR）。前三代的所有写法都只是 sRGB 的不同拼法。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>规范</th>
+<th>状态与年份</th>
+<th>新增</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CSS1</td>
+<td>1996</td>
+<td>16 个基本关键词、<code>#rgb</code> / <code>#rrggbb</code>、<code>rgb()</code></td>
+<td>关键词来自 HTML；CSS2 加了 <code>orange</code></td>
+</tr>
+<tr>
+<td>CSS2</td>
+<td>1998</td>
+<td>28 个系统颜色（<code>ButtonFace</code>、<code>WindowText</code> 等）</td>
+<td>Color 3 废弃了它们，后来以 CSS system colors 的形式保留一部分</td>
+</tr>
+<tr>
+<td>CSS Color 3</td>
+<td>2011 REC</td>
+<td><code>rgba()</code>、<code>hsl()</code>、<code>hsla()</code>、<code>transparent</code>、<code>currentColor</code>、147 个 X11 命名色</td>
+<td>明确“RGB 即 sRGB”；X11 名字里 <code>darkgray</code> 比 <code>gray</code> 还浅</td>
+</tr>
+<tr>
+<td>CSS Color 4</td>
+<td>2022 CR</td>
+<td><code>lab()</code>、<code>lch()</code>、<code>oklab()</code>、<code>oklch()</code>、<code>hwb()</code>、<code>color()</code>、<code>none</code>、空格语法、<code>rebeccapurple</code></td>
+<td><code>color()</code> 的预定义空间：srgb、srgb-linear、display-p3、a98-rgb、prophoto-rgb、rec2020、xyz-d50、xyz-d65；规定色域映射</td>
+</tr>
+<tr>
+<td>CSS Color 5</td>
+<td>工作草案（2026-06）</td>
+<td><code>color-mix()</code>、相对颜色语法 <code>from</code>、<code>light-dark()</code>、<code>contrast-color()</code>、<code>device-cmyk()</code>、<code>@color-profile</code></td>
+<td><code>color-mix()</code> 不指定空间时默认 Oklab</td>
+</tr>
+<tr>
+<td>CSS Color HDR 1</td>
+<td>工作草案（2024-12 起）</td>
+<td><code>dynamic-range-limit</code>、<code>hdr-color()</code>、<code>ictcp()</code>、<code>jzazbz()</code>、rec2100-pq / hlg / linear</td>
+<td>编辑 Chris Lilley；HDR 参考白 203 cd/m²</td>
+</tr>
+</tbody>
+</table></div>
+<p>同一个“红”在各代规范里的写法：</p>
+<pre><code class="language-css">/* CSS1：关键词与十六进制，都是 sRGB */
+color: red;  color: #f00;  color: rgb(255, 0, 0);
+
+/* Color 3：透明度与 HSL，仍是 sRGB */
+color: rgba(255, 0, 0, .5);  color: hsl(0 100% 50%);
+
+/* Color 4：指明色彩空间，可以超出 sRGB */
+color: color(display-p3 1 0 0);      /* P3 屏上更饱和的红 */
+color: oklch(62.8% 0.258 29.2);      /* 亮度 / 色度 / 色相 */
+color: lab(54.3% 80.8 69.9);
+
+/* Color 5：由已有颜色算出新颜色 */
+color: color-mix(in oklab, red 60%, white);
+color: oklch(from var(--brand) calc(l + .1) c h);
+color: light-dark(#222, #eee);
+color: contrast-color(var(--bg));    /* 黑或白 */
+
+/* HDR：限制页面里 HDR 内容的亮度 */
+img { dynamic-range-limit: standard; }
+
+/* 按屏幕能力分支 */
+@media (color-gamut: p3) { … }
+@media (dynamic-range: high) { … }
+</code></pre>
+<p><strong>为什么要 OKLCH。</strong> HSL 的“亮度 50%”对黄色和蓝色看起来完全不同；sRGB 里蓝到白的渐变会发紫。Oklab 的目标是等距离就是等感知差距，所以改亮度不会带动色相，生成调色板和渐变更稳定。2021 年 9 月 Chris Lilley 开了 CSSWG issue #6642，10 月 13 日工作组决议加入 <code>oklab()</code> / <code>oklch()</code>，并把 Oklab 定为非传统颜色的默认插值空间。</p>
+<p><strong>色域映射的争论。</strong> 一个 oklch 颜色可能超出屏幕色域。规范描述了裁剪、降低色度等做法，但浏览器一开始都直接逐通道裁剪，色相会变。issue #9449（2023）批评这“破坏了 oklch 的意义”；2024 年 Chrome 的 Christopher Cameron 开 #10579 比较更快的静态映射算法，讨论仍在继续。</p>
+<h2>各种颜色表示的差异</h2>
+<p>这些写法的差别在三件事：坐标轴指什么、能不能超出 sRGB、坐标上的等距是不是看起来的等距。前三种只是 sRGB 的换写，<code>lab</code> / <code>oklab</code> 系与设备无关，<code>color()</code> 是“指明哪个 RGB 空间”。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>写法</th>
+<th>三个坐标</th>
+<th>能表示的范围</th>
+<th>感知均匀</th>
+<th>常见坑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#rrggbb</code>、<code>rgb()</code></td>
+<td>红、绿、蓝的编码值 0–255</td>
+<td>只有 sRGB</td>
+<td>否</td>
+<td>数值是伽马编码后的，不是光强；数值的中点不是亮度的中点</td>
+</tr>
+<tr>
+<td><code>hsl()</code></td>
+<td>色相角、饱和度、“亮度”</td>
+<td>只有 sRGB</td>
+<td>否</td>
+<td>亮度 50% 的黄色和蓝色看起来差很远（OKLCH 亮度 0.97 对 0.45）</td>
+</tr>
+<tr>
+<td><code>hwb()</code></td>
+<td>色相、混入的白、混入的黑</td>
+<td>只有 sRGB</td>
+<td>否</td>
+<td>类似取色器的想法，问题同 HSL</td>
+</tr>
+<tr>
+<td><code>lab()</code>、<code>lch()</code></td>
+<td>亮度 L 0–100，a/b 或色度/色相；D50 白点</td>
+<td>所有可见色</td>
+<td>大体</td>
+<td>蓝紫区改变亮度或色度时色相会漂（蓝变紫）</td>
+</tr>
+<tr>
+<td><code>oklab()</code>、<code>oklch()</code></td>
+<td>亮度 L 0–1，色度 C（实用上限约 0.37），色相 H；D65</td>
+<td>所有可见色</td>
+<td>更好</td>
+<td>同一亮度下不同色相的最大色度不同，很容易写出色域外的颜色</td>
+</tr>
+<tr>
+<td><code>color(display-p3 …)</code> 等</td>
+<td>指定空间里的 R G B，0–1</td>
+<td>该空间的三角形</td>
+<td>否</td>
+<td>同样的数字在不同空间是不同的颜色</td>
+</tr>
+</tbody>
+</table></div>
+<p>同一个颜色 <code>rebeccapurple</code> 的各种写法（由 sRGB 换算），以及一个 sRGB 写不出来的红：</p>
+<pre><code class="language-css">color: #663399;
+color: rgb(102 51 153);
+color: hsl(270 50% 40%);
+color: hwb(270 20% 40%);
+color: lab(32.39% 38.42 -47.69);
+color: oklch(44.0% 0.160 303.4);
+color: color(display-p3 0.374 0.210 0.579);   /* 同一个颜色，P3 坐标不同 */
+
+/* P3 的最红：换到 sRGB 是 (1.093, -0.227, -0.150)，超出范围 */
+color: color(display-p3 1 0 0);                /* oklch(64.9% 0.300 29.0) */
+color: red;                                    /* oklch(62.8% 0.258 29.2) */
+</code></pre>
+<p><strong>插值也不同。</strong> 同样从红到蓝，渐变在哪个空间里算，结果差很多：</p>
+<pre><code class="language-css">linear-gradient(in srgb,  red, blue)   /* 中间发暗、发灰的紫 */
+linear-gradient(in oklab, red, blue)   /* 亮度平顺，中间是偏亮的紫 */
+linear-gradient(in oklch, red, blue)   /* 沿色相环走，经过品红，饱和度不掉 */
+linear-gradient(in oklch longer hue, red, blue)   /* 绕远路，经过黄和绿 */
+</code></pre>
+<ul>
+<li><strong>旧写法保持旧行为。</strong> Color 4 规定：只用 hex / rgb / hsl / hwb 等“传统”颜色的渐变和动画仍在 sRGB 里插值，只要有一端是新写法就默认用 Oklab。这是为了不改变已有网页的样子。</li>
+<li><strong><code>none</code> 是“缺失”，不是 0。</strong> <code>oklch(70% 0 none)</code> 没有色相，和彩色插值时用对方的色相，不会出现“灰向红插值时先变成别的颜色”。</li>
+<li><strong>精度。</strong> 传统颜色按 8 位存储和序列化；新写法保留浮点，<code>getComputedStyle</code> 返回的仍是作者写的空间（如 <code>oklch(…)</code>），而不是换成 <code>rgb()</code>。</li>
+<li><strong>给设计系统的含义。</strong> 在 OKLCH 里固定 C 和 H、只改 L，就能得到一组色相一致的深浅色；在 HSL 里做同样的事，深浅色的色相和感知亮度都会跑。Tailwind v4 和 Radix 的调色板就是这样生成的。</li>
+</ul>
+<h2>浏览器实现与色彩管理</h2>
+<p>Safari 先行、Chrome 和 Firefox 在 2023 年一起追平：Interop 2022 与 2023 都把“色彩空间与颜色函数”列为重点，2023 年 5 月 Lab / LCH / Oklab / OKLCH 在三大引擎互通。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>Safari</th>
+<th>Chrome / Edge</th>
+<th>Firefox</th>
+<th>Baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>color-gamut</code> 媒体查询</td>
+<td>10</td>
+<td>58</td>
+<td>110</td>
+<td>2023</td>
+</tr>
+<tr>
+<td><code>dynamic-range</code> 媒体查询</td>
+<td>13.1</td>
+<td>98</td>
+<td>100</td>
+<td>2022</td>
+</tr>
+<tr>
+<td><code>lab()</code> <code>lch()</code> <code>color()</code> <code>hwb()</code></td>
+<td>15（2021-10）</td>
+<td>111（2023-03）</td>
+<td>113（2023-05）</td>
+<td>2023-05</td>
+</tr>
+<tr>
+<td><code>oklab()</code> <code>oklch()</code></td>
+<td>15.4</td>
+<td>111</td>
+<td>113</td>
+<td>2023-05</td>
+</tr>
+<tr>
+<td><code>color-mix()</code></td>
+<td>16.2（2022-12）</td>
+<td>111</td>
+<td>113</td>
+<td>2023-05</td>
+</tr>
+<tr>
+<td>相对颜色语法 <code>from</code></td>
+<td>18</td>
+<td>119</td>
+<td>128</td>
+<td>2024</td>
+</tr>
+<tr>
+<td><code>light-dark()</code></td>
+<td>17.5</td>
+<td>123</td>
+<td>120</td>
+<td>2024-05</td>
+</tr>
+<tr>
+<td><code>contrast-color()</code></td>
+<td>26</td>
+<td>147</td>
+<td>146</td>
+<td>2026-04</td>
+</tr>
+<tr>
+<td><code>dynamic-range-limit</code></td>
+<td>26（不含 <code>constrained</code>）</td>
+<td>136（2025-04）</td>
+<td>—</td>
+<td>未达</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>色彩管理的历史比 CSS 语法更曲折。</strong> 关键问题是“没有标注色彩空间的内容怎么办”：当作 sRGB 换算到屏幕，还是把数值直接交给屏幕。后者在广色域屏上会过饱和。</p>
+<ul>
+<li><strong>Firefox 3.5（2009）</strong> 开始按配置文件校正带标注的图片（<code>gfx.color_management.mode</code> = 2），CSS 颜色和未标注图片仍用设备空间。这个默认值至今未变，bug 1488619 主张改为全管理，仍未关闭。</li>
+<li><strong>WebKit（2016）</strong> 对所有图片做色彩匹配，未标注当作 sRGB，这是后来公认的做法。</li>
+<li><strong>Chrome</strong> 在 macOS 上直到 2017 年仍把未标注图片和 CSS 颜色按显示器配置渲染，修复先放在 <code>--enable-color-correct-rendering</code> 后面；Chrome 94（2021）让 2D Canvas 完全按 sRGB 做色彩管理。</li>
+</ul>
+<p>待核对：<code>color(display-p3)</code> 在 Safari 里确切的首个版本（2020 年 WebKit 博客说 macOS Mojave / iOS 11 起可用）；Chrome 全面色彩管理在各平台的版本。</p>
+<h2>Canvas、WebGPU、图片与视频</h2>
+<p>像素接口比 CSS 更难升级，因为它们直接暴露数组：每个像素是哪个空间、各占几位，都要写进 API。</p>
+<pre><code class="language-js">// 2D Canvas：Chrome 94；Safari（macOS 12.1 / iOS 15.1）
+const ctx = canvas.getContext('2d', { colorSpace: 'display-p3' });
+ctx.fillStyle = 'color(display-p3 1 0 0)';
+const img = ctx.getImageData(0, 0, w, h, { colorSpace: 'display-p3' });
+
+// WebGL：Baseline 2024
+gl.drawingBufferColorSpace = 'display-p3';
+
+// WebGPU HDR：Chrome 129，允许超过 1.0 的值
+context.configure({ device, format: 'rgba16float',
+                    toneMapping: { mode: 'extended' } });
+
+// 视频：解码前询问能力
+navigator.mediaCapabilities.decodingInfo({ type: 'media-source',
+  video: { contentType: 'video/mp4; codecs=&quot;hvc1&quot;', width: 3840, height: 2160,
+           bitrate: 2e7, framerate: 30,
+           transferFunction: 'pq', colorGamut: 'rec2020', hdrMetadataType: 'smpteSt2086' } });
+</code></pre>
+<ul>
+<li><strong>半精度浮点 Canvas。</strong> Chrome 的 Cameron 在 2024 年 12 月提交 TAG 审查（2025 年 4 月获正面意见），Color on the Web CG 的草案用 <code>dataType: "float16"</code> 并增加 rec2100-pq / hlg 空间。发布状态待核对。</li>
+<li><strong>HDR 图片。</strong> Google 与 Adobe 的增益图方案：一张普通 SDR JPEG 里附带一张“亮度增益图”，HDR 屏按余量放大，旧软件只看到 SDR。Android 14（2023）的 Ultra HDR、Adobe gain map 1.0（2023）最后合流为 ISO 21496-1:2025（2025 年 7 月）。Chromium 支持 ISO 与旧格式；Safari 26（2025 年秋）支持带增益图的 JPEG、AVIF、JXL、HEIF 和 PQ PNG。</li>
+<li><strong>HDR 视频。</strong> HDR10（2015，PQ + Rec.2020 + 静态元数据）、Dolby Vision（动态元数据）、HLG（BBC 与 NHK）。Netflix 2017 年在 Windows 10 的 Edge 里开放 HDR。MediaCapabilities 的 HDR 字段已在 Safari 和 Chrome 实现，Firefox 未实现（2025-06）。</li>
+<li><strong>同一页面里 SDR 与 HDR 共存。</strong> 一张 HDR 照片旁边的白色文字会显得发灰，这就是 <code>dynamic-range-limit</code> 要解决的问题：让作者把缩略图压到 <code>standard</code>，只在全屏查看时放开。</li>
+</ul>
+<h2>谁在推动</h2>
+<p>推动力主要来自这几类人：硬件厂商制造需求，规范编辑和浏览器工程师设计语法，色彩科学家提供模型，影像行业带来 HDR 标准，设计工具与框架把它们交到普通开发者手里。无障碍社区则在对比度上提出另一组要求。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>群体</th>
+<th>代表</th>
+<th>做了什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>早期网页与设计书</td>
+<td>Netscape、<a href="https://en.wikipedia.org/wiki/Lynda_Weinman" target="_blank" rel="noopener">Lynda Weinman</a></td>
+<td>256 色显示器时代的 216 色“浏览器安全色”；Weinman 1996 年的书让它普及</td>
+</tr>
+<tr>
+<td>操作系统厂商</td>
+<td>HP + Microsoft；Apple；Google Android；Microsoft Windows</td>
+<td>1996 年提出 sRGB；2015 年 Display P3 与全线广色域屏；2017 年 Android 广色域、Ultra HDR；2022 年 Windows 自动色彩管理</td>
+</tr>
+<tr>
+<td>W3C 与规范编辑</td>
+<td><a href="https://en.wikipedia.org/wiki/Chris_Lilley_(computer_scientist)" target="_blank" rel="noopener">Chris Lilley</a>（W3C，PNG 合著者）、Tab Atkins（Google）、<a href="https://lea.verou.me/blog/tags/css-color-4/" target="_blank" rel="noopener">Lea Verou</a>、Una Kravets</td>
+<td>编写 Color 4 / 5 / HDR；Lilley 与 Verou 做了 Color.js（2022 公开），作为规范的参考实现</td>
+</tr>
+<tr>
+<td>浏览器工程师</td>
+<td>WebKit 的 Dean Jackson、Simon Fraser、Sam Weinig；Chrome 的 Christopher Cameron、Ken Russell；Igalia；Mozilla</td>
+<td>2016 年 WebKit《Improving Color on the Web》；Cameron 提出 <code>dynamic-range-limit</code>、HDR Canvas、色域映射算法；Interop 2022 / 2023</td>
+</tr>
+<tr>
+<td>色彩科学</td>
+<td><a href="https://smashingmagazine.com/2024/10/interview-bjorn-ottosson-creator-oklab-color-space/" target="_blank" rel="noopener">Björn Ottosson</a></td>
+<td>2020-12-23 发布 Oklab；动机是游戏开发里简单的变亮变暗；Photoshop 渐变也改用 Oklab</td>
+</tr>
+<tr>
+<td>影像与广播</td>
+<td>BBC、NHK、Dolby、Netflix、Disney、Adobe、ISO</td>
+<td>HLG 与 PQ（BT.2100，2016）、HDR10、Dolby Vision；增益图标准 ISO 21496-1</td>
+</tr>
+<tr>
+<td>设计工具与框架</td>
+<td>Sketch 48（2017）、Figma（2024）、Evil Martians、Radix Colors 3（2023）、Open Props、<a href="https://tailwindcss.com/blog/tailwindcss-v4" target="_blank" rel="noopener">Tailwind v4</a>（2025）</td>
+<td>设计稿可以是 P3；文章《OKLCH in CSS》（2022）与 oklch 取色器；默认调色板改用 oklch</td>
+</tr>
+<tr>
+<td>无障碍社区</td>
+<td>WCAG、Andrew Somers（APCA）</td>
+<td>WCAG 2 的对比度公式建立在 sRGB 上；APCA 曾进入 WCAG 3 草案，2023 年被移除，算法至今未定</td>
+</tr>
+</tbody>
+</table></div>
+<p>两个关键场合：</p>
+<ul>
+<li><strong>Color on the Web Community Group</strong>（2017 年 1 月由 Chris Lilley 发起，主席 Lilley 与 Cameron），把 CSS 专家和电视、电影、广播专家拉到一起。</li>
+<li><strong>W3C 广色域与 HDR 研讨会</strong>（2021 年 7–9 月，线上），演讲者包括 Lilley、Verou、Cameron、Dolby 的 Timo Kunkel、BBC 的 Andrew Cotton、Igalia 的 Felipe Erias、Disney 的 Zachary Cava。结论：Color API 进入 WICG 孵化、Canvas 扩展到广色域、HDR 色调映射仍需工作。</li>
+</ul>
+<p>一个小插曲：<code>rebeccapurple</code>（#663399）2014 年 6 月由 Daniel Glazman 提议，纪念 Eric Meyer 早逝的女儿 Rebecca，工作组两天内达成共识，四家浏览器都承诺实现。</p>
+<h2>其他设备</h2>
+<p>手机已经是广色域与 HDR 的主力，头显的硬件也在 P3 附近；但 WebXR 规范里只有 sRGB，网页在头显里的颜色还很原始。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>设备</th>
+<th>显示</th>
+<th>色域 / 亮度</th>
+<th>与 Web 的关系</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>iPhone / iPad</td>
+<td>OLED、mini-LED（XDR）</td>
+<td>P3；EDR 余量约 8–16 倍</td>
+<td>Safari 最早支持 P3 CSS 与 Canvas；Safari 26 支持 HDR 图片</td>
+</tr>
+<tr>
+<td>Android 手机</td>
+<td>OLED 为主</td>
+<td>8.0 起可申请广色域；14 起 Ultra HDR 拍照</td>
+<td>Chrome 显示 Ultra HDR / ISO 增益图</td>
+</tr>
+<tr>
+<td>Apple Vision Pro</td>
+<td>micro-OLED，约 2300 万像素</td>
+<td>92% DCI-P3；支持 Dolby Vision、HDR10、HLG 播放</td>
+<td>visionOS 2 的 Safari 默认开启 WebXR，仅 <code>immersive-vr</code></td>
+</tr>
+<tr>
+<td>Meta Quest</td>
+<td>Quest 3 为 LCD + pancake 透镜</td>
+<td>系统默认：初代 Quest Rec.2020，Quest 2 Rec.709；Quest 3 未公布</td>
+<td>原生 SDK 要求应用声明内容所用的色彩空间，由系统换算</td>
+</tr>
+<tr>
+<td>Samsung Galaxy XR（2025）</td>
+<td>micro-OLED</td>
+<td>约 90% DCI-P3</td>
+<td>Android XR 上的 Chrome</td>
+</tr>
+<tr>
+<td>HDR 电视</td>
+<td>OLED、QD-OLED、mini-LED</td>
+<td>HDR10（PQ，Rec.2020 容器）、Dolby Vision、HLG</td>
+<td>主要通过流媒体 App，网页中的 HDR 视频依赖 MediaCapabilities</td>
+</tr>
+<tr>
+<td>彩色电子墨水</td>
+<td>E Ink Kaleido 3（2022）</td>
+<td>4096 色、16 级灰；彩色 150 ppi</td>
+<td>浏览器仍按 sRGB 渲染，饱和度远低于 sRGB</td>
+</tr>
+<tr>
+<td>智能手表</td>
+<td>LTPO OLED</td>
+<td>Apple Watch Ultra 3 最亮 3000 nits</td>
+<td>没有浏览器</td>
+</tr>
+</tbody>
+</table></div>
+<h3>XR 平台</h3>
+<p>头显屏幕已经覆盖 90% 以上的 DCI-P3，原生应用可以用 P3 甚至 HDR；但网页只有在“平面网页”里用得到这些能力，进入 WebXR 沉浸模式后仍只有 sRGB。</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>平台</th>
+<th>显示</th>
+<th>浏览器里的颜色能力</th>
+<th>WebXR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>visionOS 26（Vision Pro）</td>
+<td>micro-OLED，92% DCI-P3；视频支持 Dolby Vision / HDR10 / HLG</td>
+<td>Safari 26：HDR 图片、<code>dynamic-range-limit</code>、WebGPU、<code>&lt;model&gt;</code> 元素（USDZ，可用 .exr / .hdr 环境光照）、空间视频与 180°/360° 视频</td>
+<td>visionOS 2 起默认开启，只有 <code>immersive-vr</code>；<code>immersive-ar</code> 返回不支持，网页不能叠加在透视画面上</td>
+</tr>
+<tr>
+<td>Android XR（Galaxy XR，2025-10）</td>
+<td>micro-OLED，约 90% DCI-P3</td>
+<td>Chrome</td>
+<td>支持 <code>immersive-ar</code>、命中测试、深度感知、光照估计</td>
+</tr>
+<tr>
+<td>Meta Horizon OS（Quest 3）</td>
+<td>LCD；两个 4MP 彩色透视摄像头</td>
+<td>Quest Browser</td>
+<td>支持 <code>immersive-ar</code>：透明像素处显示现实画面，脚本拿不到透视像素</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>visionOS 的设计规则改变了“颜色”的含义。</strong> 窗口是系统控制的“玻璃”材质，会随周围环境变亮变暗，并“限制背景颜色信息的范围”；没有深色模式开关，系统色采用深色模式的取值。Apple HIG 建议少用颜色、优先半透明而非不透明色块、在全沉浸场景里避免暗背景上的高亮闪烁物体，并提醒同一颜色会因用户房间的墙面和物品而看起来不同。广色域素材用 Display P3、16 位 PNG。</li>
+<li><strong>Meta 的默认色彩空间改过几次。</strong> 已废弃的 VrApi 文档说初代 Quest 未声明时按 Rec.2020；Unity 文档写 Quest 2 为 Rec.709；较新的 Unreal 文档说所有 Quest 默认并推荐 P3。原生应用要声明自己按哪个空间制作，由系统换算到屏幕；Quest Browser 怎么把 WebXR 的 sRGB 输出映射到 P3 合成器，Meta 没有公开说明。</li>
+<li><strong>WebXR 规范只有 sRGB。</strong> 核心规范 2024 年 2 月的 PR #1359 明确：合成器把图层像素当作 SRGB8 处理。WebXR Layers（2026-08 工作草案）的 <code>colorFormat</code> 只有 RGBA / sRGB 和压缩格式，没有浮点或广色域格式。WebXR–WebGPU 绑定仍是提案，也没有色彩空间参数。对比之下，平面 Canvas 和 WebGPU 已经能输出 display-p3 和 HDR。</li>
+<li><strong>透视（passthrough）引入了新变量。</strong> 虚拟内容要和摄像头拍到的真实房间混在一起，房间的光线决定了“白”有多亮。Android XR 的 WebXR 提供光照估计，让网页可以按环境调整虚拟物体的亮度和色温。</li>
+</ul>
+<p><strong>打印。</strong> CSS Color 5 的 <code>device-cmyk()</code> 和 <code>@color-profile</code> 是给打印准备的，目前都被标为“有风险”（at risk），可能从规范中移除。</p>
+<h2>视频提纲</h2>
+<p>建议分两集，每集约 7–8 分钟，沿用前几期的形式：页面信息密度高、多放代码和关系图。这个题目可以在画面里直接画颜色：用 Canvas 绘制色度图和渐变对比（视频本身是 sRGB / BT.709，超出 sRGB 的颜色只能用标注示意）。</p>
+<p><strong>上集 · 屏幕与规范</strong></p>
+<ol>
+<li>开场：同一个 <code>#ff0000</code>，在 2010 年的显示器和今天的手机上不是同一种红。</li>
+<li>人眼与 CIE 1931：马蹄形色度图，为什么屏幕色域是三角形。动画：sRGB、P3、Rec.2020 三个三角形依次叠上，标出 35.9% / 53.6% / 75.8%。</li>
+<li>sRGB（1996）：HP 与 Microsoft 把 CRT 的平均值写成标准。动画：传递曲线与 80 cd/m²。</li>
+<li>256 色时代：216 色安全色（6×6×6 立方体动画）、Lynda Weinman。</li>
+<li>CSS1 到 Color 3：代码卡——关键词、hex、rgba、hsl；X11 命名色的怪事（<code>darkgray</code> 比 <code>gray</code> 浅）、<code>rebeccapurple</code>。</li>
+<li>屏幕变了：2015 年 iMac P3、量子点、OLED；WebKit 2016 年“CSS 只在 sRGB 里”。关系图：硬件 → 系统色彩管理 → 浏览器 → CSS。</li>
+<li>CSS Color 4：<code>color()</code>、<code>lab()</code>、<code>oklch()</code> 代码卡；“色彩空间 + 坐标”的表示法。</li>
+<li>为什么是 Oklab：HSL 等亮度色条、sRGB 与 Oklab 的蓝到白渐变对比；Ottosson 2020 年博客到 CSSWG 2021 年决议。</li>
+<li>浏览器时间线：Safari 15 → Chrome 111 → Firefox 113，Interop 2022 / 2023。</li>
+<li>小结与下集预告。</li>
+</ol>
+<p><strong>下集 · HDR、设备与推动者</strong></p>
+<ol>
+<li>开场：一张 HDR 照片旁边的白字为什么发灰。</li>
+<li>色域映射：逐通道裁剪 vs 在 OKLCH 里降低色度（动画：一个超出三角形的点被拉回来）；issue #9449 与 #10579。</li>
+<li>Color 5：<code>color-mix()</code>、<code>from</code> 相对颜色、<code>light-dark()</code>、<code>contrast-color()</code>，从一个品牌色生成整套调色板。</li>
+<li>色彩管理：未标注内容的两种处理；Firefox <code>mode 2</code>；Windows 自动色彩管理。</li>
+<li>HDR 基础：PQ 与 HLG、参考白 203 nits、EDR 余量（动画：亮度柱从 SDR 白向上长出）。</li>
+<li>HDR 进入网页：增益图（Ultra HDR → ISO 21496-1）、<code>dynamic-range-limit</code>、WebGPU <code>extended</code>、float16 Canvas、MediaCapabilities。</li>
+<li>其他设备：手机、电视、Vision Pro、Quest、彩色墨水屏；WebXR 只有 sRGB。</li>
+<li>谁在推动：关系图——厂商、W3C 与编辑、浏览器工程师、色彩科学、影像行业、设计工具、无障碍；2021 年 W3C 研讨会。</li>
+<li>还没解决的事与给开发者的建议：用 oklch 写调色板、<code>@media (color-gamut: p3)</code> 渐进增强、对比度仍按 WCAG 2 检查。</li>
+<li>结尾。</li>
+</ol>
+<h2>参考资料</h2>
+<p><strong>规范</strong></p>
+<ul>
+<li><a href="https://www.w3.org/Graphics/Color/sRGB.html" target="_blank" rel="noopener">A Standard Default Color Space for the Internet – sRGB</a>（1996）</li>
+<li><a href="https://www.w3.org/TR/2022/REC-css-color-3-20220118/" target="_blank" rel="noopener">CSS Color Module Level 3</a></li>
+<li><a href="https://www.w3.org/TR/2022/CRD-css-color-4-20221101" target="_blank" rel="noopener">CSS Color Module Level 4（2022 CR Draft）</a></li>
+<li><a href="https://drafts.csswg.org/css-color-5/" target="_blank" rel="noopener">CSS Color Module Level 5（编辑草案）</a></li>
+<li><a href="https://drafts.csswg.org/css-color-hdr/" target="_blank" rel="noopener">CSS Color HDR Module Level 1（编辑草案）</a></li>
+<li><a href="https://www.w3.org/TR/2025/WD-webxrlayers-1-20250404/" target="_blank" rel="noopener">WebXR Layers API（2025-04 WD）</a></li>
+<li><a href="https://www.iso.org/standard/86775.html" target="_blank" rel="noopener">ISO 21496-1:2025 增益图元数据</a></li>
+<li><a href="https://github.com/w3c/media-capabilities/blob/main/hdr_explainer.md" target="_blank" rel="noopener">Media Capabilities HDR 说明</a></li>
+</ul>
+<p><strong>浏览器与平台</strong></p>
+<ul>
+<li>WebKit：<a href="https://webkit.org/blog/6682/improving-color-on-the-web/" target="_blank" rel="noopener">Improving Color on the Web</a>（2016）、<a href="https://webkit.org/blog/11989/new-webkit-features-in-safari-15/" target="_blank" rel="noopener">New WebKit Features in Safari 15</a>、<a href="https://webkit.org/blog/12058/wide-gamut-2d-graphics-using-html-canvas/" target="_blank" rel="noopener">Wide Gamut 2D Graphics using HTML Canvas</a></li>
+<li>Chrome：<a href="https://developer.chrome.com/blog/new-in-chrome-94/" target="_blank" rel="noopener">New in Chrome 94</a>、<a href="https://developer.chrome.com/en/blog/new-in-chrome-111/" target="_blank" rel="noopener">New in Chrome 111</a>、<a href="https://developer.chrome.com/release-notes/136" target="_blank" rel="noopener">Chrome 136 发布说明</a>、<a href="https://developer.chrome.com/blog/new-in-webgpu-129" target="_blank" rel="noopener">What's New in WebGPU (Chrome 129)</a>、<a href="https://developer.chrome.com/docs/css-ui/migrate-hd-color" target="_blank" rel="noopener">High definition CSS color guide</a></li>
+<li>Firefox：<a href="https://developer.mozilla.org/docs/Mozilla/Firefox/Releases/113" target="_blank" rel="noopener">Firefox 113 for developers</a>、<a href="https://hacks.mozilla.org/?p=610" target="_blank" rel="noopener">Color correction in Firefox 3.5</a>、<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1488619" target="_blank" rel="noopener">Bug 1488619</a></li>
+<li><a href="https://web.dev/blog/interop2023-update?hl=en" target="_blank" rel="noopener">Interop 2023 进展</a>、<a href="https://web.dev/blog/web-platform-05-2024" target="_blank" rel="noopener">Web Platform 2024-05</a>、<a href="https://web.dev/blog/web-platform-07-2024?hl=en" target="_blank" rel="noopener">Web Platform 2024-07</a>、<a href="https://web.dev/blog/web-platform-04-2026" target="_blank" rel="noopener">Web Platform 2026-04</a></li>
+<li><a href="https://developer.android.com/training/wide-color-gamut" target="_blank" rel="noopener">Android 广色域开发指南</a>、<a href="https://source.android.com/docs/core/camera/ultra-hdr" target="_blank" rel="noopener">Ultra HDR 格式</a>、<a href="https://devblogs.microsoft.com/directx/auto-color-management" target="_blank" rel="noopener">Windows Auto Color Management</a>、<a href="https://developer.apple.com/videos/play/wwdc2021/10161/" target="_blank" rel="noopener">Apple WWDC21：Explore HDR rendering with EDR</a></li>
+</ul>
+<p><strong>人物与社区</strong></p>
+<ul>
+<li><a href="https://w3.org/Graphics/Color/Workshop/report.html" target="_blank" rel="noopener">W3C 广色域与 HDR 研讨会报告</a>与<a href="https://www.w3.org/Graphics/Color/Workshop/talks.html" target="_blank" rel="noopener">演讲列表</a></li>
+<li><a href="https://www.w3.org/Community/colorweb/" target="_blank" rel="noopener">Color on the Web Community Group</a></li>
+<li>CSSWG 关于 Oklab 的<a href="https://lists.w3.org/Archives/Public/public-css-archive/2021Sep/0454.html" target="_blank" rel="noopener">提议</a>与<a href="https://lists.w3.org/Archives/Public/www-style/2021Oct/0010.html" target="_blank" rel="noopener">决议</a>；色域映射 <a href="https://lists.w3.org/Archives/Public/public-css-archive/2023Oct/0273.html" target="_blank" rel="noopener">#9449</a>、<a href="https://lists.w3.org/Archives/Public/public-css-archive/2024Jul/0399.html" target="_blank" rel="noopener">#10579</a></li>
+<li><a href="https://smashingmagazine.com/2024/10/interview-bjorn-ottosson-creator-oklab-color-space/" target="_blank" rel="noopener">采访 Björn Ottosson</a>（Smashing Magazine，2024）</li>
+<li><a href="https://lists.w3.org/Archives/Public/www-style/2014Jun/0312.html" target="_blank" rel="noopener">rebeccapurple 提议</a>与 <a href="https://meyerweb.com/eric/thoughts/2014/06/19/rebeccapurple/" target="_blank" rel="noopener">Eric Meyer 的文章</a></li>
+<li><a href="https://tailwindcss.com/blog/tailwindcss-v4" target="_blank" rel="noopener">Tailwind CSS v4.0</a>、<a href="https://forum.figma.com/product-updates-3/display-p3-color-management-19944" target="_blank" rel="noopener">Figma Display P3</a>、<a href="https://www.radix-ui.com/colors/docs/overview/releases" target="_blank" rel="noopener">Radix Colors 发布记录</a></li>
+<li><a href="https://adrianroselli.com/2026/04/wcag3-contrast-as-of-april-2026.html" target="_blank" rel="noopener">WCAG 3 对比度现状（2026-04）</a>、<a href="https://webkit.org/?p=16929" target="_blank" rel="noopener">contrast-color()</a></li>
+</ul>
+<p><strong>设备与色彩科学</strong></p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Rec._2020" target="_blank" rel="noopener">Rec. 2020</a>、<a href="https://en.wikipedia.org/wiki/Rec._2100" target="_blank" rel="noopener">Rec. 2100</a>、<a href="https://en.wikipedia.org/wiki/CIE_1931_color_space" target="_blank" rel="noopener">CIE 1931</a>、<a href="https://en.wikipedia.org/wiki/Oklab_color_space" target="_blank" rel="noopener">Oklab</a>、<a href="https://en.wikipedia.org/wiki/X11_color_names" target="_blank" rel="noopener">X11 color names</a></li>
+<li><a href="https://developer.apple.com/library/archive/releasenotes/MacOSX/WhatsNewInOSX/Articles/MacOSX10_11_2.html" target="_blank" rel="noopener">OS X 10.11.2 新特性（Display P3）</a>、<a href="https://www.apple.com/apple-vision-pro/specs" target="_blank" rel="noopener">Apple Vision Pro 规格</a>、<a href="https://developers.meta.com/horizon/documentation/unity/unity-color-space/" target="_blank" rel="noopener">Meta Unity 色彩空间</a>、<a href="https://roadtovr.com/visionos-2-webxr-support-vision-pro/" target="_blank" rel="noopener">visionOS 2 WebXR</a></li>
+<li><a href="https://www.eink.com/news/detail/E_Ink_Launches_E%20Ink%20Kaleido_3_the_Next_Generation_of_Print_Color_ePaper_Technology" target="_blank" rel="noopener">E Ink Kaleido 3</a>、<a href="https://en.wikipedia.org/wiki/HDR10" target="_blank" rel="noopener">HDR10</a>、<a href="https://tech.ebu.ch/news/2023/10/emmy-awards-reward-public-service-medias-role-in-the-development-of-hdr" target="_blank" rel="noopener">EBU：HLG 获艾美奖</a></li>
+</ul>
+<p>未能从原始页面核对的：Safari 首次支持 <code>color(display-p3)</code> 的版本、Chrome 各平台全面色彩管理的版本、float16 Canvas 的发布状态、CSS 最终采用的色域映射算法。</p><p class="foot">Markdown 原文与视频稿件：<a href="https://github.com/Memkits/desk/tree/main/sources/web-color">sources/web-color</a>。<a href="../index.html">返回目录</a></p>
+</div></body></html>

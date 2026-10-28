@@ -1,0 +1,73 @@
+"""《Web 平台的颜色》两集台词。每个 beat = 一次配音 = 一个画面步骤。"""
+import json
+S = []
+def sc(ep, id, chapter, title, *beats): S.append({"ep": ep, "id": id, "chapter": chapter, "title": title, "beats": list(beats)})
+
+# ======================= 上集 · 屏幕与表示 =======================
+sc(1, "w_open", "", "Web 的颜色 · 上集：屏幕与表示",
+ "这一期讲 Web 平台上的颜色：屏幕能显示什么、CSS 怎么表示颜色、浏览器和规范怎么一步步变化，以及是谁在推动。分上下两集，上集讲屏幕和颜色的表示，下集讲 HDR、各种设备和推动者。内容由 AI 协助整理，年份和版本号都标了出处。",
+ "先看一个问题。同样写 color 冒号 red，十年前的显示器和今天的手机上，显示的是同一种红吗？答案是不一定。十六进制的 ff0000 只是三个数字，它到底是什么颜色，要看这三个数字被解释在哪个色彩空间里。")
+sc(1, "w_eye", "人眼", "01 色彩空间是三角形",
+ "从人眼说起。1931 年，国际照明委员会根据配色实验定义了 XYZ，这是和设备无关的参照系。把亮度去掉，所有可见颜色在色度图上围成一个马蹄形。两种光混合，结果落在它们的连线上，所以三种原色能混出的颜色，是马蹄里的一个三角形，这就是色域。",
+ "三个常见的三角形：sRGB 大约占马蹄面积的百分之三十六，DCI-P3 大约百分之五十四，Rec.2020 大约百分之七十六。P3 主要多出了更饱和的红和绿。但要注意，这张图不是感知均匀的，面积大小不等于人眼觉得的差距。")
+sc(1, "w_srgb", "sRGB", "02 1996 年的 sRGB",
+ "1996 年 11 月，HP 和微软的四位工程师向 W3C 提交了 sRGB 提案，标题就是“互联网的默认色彩空间”。它把当时 CRT 显示器的平均特性写成了标准：BT.709 的原色、D65 白点、接近 2.2 的伽马曲线，参考亮度每平方米 80 坎德拉。1999 年成为 IEC 标准。",
+ "从此，一个没有标注色彩空间的颜色值，默认就是 sRGB。这也意味着 CSS 里的数字是伽马编码后的值，不是光的强度。128 不是一半的亮度，两个颜色的数值平均，也不是看起来的中间色。")
+sc(1, "w_css3", "CSS1–3", "03 从 216 色到 CSS3",
+ "九十年代很多电脑只能同时显示 256 种颜色。Netscape 选了 216 种在 Mac、Windows 和 Unix 上都不会抖动的颜色，红绿蓝各取六级，这就是“网页安全色”，Lynda Weinman 1996 年的书让它广为人知。1996 年的 CSS1 有 16 个颜色关键词，以及十六进制和 rgb 函数。",
+ "CSS3 的颜色模块在 2011 年成为推荐标准，加入了 rgba、hsl、transparent、currentColor，以及从 X11 继承的 147 个颜色名。X11 的名字有些怪事，比如 darkgray 比 gray 还浅。2014 年加入的 rebeccapurple，纪念 Eric Meyer 早逝的女儿。到这里为止，所有写法都只是 sRGB 的不同拼法。")
+sc(1, "w_screen", "屏幕变了", "04 屏幕先变了",
+ "2015 年前后，屏幕先变了。Apple 在 2015 年底的 iMac 上用了 Display P3，也就是 DCI-P3 的原色、D65 白点和 sRGB 的曲线；2016 年的 iPad Pro 和 iPhone 7 跟进。同一时期，量子点电视、OLED 和 HDR10 标准也都出现了。",
+ "可 CSS 当时规定颜色只在 sRGB 里。2016 年 7 月，WebKit 的博客《改进 Web 上的颜色》写道：网页内容没法用上这些更饱和的颜色。WebKit 先做了两件事：所有图片按配置文件做色彩匹配，未标注的当作 sRGB；以及 color-gamut 媒体查询，让网页知道屏幕是不是 P3。")
+sc(1, "w_c4", "Color 4", "05 CSS Color 4",
+ "CSS Color 4 换了一种表示方法：颜色等于色彩空间加坐标。color 函数可以指明 RGB 空间，比如 display-p3 1 0 0，这是 P3 屏上最红的红，换算回 sRGB 会得到大于 1 和小于 0 的值，也就是 sRGB 写不出来。它还支持 rec2020、a98-rgb、prophoto-rgb 和 XYZ。",
+ "另一类是与设备无关的感知空间：lab 和 lch 来自 1976 年的 CIELAB，oklab 和 oklch 来自 2020 年。它们能描述任何可见颜色，交给浏览器换算到屏幕上。规范的编辑是 Google 的 Tab Atkins、W3C 的 Chris Lilley 和 Lea Verou，2022 年进入候选推荐。")
+sc(1, "w_repr", "表示差异", "06 几种写法的差别",
+ "这些写法有三点区别：坐标轴指什么，能不能超出 sRGB，坐标上的等距是不是看起来的等距。十六进制、rgb、hsl、hwb 都只是 sRGB；lab 和 oklab 一系覆盖所有可见色；color 函数表示指定 RGB 空间里的三角形，同样的数字在不同空间是不同的颜色。",
+ "HSL 的问题最常见：亮度百分之五十的黄色和蓝色，看起来一亮一暗，换成 OKLCH 的亮度是 0.97 对 0.45。插值也不同：从红到蓝的渐变，在 sRGB 里中间发灰，在 Oklab 里亮度平顺，在 OKLCH 里沿色相环经过品红。为了不改变旧网页，只用旧写法的渐变仍在 sRGB 里插值。")
+sc(1, "w_oklab", "Oklab", "07 为什么是 Oklab",
+ "Oklab 的作者 Björn Ottosson 是游戏开发者。他想要一个简单的需求：把颜色变亮变暗时，色相不要跑。CIELAB 在蓝色区域会把蓝变成紫，sRGB 里蓝到白的渐变会发紫。2020 年 12 月，他在博客上发布了 Oklab，结合了 CAM16 的亮度和 IPT 的色相均匀性，而且计算很快。",
+ "W3C 的 Chris Lilley 看到后联系了他。2021 年 9 月 Lilley 在 CSS 工作组提议加入 Oklab，10 月工作组决议：加入 oklab 和 oklch 函数，用 Oklab 做新颜色的默认插值空间，用 OKLCH 做色域映射。之后 Photoshop 的渐变、Tailwind v4 的调色板都改用了它。")
+sc(1, "w_browser", "浏览器", "08 浏览器追平",
+ "浏览器实现的顺序是：Safari 15 在 2021 年支持 lab、lch 和 color 函数；Chrome 111 在 2023 年 3 月一次性实现了整个 Color 4，加上 color-mix；Firefox 113 在 2023 年 5 月跟上。Interop 2022 和 2023 都把颜色列为重点，2023 年 5 月这些写法在三大引擎互通。",
+ "这类功能可以渐进增强：先写一个 sRGB 的值，再在支持的环境里覆盖成 P3 或 oklch，或者用 color-gamut 媒体查询判断屏幕。不支持的浏览器会忽略看不懂的声明，保留前一个值。")
+sc(1, "w_end", "小结", "09 上集小结",
+ "上集小结。sRGB 是 1996 年 CRT 的平均值，CSS 前三代的写法都在它里面。2015 年屏幕先变成了 P3，WebKit 带头，CSS Color 4 把颜色改成“色彩空间加坐标”，并采用了感知更均匀的 Oklab，2023 年三大浏览器追平。",
+ "下集讲还没解决的部分：超出屏幕的颜色怎么映射，Color 5 的颜色运算，HDR 怎么进入网页，手机、电视和 XR 头显上的颜色，以及推动这些变化的人和组织。")
+
+# ======================= 下集 · HDR、设备与推动者 =======================
+sc(2, "x_open", "", "Web 的颜色 · 下集：HDR、设备与推动者",
+ "上集讲到 2023 年，三大浏览器都支持了广色域写法。这一集讲之后的事：色域映射、颜色运算、色彩管理、HDR、各种设备，以及推动者。",
+ "先看一个现象：在支持 HDR 的手机上，一张 HDR 照片旁边的白色文字，会显得发灰。这是因为照片里的高光比界面的白更亮。网页上同时有 SDR 和 HDR 内容时，怎么处理亮度，是这几年规范在补的课。")
+sc(2, "x_gamut", "色域映射", "01 超出屏幕的颜色",
+ "oklch 很容易写出屏幕显示不了的颜色。比如亮度不变，把色度调到很高，在 sRGB 屏上就超出了三角形。规范描述了几种映射办法：逐通道裁剪最简单，但色相会变；在 OKLCH 里保持亮度和色相、降低色度，更接近作者的意图。",
+ "可浏览器一开始都直接裁剪。2023 年 CSS 工作组的 issue 9449 批评这“破坏了 oklch 的意义”；2024 年 Chrome 的 Christopher Cameron 开了新的 issue，比较更快的静态映射算法。到现在，最终采用的算法仍在讨论。")
+sc(2, "x_c5", "Color 5", "02 颜色运算",
+ "CSS Color 5 让颜色可以由其他颜色算出来。color-mix 按比例混合两个颜色，不写空间时默认用 Oklab；相对颜色语法用 from 取出一个颜色的分量再改，比如把品牌色的亮度加 0.1；light-dark 按浅色或深色模式选择；contrast-color 给出黑或白，保证和背景有对比。",
+ "它们在 2023 到 2026 年间陆续进入三大浏览器，contrast-color 在 2026 年 4 月成为 Baseline。不过它目前用的是 WCAG 2 的对比度公式，这个公式建立在 sRGB 上，规范自己也注明它有已知问题。WCAG 3 的新算法至今没有定下来。")
+sc(2, "x_cm", "色彩管理", "03 未标注的颜色",
+ "色彩管理的核心问题是：没有标注色彩空间的内容怎么办。一种是当作 sRGB 换算到屏幕；另一种是把数值直接交给屏幕，在广色域屏上就会过饱和。WebKit 从 2016 年起采用前者，这也是后来公认的做法。",
+ "Firefox 3.5 在 2009 年开始校正带配置文件的图片，但 CSS 颜色和未标注的图片仍直接送给屏幕，这个默认值至今没变。Chrome 在 macOS 上到 2017 年还有同样的问题。操作系统也在补：Windows 11 22H2 的自动色彩管理，把桌面合成改成了半精度浮点。")
+sc(2, "x_hdr", "HDR", "04 HDR 是亮度问题",
+ "广色域是更饱和，HDR 是更亮的高光。2016 年的 BT.2100 定义了两种曲线：Dolby 提出的 PQ，按绝对亮度编码，最高一万尼特；BBC 和 NHK 提出的 HLG，兼容普通电视。ITU 建议把 HDR 里的参考白定在每平方米 203 坎德拉，比它亮的部分才是高光。",
+ "Apple 的 EDR 换了个说法：SDR 的白是 1.0，超出部分叫余量。iPhone 约 8 倍，iPad Pro 约 16 倍，Pro Display XDR 在低亮度下可达约 400 倍。余量会随环境光和亮度设置变化，同一张照片在白天和晚上能亮多少都不一样，这是网页处理 HDR 的难点。")
+sc(2, "x_hdrweb", "HDR 网页", "05 HDR 进入网页",
+ "HDR 照片的方案是增益图：一张普通的 SDR JPEG，再附一张记录每个像素能亮多少倍的图。旧软件只看到 SDR，HDR 屏按余量放大。Google 在 Android 14 推出 Ultra HDR，Adobe 也有自己的格式，2025 年 7 月合并成 ISO 21496-1。Chromium 和 Safari 26 都支持。",
+ "CSS 这边，dynamic-range-limit 让作者限制 HDR 内容的亮度，比如缩略图用 standard，点开再放开；Chrome 136 在 2025 年 4 月发布，Safari 26 跟进。WebGPU 可以配置 rgba16float 格式、toneMapping 设为 extended，输出超过 1.0 的值。视频则用 MediaCapabilities 先询问能否解码 PQ 和 Rec.2020。")
+sc(2, "x_dev", "设备", "06 手机、电视与墨水屏",
+ "手机是广色域和 HDR 的主力。Android 8.0 在 2017 年让应用可以申请广色域，Android 14 加入 Ultra HDR 拍照；iPhone 从 2016 年起是 P3，XDR 屏有约 8 倍余量。电视用 HDR10、Dolby Vision 和 HLG，网页里的 HDR 视频主要靠流媒体服务。",
+ "另一头是彩色电子墨水。E Ink 的 Kaleido 3 只有 4096 种颜色，彩色分辨率 150 ppi，饱和度远低于 sRGB，浏览器仍按 sRGB 渲染，靠屏幕自己去近似。打印方面，Color 5 的 device-cmyk 和 color-profile 规则被标为有风险，可能被移除。")
+sc(2, "x_xr", "XR", "07 头显里的颜色",
+ "头显屏幕已经很好：Apple Vision Pro 是 micro-OLED，覆盖 92% 的 DCI-P3，支持 Dolby Vision、HDR10 和 HLG 播放；三星 Galaxy XR 约 90%；Meta 的较新文档建议 Quest 应用默认用 P3。visionOS 26 的 Safari 支持 HDR 图片、dynamic-range-limit、WebGPU，以及可以用 HDR 环境光照的 model 元素。",
+ "但进入 WebXR 沉浸模式后，规范里只有 sRGB：图层格式只有 RGBA 和 sRGB，没有浮点或广色域。visionOS 只支持 VR 会话，不能把网页叠在透视画面上；Quest 和 Android XR 支持 AR 会话。visionOS 还用会随房间明暗变化的“玻璃”材质，HIG 建议少用颜色、多用半透明，因为同一个颜色在不同房间看起来不一样。")
+sc(2, "x_who", "推动者", "08 谁在推动",
+ "推动者是一个不大的圈子。硬件和系统厂商制造需求：HP 和微软的 sRGB，Apple 的 P3 和 EDR，Google 的 Ultra HDR。W3C 的 Chris Lilley 写过 PNG，2017 年发起了 Color on the Web 社区组；Lea Verou 和他做了 Color.js；Chrome 的 Christopher Cameron 推动了 HDR 画布和 dynamic-range-limit。",
+ "影像行业带来 HDR 标准：BBC、NHK、Dolby、Netflix、Adobe。2021 年 W3C 的广色域与 HDR 研讨会把他们和浏览器工程师拉到一起。最后，设计工具和框架把成果交给普通开发者：Sketch 2017 年支持 P3，Figma 2024 年支持 P3，Tailwind v4 在 2025 年把整套调色板换成 oklch。")
+sc(2, "x_end", "结尾", "09 结尾",
+ "总结一下。Web 的颜色从 1996 年的 sRGB，走到了“色彩空间加坐标”、感知均匀的 Oklab，和刚起步的 HDR。还没解决的有：色域映射算法、WCAG 3 的对比度、Firefox 的默认色彩管理，以及 WebXR 里的广色域和 HDR。",
+ "给开发者的建议：用 oklch 写调色板，先给 sRGB 后备值，再用 color-gamut 做渐进增强，HDR 内容用 dynamic-range-limit 控制。本期的调研文档和参考资料已经整理好。谢谢观看。")
+
+json.dump(S, open('script.json', 'w'), ensure_ascii=False, indent=1)
+for ep in (1, 2):
+    n = sum(len(''.join(s['beats'])) for s in S if s['ep'] == ep)
+    print(ep, len([s for s in S if s['ep'] == ep]), '场', sum(len(s['beats']) for s in S if s['ep'] == ep), '段', n, '字', f'约 {n/5.0/60:.1f} 分钟')

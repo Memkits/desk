@@ -1,0 +1,26 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><style>
+body{margin:0;width:1920px;height:1080px;background:#F2F3EF;font-family:"Inter","Noto Sans CJK SC",sans-serif;color:#11161C;overflow:hidden;position:relative}
+.L{position:absolute;left:250px;top:170px}
+.ep{display:inline-block;font:700 34px sans-serif;background:#11161C;color:#fff;padding:10px 22px;border-radius:10px}
+h1{font:900 170px/1.05 "Noto Serif CJK SC",serif;margin:24px 0 0;white-space:nowrap}
+.st{font:700 60px/1.3 "Noto Serif CJK SC",serif;color:#3D4650;margin-top:10px}
+.badge{margin-top:36px;display:inline-block;border:3px solid #5B4A9E;color:#5B4A9E;border-radius:12px;padding:10px 20px;font-size:28px;font-weight:700}
+.R{position:absolute;left:1000px;top:560px;width:760px}
+.code{font:500 26px/1.55 "DejaVu Sans Mono",monospace;background:#1D2128;color:#E8E6DF;border-radius:18px;padding:26px 32px;white-space:pre}
+.code .kw{color:#F0B86E}.code .hl{background:rgba(255,215,90,.2)}.code .k{color:#C9B6FF;font-weight:700}
+.t{padding:16px 22px;border-radius:14px;color:#fff;font-size:30px;font-weight:700;margin-bottom:12px}
+.t small{display:block;font-size:20px;font-weight:400;opacity:.85}
+</style><body>
+<div class="L"><span class="ep" id="ep"></span><h1>Web 的颜色</h1><div class="st" id="st"></div><div class="badge" id="bd"></div></div>
+<div class="R" id="R"></div>
+<script>
+const ep=+(new URLSearchParams(location.search).get('ep')||1);
+const E={1:['上集','屏幕与表示','sRGB · P3 · Color 4 · Oklab'],2:['下集','HDR、设备与推动者','色域映射 · HDR · XR · 推动者']}[ep];
+document.getElementById('ep').textContent=E[0];document.getElementById('st').textContent=E[1];document.getElementById('bd').textContent=E[2];
+const R=document.getElementById('R');
+if(ep===1)R.innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px">${['#ff0000','oklch(62.8% 0.258 29.2)','color(display-p3 1 0 0)'].map(c=>`<div style="height:120px;border-radius:14px;background:${c}"></div>`).join('')}</div><div class="code">color: <span class="k">#ff0000</span>;
+color: <span class="k">oklch(62.8% 0.258 29.2)</span>;
+color: <span class="kw">color(display-p3 1 0 0)</span>;</div>`;
+else R.innerHTML=`<div style="height:150px;border-radius:14px;margin-bottom:18px;background:radial-gradient(circle at 75% 40%,#fff 0 8%,#ffe9a8 14%,#f29b38 32%,#5a3a6e 66%,#1c1f33 100%)"></div><div class="code">img { <span class="kw">dynamic-range-limit</span>: standard; }
+colorFormat: <span class="k">SRGB8_ALPHA8</span>  <span style="color:#8A929B">// WebXR</span></div>`;
+</script></body></html>
