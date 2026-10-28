@@ -58,7 +58,7 @@ S('c_hist1', c => {
   const t = show(c, at(120, 250, 1000, tbl([['时间', '名字', '意义'], ...T], { st: 'font-size:21px' })), b(0) + .1);
   rowsIn(c, t, [[0, F(c, 0, .05)], [1, F(c, 0, .25)], [2, F(c, 0, .5)], [3, F(c, 0, .8)]]);
   show(c, `<div class="stk" style="left:1180px;top:260px;width:560px"><div class="fr">f()</div><div class="fr">g()</div><div class="fr" style="border-style:dashed;border-color:var(--kk);color:var(--kk);font-weight:700">── prompt（标记）──</div><div class="fr">main()</div></div>`, F(c, 0, .55));
-  show(c, `<div class="abs" style="left:0;top:0"><div class="kbr" style="left:1160px;top:254px;width:20px;height:110px"></div><div class="klab" style="left:1180px;top:222px;font-size:20px">只抓到标记为止的这一段</div></div>`, F(c, 0, .65));
+  show(c, `<div class="abs" style="left:0;top:0"><div class="kbr" style="left:1160px;top:254px;width:20px;height:110px"></div><div class="klab" style="left:1180px;top:222px;font-size:20px;white-space:nowrap">只抓到标记为止的这一段</div></div>`, F(c, 0, .65));
   show(c, concl(1180, 520, 620, '一个处理器，就是一个<b>带名字的 prompt</b>'), b(1) + .1);
   show(c, at(120, 600, 1000, `<div class="mc" style="--c:var(--itp)"><h3 style="font-size:28px">Common Lisp 条件系统（1994 年入 ANSI 标准）</h3><ul><li>处理器在<b>不展开栈</b>的情况下运行</li><li>由处理器选一个<b>重启点</b>让程序继续</li><li>差一步：重启点要事先列好，拿不到可以存起来的续延</li></ul></div>`), F(c, 1, .45));
 });
