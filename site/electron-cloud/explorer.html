@@ -1,0 +1,1053 @@
+<title>电子云周期表</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
+<style>
+/* 布局：上方是观察窗（3D 电子云 + 右侧信息栏），下方是可点的周期表 */
+:root{
+  --bg:#070A12; --panel:#0E1320; --line:#1E2638; --fg:#E7ECF5; --fg2:#9AA6BC; --fg3:#5E6A82;
+  --s:#FF7A93; --p:#5CB4FF; --d:#5FE0A0; --f:#C79BFF; --pos:#FFB25C; --neg:#4FA3FF; --accent:#FFD27A;
+  --display:"Noto Serif SC","Songti SC",serif; --body:"Noto Sans SC","PingFang SC",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--fg)}
+body{font:15px/1.6 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.wrap{max-width:1360px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px}
+h1{margin:0;font:900 clamp(26px,3.4vw,40px)/1.2 var(--display);letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--fg2);font-size:14px;max-width:62ch}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px}
+@media (max-width:900px){.stage{grid-template-columns:minmax(0,1fr)}}
+.left{display:flex;flex-direction:column;gap:12px;min-width:0}
+.orbs{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 12px 8px}
+.ohead{font-size:12.5px;color:var(--fg2);margin-bottom:6px}
+.ocv{position:relative;height:190px}.ocv canvas{display:block;width:100%;height:100%}
+.olab{position:absolute;inset:auto 0 0 0;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;pointer-events:none}
+.olab span{text-align:center;font:500 13px var(--mono);color:var(--fg2)}.olab b{color:var(--fg);font-weight:600}
+.view{position:relative;background:radial-gradient(ellipse at 50% 45%,#121a2e 0,var(--bg) 70%);border:1px solid var(--line);border-radius:16px;overflow:hidden;aspect-ratio:4/3;min-height:320px;touch-action:none}
+.view canvas{display:block;width:100%;height:100%;cursor:grab}
+.hud{position:absolute;left:18px;top:14px;pointer-events:none}
+.hud .z{font:600 15px var(--mono);color:var(--fg2)}
+.hud .sym{font:900 64px/1 var(--display)}
+.hud .nm{font:700 22px var(--display);color:var(--fg2)}
+.hud .cf{font:500 16px var(--mono);color:var(--accent);margin-top:6px}
+.scale{position:absolute;right:16px;bottom:14px;font:500 12px var(--mono);color:var(--fg3);display:flex;align-items:center;gap:8px}
+.scale i{display:block;height:2px;background:var(--fg3)}
+.vbtns{position:absolute;right:12px;top:12px;display:flex;gap:6px}
+button,.chip{font:500 13px var(--body);color:var(--fg);background:#151c2c;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+button:hover,.chip:hover{border-color:var(--fg3)}
+button:focus-visible,.chip:focus-visible,.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.side h2{margin:0;font:600 12px var(--body);letter-spacing:.12em;color:var(--fg3)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono)}
+.chip b{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.chip[aria-pressed="false"]{opacity:.38}
+.radial{width:100%;height:150px;display:block}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.facts dt{color:var(--fg3)}.facts dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.note{font-size:12.5px;color:var(--fg2);line-height:1.6}
+.ptwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
+.pt{display:grid;grid-template-columns:repeat(18,minmax(40px,1fr));grid-template-rows:repeat(7,auto) 10px repeat(2,auto);gap:3px;min-width:760px}
+.cell{border:1px solid transparent;border-radius:6px;padding:3px 4px 4px;background:color-mix(in srgb,var(--c) 14%,#0d1220);text-align:left;cursor:pointer;color:var(--fg);font:inherit;min-width:0}
+.cell .n{font:500 10px var(--mono);color:var(--fg3);display:block}
+.cell .s{font:700 16px/1.1 var(--body);display:block}
+.cell .c{font:400 10px var(--body);color:var(--fg2);display:block;white-space:nowrap;overflow:hidden}
+.cell:hover{border-color:var(--c)}
+.cell[aria-current="true"]{background:var(--c);color:#0b0f18}.cell[aria-current="true"] .n,.cell[aria-current="true"] .c{color:#0b0f18}
+.ph{font:500 11px var(--body);color:var(--fg3);display:flex;align-items:center;justify-content:center;text-align:center;border:1px dashed var(--line);border-radius:6px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--fg2);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend b{width:12px;height:12px;border-radius:3px;background:var(--c)}
+[hidden]{display:none!important}
+.tabs{display:flex;gap:6px}.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg)}
+.rx{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px}
+@media (max-width:900px){.rx{grid-template-columns:minmax(0,1fr)}.rlist{flex-direction:row!important;overflow-x:auto;max-height:none!important}.rlist button{min-width:200px}}
+.rlist{display:flex;flex-direction:column;gap:6px;max-height:760px;overflow-y:auto;padding-right:4px}
+.rlist button{border-radius:12px;text-align:left;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.rlist button .k{font:500 11px var(--body);color:var(--fg3);letter-spacing:.06em}.rlist button .q{font:500 12px var(--mono);color:var(--fg2)}
+.rlist button[aria-selected="true"]{border-color:var(--accent);background:#1a2234}
+.busy{font:500 12px var(--mono);color:var(--fg2);align-self:center;padding:0 6px}
+.rgh{font:600 12px var(--body);color:var(--accent);letter-spacing:.06em;margin:10px 2px 2px}.rgh:first-child{margin-top:0}
+.modenote{font-size:12.5px;color:var(--fg2)}
+.rmain{display:flex;flex-direction:column;gap:12px;min-width:0}
+.rview{aspect-ratio:16/10}
+.rname{font:900 30px/1.2 var(--display);max-width:22ch}
+.rlabels{position:absolute;inset:0;pointer-events:none}.rlabels span{position:absolute;transform:translate(-50%,-50%);font:700 14px var(--body);color:#fff;text-shadow:0 0 6px #000,0 0 2px #000}
+.rctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}.rctl input{flex:1 1 240px;accent-color:var(--accent)}
+.steps{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:700px){.steps{grid-template-columns:minmax(0,1fr)}}
+.steps li{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--fg2);transition:border-color .3s,color .3s}
+.steps li b{display:block;font:600 12px var(--mono);color:var(--fg3);margin-bottom:2px}.steps li.on{border-color:var(--accent);color:var(--fg)}
+@media (prefers-reduced-motion:reduce){.cell,.steps li{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>电子云周期表</h1>
+    <nav class="tabs" role="tablist"><button role="tab" id="tab-a" aria-selected="true">原子</button><button role="tab" id="tab-r" aria-selected="false">化学反应</button></nav>
+    <div class="sub">从氢到鿫，按元素周期表的顺序画出每个原子里被占据的轨道。点表示在那里找到电子的概率：越密越可能。也可以换成包络面（装下 90% 电子的边界）、剖开的实体，或穿过原子核的截面。拖动可旋转。</div>
+  </header>
+
+  <section class="stage" id="sec-a1">
+    <div class="left">
+    <div class="view" id="view">
+      <canvas id="cv" aria-label="电子云三维视图"></canvas>
+      <div class="hud"><div class="z" id="hz"></div><div class="sym" id="hs"></div><div class="nm" id="hn"></div><div class="cf" id="hc"></div></div>
+      <div class="vbtns"><button id="play" aria-pressed="false">按顺序播放</button><button id="spin" aria-pressed="true">自动旋转</button></div>
+      <div class="scale"><i id="sbar"></i><span id="stxt"></span></div>
+    </div>
+    <div class="orbs"><div class="ohead">拆开看：价层里每个被占据的轨道（颜色表示波函数的正负）</div><div class="ocv"><canvas id="mcv" aria-label="各轨道的三维形状"></canvas><div class="olab" id="olab"></div></div></div>
+    </div>
+    <aside class="side">
+      <div><h2>画法</h2><div class="seg" role="group" aria-label="画法" id="am"><button data-m="pts" aria-pressed="true">点云</button><button data-m="shell" aria-pressed="false">包络面</button><button data-m="solid" aria-pressed="false">实体剖开</button><button data-m="slice" aria-pressed="false">截面</button></div></div>
+      <div><h2>着色</h2><div class="seg" role="group" aria-label="着色"><button id="cm-l" aria-pressed="true">按亚层</button><button id="cm-ph" aria-pressed="false">按相位（±）</button></div></div>
+      <div><h2>径向比例</h2><div class="seg" role="group" aria-label="径向比例"><button id="sc-t" aria-pressed="false">真实</button><button id="sc-c" aria-pressed="true">压缩（√r）</button></div></div>
+      <div><h2>显示</h2><div class="seg" role="group" aria-label="显示"><button id="sh-v" aria-pressed="true">价层</button><button id="sh-a" aria-pressed="false">全部电子</button></div></div>
+      <div><h2>轨道（点按可隐藏）</h2><div class="chips" id="chips"></div></div>
+      <div><h2>径向分布 4πr²ρ</h2><canvas class="radial" id="rad" width="620" height="280"></canvas></div>
+      <dl class="facts" id="facts"></dl>
+      <p class="note">近似方法：每个轨道用类氢波函数画形状，有效核电荷按斯莱特规则估算，尺寸用斯莱特的有效主量子数校正。形状和层次是对的，半径误差可达三成；重元素的相对论效应未计入。Z ≥ 104 的构型是理论预测。</p>
+    </aside>
+  </section>
+
+  <section id="sec-a2">
+    <div class="ptwrap"><div class="pt" id="pt"></div></div>
+    <div class="legend"><span style="--c:var(--s)"><b></b>s 区</span><span style="--c:var(--p)"><b></b>p 区</span><span style="--c:var(--d)"><b></b>d 区</span><span style="--c:var(--f)"><b></b>f 区</span><span>色块下方是最外层构型</span></div>
+  </section>
+
+  <section class="rx" id="sec-r" hidden>
+    <div class="rlist" id="rlist" role="listbox" aria-label="反应"></div>
+    <div class="rmain">
+      <div class="view rview" id="rview"><canvas id="rcv" aria-label="反应中的电子云"></canvas><div class="rlabels" id="rlabels"></div>
+        <div class="hud"><div class="z" id="rkind"></div><div class="rname" id="rname"></div><div class="cf" id="req"></div></div>
+        <div class="vbtns"><span class="busy" id="rbusy" hidden></span><button id="rplay" aria-pressed="true">播放</button></div>
+      </div>
+      <div class="rctl"><input type="range" id="rscrub" min="0" max="1000" value="0" aria-label="反应进度"><div class="seg" role="group" aria-label="画法" id="rm"><button data-m="pts" aria-pressed="true">点云</button><button data-m="shell" aria-pressed="false">包络面</button><button data-m="solid" aria-pressed="false">实体</button><button data-m="slice" aria-pressed="false">截面</button></div><div class="seg" role="group" aria-label="着色"><button id="rc-src" aria-pressed="true">按电子来自哪个原子</button><button id="rc-k" aria-pressed="false">按电子对类型</button></div><button id="ract" aria-pressed="false">只看参与反应的电子</button></div>
+      <ol class="steps" id="rsteps"></ol>
+      <div class="legend" id="rleg"></div>
+      <p class="note">画法：只画价电子。每对电子用一个定域轨道表示（σ 键、π 键、孤对电子），由斯莱特型原子轨道和杂化轨道线性组合得到，再按 |ψ|² 采样成点。包络面装下 90% 的价电子；截面用亮度表示密度（每半个数量级一条等高线，白线是 90% 包络）。反应过程中的电子云是从反应物的分布平滑移到产物的分布，表示电子“去了哪里”，并不是真实的反应路径；过渡态、溶剂和催化剂都省略了。</p>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>// ec.js —— 元素电子构型 + 斯莱特屏蔽 + 类氢轨道采样（页面与视频共用）
+(function (G) {
+  const SYM = 'H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og'.split(' ');
+  const NAME = '氢 氦 锂 铍 硼 碳 氮 氧 氟 氖 钠 镁 铝 硅 磷 硫 氯 氩 钾 钙 钪 钛 钒 铬 锰 铁 钴 镍 铜 锌 镓 锗 砷 硒 溴 氪 铷 锶 钇 锆 铌 钼 锝 钌 铑 钯 银 镉 铟 锡 锑 碲 碘 氙 铯 钡 镧 铈 镨 钕 钷 钐 铕 钆 铽 镝 钬 铒 铥 镱 镥 铪 钽 钨 铼 锇 铱 铂 金 汞 铊 铅 铋 钋 砹 氡 钫 镭 锕 钍 镤 铀 镎 钚 镅 锔 锫 锎 锿 镄 钔 锘 铹 𬬻 𬭊 𬭳 𬭛 𬭶 鿏 𫟼 𬬭 鿔 鿭 𫓧 镆 𫟷 鿬 鿫'.split(' ');
+  const LL = 'spdf';
+  const ORDER = ['1s', '2s', '2p', '3s', '3p', '4s', '3d', '4p', '5s', '4d', '5p', '6s', '4f', '5d', '6p', '7s', '5f', '6d', '7p'];
+  const cap = l => 2 * (2 * l + 1);
+  const parse = s => ({ n: +s[0], l: LL.indexOf(s[1]) });
+  // 相对马德隆顺序的例外（NIST 基态构型；Z ≥ 104 为理论预测）
+  const EXC = {
+    24: { '3d': 5, '4s': 1 }, 29: { '3d': 10, '4s': 1 }, 41: { '4d': 4, '5s': 1 }, 42: { '4d': 5, '5s': 1 }, 44: { '4d': 7, '5s': 1 }, 45: { '4d': 8, '5s': 1 },
+    46: { '4d': 10, '5s': 0 }, 47: { '4d': 10, '5s': 1 }, 57: { '4f': 0, '5d': 1 }, 58: { '4f': 1, '5d': 1 }, 64: { '4f': 7, '5d': 1 }, 78: { '5d': 9, '6s': 1 }, 79: { '5d': 10, '6s': 1 },
+    89: { '5f': 0, '6d': 1 }, 90: { '5f': 0, '6d': 2 }, 91: { '5f': 2, '6d': 1 }, 92: { '5f': 3, '6d': 1 }, 93: { '5f': 4, '6d': 1 }, 96: { '5f': 7, '6d': 1 }, 103: { '6d': 0, '7p': 1 },
+  };
+  function config(Z) {
+    const occ = {}; let left = Z;
+    for (const s of ORDER) { if (left <= 0) break; const k = Math.min(cap(parse(s).l), left); occ[s] = k; left -= k; }
+    if (EXC[Z]) Object.assign(occ, EXC[Z]);
+    return ORDER.filter(s => occ[s] > 0).map(s => ({ key: s, ...parse(s), e: occ[s] })).sort((a, b) => a.n - b.n || a.l - b.l);
+  }
+  const SUP = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+  const sup = k => String(k).split('').map(c => SUP[c]).join('');
+  const CORES = [[86, 'Rn'], [54, 'Xe'], [36, 'Kr'], [18, 'Ar'], [10, 'Ne'], [2, 'He']];
+  function configStr(Z) {
+    const c = config(Z); const core = CORES.find(([z]) => z < Z);
+    if (!core) return c.map(s => s.key + sup(s.e)).join(' ');
+    const cc = config(core[0]), ck = Object.fromEntries(cc.map(s => [s.key, s.e]));
+    return `[${core[1]}] ` + c.filter(s => ck[s.key] !== s.e).map(s => s.key + sup(s.e)).join(' ');
+  }
+  // 斯莱特规则
+  const GRP = s => (s.l <= 1 ? `${s.n}sp` : `${s.n}${LL[s.l]}`);
+  const GORD = ['1sp', '2sp', '3sp', '3d', '4sp', '4d', '4f', '5sp', '5d', '5f', '6sp', '6d', '7sp'];
+  function zeff(Z, target, c = config(Z)) {
+    const tg = GRP(target), ti = GORD.indexOf(tg); let S = 0;
+    for (const s of c) {
+      const g = GRP(s), gi = GORD.indexOf(g); let k = s.e; if (s.key === target.key) k -= 1; if (k <= 0) continue;
+      if (g === tg) S += (target.n === 1 ? .30 : .35) * k;
+      else if (gi < ti) {
+        if (target.l <= 1) S += (s.n === target.n - 1 ? .85 : s.n < target.n - 1 ? 1 : (s.n === target.n ? 1 : 0)) * k;
+        else S += 1 * k;
+      }
+    }
+    return Math.max(1, Z - S);
+  }
+  // 实球谐函数（未归一化，按笛卡尔方向余弦）
+  const ANG = {
+    0: [['', () => 1]],
+    1: [['x', (x, y, z) => x], ['y', (x, y, z) => y], ['z', (x, y, z) => z]],
+    2: [['z²', (x, y, z) => 3 * z * z - 1], ['xz', (x, y, z) => x * z], ['yz', (x, y, z) => y * z], ['xy', (x, y, z) => x * y], ['x²−y²', (x, y, z) => x * x - y * y]],
+    3: [['z³', (x, y, z) => z * (5 * z * z - 3)], ['xz²', (x, y, z) => x * (5 * z * z - 1)], ['yz²', (x, y, z) => y * (5 * z * z - 1)], ['z(x²−y²)', (x, y, z) => z * (x * x - y * y)], ['xyz', (x, y, z) => x * y * z], ['x(x²−3y²)', (x, y, z) => x * (x * x - 3 * y * y)], ['y(3x²−y²)', (x, y, z) => y * (3 * x * x - y * y)]],
+  };
+  // 填充顺序（洪特规则：先单占再成对）
+  function orbitals(s) {
+    const m = 2 * s.l + 1, occ = new Array(m).fill(0);
+    for (let k = 0; k < s.e; k++) occ[k % m] += 1;
+    return ANG[s.l].map(([lab, f], i) => ({ lab: s.key + (lab ? '<sub>' + lab + '</sub>' : ''), plain: s.key + lab, f, e: occ[i] })).filter(o => o.e > 0);
+  }
+  function laguerre(k, a, x) { if (k === 0) return 1; let L0 = 1, L1 = 1 + a - x; for (let i = 1; i < k; i++) { const L2 = ((2 * i + 1 + a - x) * L1 - (i + a) * L0) / (i + 1); L0 = L1; L1 = L2; } return L1; }
+  const A0 = .529177, NSTAR = { 1: 1, 2: 2, 3: 3, 4: 3.7, 5: 4.0, 6: 4.2, 7: 4.4 };
+  // 径向函数 R(r)，r 以 Å 计
+  function radial(n, l, Z) { return r => { const rho = 2 * Z * (r / A0) / n; return Math.pow(rho, l) * Math.exp(-rho / 2) * laguerre(n - l - 1, 2 * l + 1, rho); }; }
+  // 径向概率分布 P(r) = r²R²（归一化）表
+  function radialTable(n, l, Z, N = 600) {
+    let rmax = A0 * (n * (n + 10)) / Z, R = radial(n, l, Z); const rs = [], ps = []; let s = 0;
+    for (let i = 0; i <= N; i++) { const r = rmax * i / N, v = r * r * R(r) ** 2; rs.push(r); ps.push(v); s += v; }
+    const dr = rmax / N; for (let i = 0; i <= N; i++) ps[i] /= s * dr;
+    // 用斯莱特的有效主量子数 n* 校正尺寸：⟨r⟩ = n*(2n*+1)/(2Z_eff) a₀，保留类氢函数的节点结构
+    let mr = 0; for (let i = 0; i <= N; i++) mr += rs[i] * ps[i] * dr;
+    const ns = NSTAR[n], k = (A0 * ns * (2 * ns + 1) / (2 * Z)) / mr;
+    for (let i = 0; i <= N; i++) { rs[i] *= k; ps[i] /= k; }
+    const R0 = R; R = r => R0(r / k);
+    const cdf = []; let acc = 0; for (let i = 0; i <= N; i++) { acc += ps[i] * dr; cdf.push(acc); }
+    return { rs, ps, cdf, rmax: rmax * k, R, k };
+  }
+  // 可复现的随机数
+  function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  // 采样一个原子的所有轨道点：返回 [{orb, n, l, pts: Float32Array(x,y,z,sign...)}]
+  function sampleOrb(o, tab, np, rnd) {
+    const arr = new Float32Array(np * 4);
+    let fmax = 0; for (let i = 0; i < 3000; i++) { const u = 2 * rnd() - 1, ph = 2 * Math.PI * rnd(), q = Math.sqrt(1 - u * u); fmax = Math.max(fmax, o.f(q * Math.cos(ph), q * Math.sin(ph), u) ** 2); }
+    fmax *= 1.05;
+    for (let i = 0; i < np; i++) {
+      let x, y, z, a;
+      do { const u = 2 * rnd() - 1, ph = 2 * Math.PI * rnd(), q = Math.sqrt(1 - u * u); x = q * Math.cos(ph); y = q * Math.sin(ph); z = u; a = o.f(x, y, z); } while (a * a < rnd() * fmax);
+      const t = rnd(); let lo = 0, hi = tab.cdf.length - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (tab.cdf[mid] < t) lo = mid; else hi = mid; }
+      const r = tab.rs[lo] + (tab.rs[hi] - tab.rs[lo]) * ((t - tab.cdf[lo]) / Math.max(1e-12, tab.cdf[hi] - tab.cdf[lo]));
+      const sg = Math.sign(a * tab.R(r)) || 1;
+      arr[i * 4] = x * r; arr[i * 4 + 1] = y * r; arr[i * 4 + 2] = z * r; arr[i * 4 + 3] = sg;
+    }
+    return arr;
+  }
+  // 采样一个原子的所有轨道点：返回 [{key, n, l, lab, e, zeff, pts: Float32Array(x,y,z,sign,...)}]
+  function sampleAtom(Z, perE = 900, maxPts = 70000, seed = 7) {
+    const c = config(Z), rnd = rng(seed * 1000 + Z), tot = Math.min(perE * Z, maxPts), pe = tot / Z, out = [];
+    for (const s of c) {
+      const Ze = zeff(Z, s), tab = radialTable(s.n, s.l, Ze);
+      for (const o of orbitals(s)) {
+        const np = Math.max(60, Math.round(pe * o.e));
+        out.push({ key: s.key, n: s.n, l: s.l, lab: o.lab, plain: o.plain, e: o.e, zeff: Ze, pts: sampleOrb(o, tab, np, rnd) });
+      }
+    }
+    return out;
+  }
+  // 单个轨道（用于“拆开看”）
+  function sampleOne(Z, key, idx, np = 6000, seed = 11) {
+    const s = config(Z).find(q => q.key === key), o = orbitals(s)[idx], tab = radialTable(s.n, s.l, zeff(Z, s));
+    return { key, n: s.n, l: s.l, lab: o.lab, plain: o.plain, e: o.e, pts: sampleOrb(o, tab, np, rng(seed * 7919 + Z * 131 + idx)) };
+  }
+  // 周期表位置
+  function pos(Z) {
+    if (Z === 1) return [1, 1]; if (Z === 2) return [1, 18];
+    const rows = [[3, 10, 2], [11, 18, 3]];
+    for (const [a, b, p] of rows) if (Z >= a && Z <= b) return [p, Z - a < 2 ? Z - a + 1 : Z - a + 10];
+    if (Z <= 36) return [4, Z - 18]; if (Z <= 54) return [5, Z - 36];
+    if (Z >= 57 && Z <= 71) return [9, Z - 54]; if (Z >= 89 && Z <= 103) return [10, Z - 86];
+    if (Z <= 56) return [6, Z - 54]; if (Z <= 86) return [6, Z - 68];
+    if (Z <= 88) return [7, Z - 86]; return [7, Z - 100];
+  }
+  function block(Z) { if (Z === 2) return 's'; const c = config(Z), last = ORDER.filter(k => c.some(s => s.key === k)).pop(); if ((Z >= 57 && Z <= 71) || (Z >= 89 && Z <= 103)) return 'f'; return LL[parse(last).l]; }
+  G.EC = { SYM, NAME, config, configStr, zeff, orbitals, radialTable, sampleAtom, sampleOne, pos, block, A0, LL };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>// mol.js —— 分子与化学反应的电子云（斯莱特型轨道 + 杂化 + 定域键的 LCAO 近似）
+(function (G) {
+  const A0 = .529177, NST = { 1: 1, 2: 2, 3: 3, 4: 3.7, 5: 4.0 };
+  const EL = {};
+  // 价层斯莱特指数 ζ = Z_eff / n*（单位 bohr⁻¹）
+  function el(sym) {
+    if (EL[sym]) return EL[sym];
+    const Z = G.EC.SYM.indexOf(sym) + 1, c = G.EC.config(Z), v = c.filter(s => s.l <= 1).pop(), n = v.n, ze = sym === 'H' ? 1 : G.EC.zeff(Z, v);
+    return (EL[sym] = { sym, Z, n, ns: NST[n], zeta: ze / NST[n] });
+  }
+  // Γ 函数（Lanczos）与伽马分布采样（Marsaglia–Tsang）
+  function lgamma(x) { const g = 7, p = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7]; if (x < .5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x); x -= 1; let a = p[0]; const t = x + g + .5; for (let i = 1; i < 9; i++) a += p[i] / (x + i); return .5 * Math.log(2 * Math.PI) + (x + .5) * Math.log(t) - t + Math.log(a); }
+  function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  function normal(rnd) { const u = Math.max(1e-12, rnd()), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function gamma(k, rnd) { const d = k - 1 / 3, c = 1 / Math.sqrt(9 * d); for (;;) { let x, v; do { x = normal(rnd); v = 1 + c * x; } while (v <= 0); v = v * v * v; const u = rnd(); if (u < 1 - .0331 * x ** 4 || Math.log(u) < .5 * x * x + d * (1 - v + Math.log(v))) return d * v; } }
+  const C4 = 1 / Math.sqrt(4 * Math.PI), C3 = Math.sqrt(3 / (4 * Math.PI));
+  // 原子轨道（杂化）：{a: 原子序号, s: s 系数, p: [x,y,z]（长度为 p 系数）}；R(r) 为斯莱特型
+  function aoVal(ao, atoms, x, y, z) {
+    const A = atoms[ao.a], e = el(A.el), dx = (x - A.p[0]) / A0, dy = (y - A.p[1]) / A0, dz = (z - A.p[2]) / A0, r = Math.hypot(dx, dy, dz) || 1e-9;
+    const N = Math.exp((e.ns + .5) * Math.log(2 * e.zeta) - .5 * lgamma(2 * e.ns + 1));
+    const R = N * Math.pow(r, e.ns - 1) * Math.exp(-e.zeta * r);
+    return R * (ao.s * C4 + C3 * (ao.p[0] * dx + ao.p[1] * dy + ao.p[2] * dz) / r);
+  }
+  function aoSample(ao, atoms, rnd) {
+    const A = atoms[ao.a], e = el(A.el), r = gamma(2 * e.ns + 1, rnd) / (2 * e.zeta) * A0;
+    const pl = Math.hypot(...ao.p), mx = (Math.abs(ao.s) * C4 + C3 * pl) ** 2;
+    for (;;) { const u = 2 * rnd() - 1, ph = 2 * Math.PI * rnd(), q = Math.sqrt(1 - u * u), x = q * Math.cos(ph), y = q * Math.sin(ph), z = u; const f = (ao.s * C4 + C3 * (ao.p[0] * x + ao.p[1] * y + ao.p[2] * z)) ** 2; if (f >= rnd() * mx) return [A.p[0] + x * r, A.p[1] + y * r, A.p[2] + z * r]; }
+  }
+  // 分子轨道 ψ = Σ cᵢ χᵢ 的精确拒绝采样（提议分布为 Σ cᵢ²|χᵢ|²，界为项数 K）
+  function moSample(mo, atoms, n, rnd) {
+    const out = new Float32Array(n * 4), K = mo.length, w = mo.map(t => t.c * t.c), W = w.reduce((a, b) => a + b, 0);
+    let k = 0, guard = 0;
+    while (k < n && guard++ < n * 400) {
+      let u = rnd() * W, i = 0; while (u > w[i] && i < K - 1) { u -= w[i]; i++; }
+      const p = aoSample(mo[i].ao, atoms, rnd);
+      if (K > 1) { let psi = 0, q = 0; for (const t of mo) { const v = aoVal(t.ao, atoms, p[0], p[1], p[2]); psi += t.c * v; q += t.c * t.c * v * v; } if (psi * psi < rnd() * K * q) continue; out[k * 4 + 3] = psi >= 0 ? 1 : -1; }
+      else out[k * 4 + 3] = aoVal(mo[0].ao, atoms, p[0], p[1], p[2]) >= 0 ? 1 : -1;
+      out[k * 4] = p[0]; out[k * 4 + 1] = p[1]; out[k * 4 + 2] = p[2]; k++;
+    }
+    return out;
+  }
+  // 编译 MO 为快速求值函数 ψ(x,y,z)
+  function moFn(mo, atoms) {
+    const T = mo.map(t => { const A = atoms[t.ao.a], e = el(A.el); return { c: t.c, x: A.p[0], y: A.p[1], z: A.p[2], ze: e.zeta / A0, nm1: e.ns - 1, N: Math.exp((e.ns + .5) * Math.log(2 * e.zeta) - .5 * lgamma(2 * e.ns + 1)) * Math.pow(1 / A0, e.ns - 1), s: t.ao.s * C4, px: C3 * t.ao.p[0], py: C3 * t.ao.p[1], pz: C3 * t.ao.p[2] }; });
+    return (x, y, z) => { let v = 0; for (const t of T) { const dx = x - t.x, dy = y - t.y, dz = z - t.z, r = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-9; v += t.c * t.N * Math.pow(r, t.nm1) * Math.exp(-t.ze * r) * (t.s + (t.px * dx + t.py * dy + t.pz * dz) / r); } return v; };
+  }
+  // ---------- 构造轨道的小工具 ----------
+  const nrm = v => { const l = Math.hypot(...v) || 1; return v.map(x => x / l); };
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const hyb = (a, dir, sf) => ({ a, s: Math.sqrt(sf), p: nrm(dir).map(x => x * Math.sqrt(1 - sf)) });
+  const S = a => ({ a, s: 1, p: [0, 0, 0] }), P = (a, dir) => hyb(a, dir, 0);
+  const one = ao => [{ c: 1, ao }];
+  // σ 键：两侧杂化轨道指向对方；pol = 第二个原子的系数（>1 表示电子偏向它）
+  function sigma(atoms, i, j, sfi, sfj, pol = 1) { const d = sub(atoms[j].p, atoms[i].p); return [{ c: 1, ao: sfi === null ? S(i) : hyb(i, d, sfi) }, { c: pol, ao: sfj === null ? S(j) : hyb(j, d.map(x => -x), sfj) }]; }
+  const pi = (i, j, dir, pol = 1) => [{ c: 1, ao: P(i, dir) }, { c: pol, ao: P(j, dir) }];
+  const TET = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]].map(nrm);
+  const at = (el, p) => ({ el, p });
+  const sh = (p, d) => [p[0] + d[0], p[1] + d[1], p[2] + d[2]];
+  const scl = (v, s) => v.map(x => x * s);
+  // 水分子：O 在 o，两个 H 在 xy 平面内，孤对电子朝 −x 并向 ±z 张开
+  function waterGeo(o, rOH = .96, ang = 104.5, rot = 0) {
+    const h = ang / 2 * Math.PI / 180, c = Math.cos(rot), s = Math.sin(rot), R = v => [v[0] * c - v[1] * s, v[0] * s + v[1] * c, v[2]];
+    return { h1: sh(o, R([rOH * Math.cos(h), rOH * Math.sin(h), 0])), h2: sh(o, R([rOH * Math.cos(h), -rOH * Math.sin(h), 0])), l1: nrm(R([-.55, 0, .83])), l2: nrm(R([-.55, 0, -.83])) };
+  }
+  // 三角锥（NH₃ / H₃O⁺）：中心 c，三个 H 在下方，孤对朝 +x
+  function pyramid(c, r = 1.01, tilt = 112) { const t = tilt * Math.PI / 180; return [0, 1, 2].map(k => { const ph = k * 2 * Math.PI / 3; return sh(c, [r * Math.cos(t), r * Math.sin(t) * Math.cos(ph), r * Math.sin(t) * Math.sin(ph)]); }); }
+
+  // ---------- 反应库 ----------
+  // 每个反应：atoms0 / atoms1（同样顺序的原子，起止坐标），tracks：电子从哪个轨道到哪个轨道
+  // track = {e: 电子数, from: MO, to: MO, src: 电子来源原子, k: 类型}；MO 在各自状态的原子坐标下定义
+  const R = [];
+  // 1 氢分子
+  (() => { const a0 = [at('H', [-2.6, 0, 0]), at('H', [2.6, 0, 0])], a1 = [at('H', [-.37, 0, 0]), at('H', [.37, 0, 0])];
+    R.push({ id: 'h2', name: '氢原子结合成氢分子', eq: 'H· + ·H → H–H', kind: '共价键', atoms0: a0, atoms1: a1,
+      tracks: [{ e: 1, src: 0, k: 'ao', from: one(S(0)), to: sigma(a1, 0, 1, null, null), k1: 'σ' }, { e: 1, src: 1, k: 'ao', from: one(S(1)), to: sigma(a1, 0, 1, null, null), k1: 'σ' }],
+      steps: ['两个氢原子各带一个 1s 电子，自旋相反', '靠近后两团电子云重叠', '电子集中到两个原子核之间：σ 键，键长 0.74 Å'] }); })();
+  // 2 氟化氢（极性键）
+  (() => { const a0 = [at('H', [-2.8, 0, 0]), at('F', [1.2, 0, 0])], a1 = [at('H', [-.46, 0, 0]), at('F', [.46, 0, 0])];
+    R.push({ id: 'hf', name: '氢与氟：极性共价键', eq: 'H· + ·F → H–F', kind: '极性键', atoms0: a0, atoms1: a1,
+      tracks: [{ e: 1, src: 0, k: 'ao', from: one(S(0)), to: sigma(a1, 0, 1, null, .15, 1.6), k1: 'σ' }, { e: 1, src: 1, k: 'ao', from: one(P(1, [-1, 0, 0])), to: sigma(a1, 0, 1, null, .15, 1.6), k1: 'σ' },
+        { e: 2, src: 1, k: 'lp', from: one(S(1)), to: one(hyb(1, [1, 0, 0], .85)), k1: 'lp' }, { e: 2, src: 1, k: 'lp', from: one(P(1, [0, 1, 0])), to: one(P(1, [0, 1, 0])), k1: 'lp' }, { e: 2, src: 1, k: 'lp', from: one(P(1, [0, 0, 1])), to: one(P(1, [0, 0, 1])), k1: 'lp' }],
+      steps: ['氟有 7 个价电子，其中一个 2p 轨道只有一个电子', '氢的 1s 与氟的 2p 重叠成键', '氟的电负性大，成键电子偏向氟：一端带部分负电，一端带部分正电'] }); })();
+  // 3 氯化钠（电子转移）
+  (() => { const a0 = [at('Na', [-3.2, 0, 0]), at('Cl', [3.0, 0, 0])], a1 = [at('Na', [-1.18, 0, 0]), at('Cl', [1.18, 0, 0])];
+    R.push({ id: 'nacl', name: '钠与氯：电子转移', eq: 'Na· + ·Cl → Na⁺ Cl⁻', kind: '离子键', atoms0: a0, atoms1: a1,
+      tracks: [{ e: 1, src: 0, k: 'ao', from: one(S(0)), to: one(P(1, [-1, 0, 0])), k1: 'lp' }, { e: 1, src: 1, k: 'ao', from: one(P(1, [-1, 0, 0])), to: one(P(1, [-1, 0, 0])), k1: 'lp' },
+        { e: 2, src: 1, k: 'lp', from: one(S(1)), to: one(S(1)), k1: 'lp' }, { e: 2, src: 1, k: 'lp', from: one(P(1, [0, 1, 0])), to: one(P(1, [0, 1, 0])), k1: 'lp' }, { e: 2, src: 1, k: 'lp', from: one(P(1, [0, 0, 1])), to: one(P(1, [0, 0, 1])), k1: 'lp' }],
+      steps: ['钠的 3s 电子离核远、束缚松（电离能 5.1 eV）', '这个电子转移到氯的 3p 空位上（氯的电子亲和能 3.6 eV）', 'Na⁺ 与 Cl⁻ 靠静电吸引：离子键，电子云没有共享'] }); })();
+  // 4 水（两个 O–H 键 + 两对孤对电子）
+  (() => { const o = [0, 0, 0], w = waterGeo(o), a0 = [at('O', o), at('H', [3.0, 2.2, 0]), at('H', [3.0, -2.2, 0])], a1 = [at('O', o), at('H', w.h1), at('H', w.h2)];
+    R.push({ id: 'h2o', name: '氧与两个氢：水', eq: '2H· + ·Ö· → H₂O', kind: '共价键 · 孤对电子', atoms0: a0, atoms1: a1,
+      tracks: [{ e: 1, src: 1, k: 'ao', from: one(S(1)), to: sigma(a1, 1, 0, null, .2, 1.35), k1: 'σ' }, { e: 1, src: 0, k: 'ao', from: one(P(0, [1, 1, 0])), to: sigma(a1, 1, 0, null, .2, 1.35), k1: 'σ' },
+        { e: 1, src: 2, k: 'ao', from: one(S(2)), to: sigma(a1, 2, 0, null, .2, 1.35), k1: 'σ' }, { e: 1, src: 0, k: 'ao', from: one(P(0, [1, -1, 0])), to: sigma(a1, 2, 0, null, .2, 1.35), k1: 'σ' },
+        { e: 2, src: 0, k: 'lp', from: one(S(0)), to: one(hyb(0, w.l1, .3)), k1: 'lp' }, { e: 2, src: 0, k: 'lp', from: one(P(0, [0, 0, 1])), to: one(hyb(0, w.l2, .3)), k1: 'lp' }],
+      steps: ['氧有 6 个价电子：两个半满的 2p 轨道可以成键', '两个 O–H 键，键角 104.5°', '另外 4 个电子成为两对孤对电子，让水分子是弯的、有极性'] }); })();
+  // 5 甲烷（sp³ 杂化）
+  (() => { const c = [0, 0, 0], hs = TET.map(d => scl(d, 1.09)), far = TET.map(d => scl(d, 3.2)), a0 = [at('C', c), ...far.map(p => at('H', p))], a1 = [at('C', c), ...hs.map(p => at('H', p))];
+    const tr = []; TET.forEach((d, k) => { tr.push({ e: 1, src: k + 1, k: 'ao', from: one(S(k + 1)), to: sigma(a1, 0, k + 1, .25, null, 1), k1: 'σ' }); tr.push({ e: 1, src: 0, k: 'ao', from: one(k === 0 ? S(0) : P(0, [[1, 0, 0], [0, 1, 0], [0, 0, 1]][k - 1])), to: sigma(a1, 0, k + 1, .25, null, 1), k1: 'σ' }); });
+    R.push({ id: 'ch4', name: '碳与四个氢：甲烷', eq: 'C + 4H· → CH₄', kind: 'sp³ 杂化', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['碳的 2s 与三个 2p 混合成四个等价的 sp³ 杂化轨道', '四个杂化轨道指向正四面体的四个顶点', '各与一个氢的 1s 成键：四个 C–H 键，夹角 109.5°'] }); })();
+  // 6 氮分子（三键：σ + 2π）
+  (() => { const a0 = [at('N', [-2.6, 0, 0]), at('N', [2.6, 0, 0])], a1 = [at('N', [-.55, 0, 0]), at('N', [.55, 0, 0])];
+    const tr = [{ e: 1, src: 0, k: 'ao', from: one(P(0, [1, 0, 0])), to: sigma(a1, 0, 1, .3, .3), k1: 'σ' }, { e: 1, src: 1, k: 'ao', from: one(P(1, [-1, 0, 0])), to: sigma(a1, 0, 1, .3, .3), k1: 'σ' },
+      { e: 1, src: 0, k: 'ao', from: one(P(0, [0, 1, 0])), to: pi(0, 1, [0, 1, 0]), k1: 'π' }, { e: 1, src: 1, k: 'ao', from: one(P(1, [0, 1, 0])), to: pi(0, 1, [0, 1, 0]), k1: 'π' },
+      { e: 1, src: 0, k: 'ao', from: one(P(0, [0, 0, 1])), to: pi(0, 1, [0, 0, 1]), k1: 'π' }, { e: 1, src: 1, k: 'ao', from: one(P(1, [0, 0, 1])), to: pi(0, 1, [0, 0, 1]), k1: 'π' },
+      { e: 2, src: 0, k: 'lp', from: one(S(0)), to: one(hyb(0, [-1, 0, 0], .7)), k1: 'lp' }, { e: 2, src: 1, k: 'lp', from: one(S(1)), to: one(hyb(1, [1, 0, 0], .7)), k1: 'lp' }];
+    R.push({ id: 'n2', name: '两个氮原子：三键', eq: '·N̈· + ·N̈· → N≡N', kind: 'σ 键 + 两个 π 键', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['每个氮有三个半满的 2p 轨道', '头对头重叠成一个 σ 键，肩并肩重叠成两个互相垂直的 π 键', '三键让 N₂ 非常稳定：键能约 945 kJ/mol'] }); })();
+  // 7 二氧化碳（两个双键，π 在互相垂直的平面）
+  (() => { const a0 = [at('C', [0, 0, 0]), at('O', [-3, 0, 0]), at('O', [3, 0, 0])], a1 = [at('C', [0, 0, 0]), at('O', [-1.16, 0, 0]), at('O', [1.16, 0, 0])];
+    const tr = [];
+    [[1, -1, [0, 1, 0]], [2, 1, [0, 0, 1]]].forEach(([o, sx, pd]) => {
+      tr.push({ e: 1, src: 0, k: 'ao', from: one(o === 1 ? S(0) : P(0, [1, 0, 0])), to: sigma(a1, 0, o, .5, .3, 1.3), k1: 'σ' }, { e: 1, src: o, k: 'ao', from: one(P(o, [-sx, 0, 0])), to: sigma(a1, 0, o, .5, .3, 1.3), k1: 'σ' });
+      tr.push({ e: 1, src: 0, k: 'ao', from: one(P(0, pd)), to: pi(0, o, pd, 1.3), k1: 'π' }, { e: 1, src: o, k: 'ao', from: one(P(o, pd)), to: pi(0, o, pd, 1.3), k1: 'π' });
+      tr.push({ e: 2, src: o, k: 'lp', from: one(S(o)), to: one(hyb(o, [sx, 0, 0], .7)), k1: 'lp' }, { e: 2, src: o, k: 'lp', from: one(P(o, pd[1] ? [0, 0, 1] : [0, 1, 0])), to: one(P(o, pd[1] ? [0, 0, 1] : [0, 1, 0])), k1: 'lp' });
+    });
+    R.push({ id: 'co2', name: '碳与氧：二氧化碳', eq: 'C + O₂ → O=C=O', kind: '双键', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['碳用两个 sp 杂化轨道与两个氧形成 σ 键', '碳剩下的两个 p 轨道分别与两个氧形成 π 键', '两个 π 键所在平面互相垂直；分子是直线形'] }); })();
+  // 8 氨 + 质子 → 铵离子（配位键）
+  (() => { const n = [0, 0, 0], hs = pyramid(n, 1.01, 112), a0 = [at('N', n), ...hs.map(p => at('H', p)), at('H', [3.2, 0, 0])];
+    const hs1 = TET.map(d => { const R2 = [[0.5774, 0.5774, 0.5774], [0.5774, -0.5774, -0.5774]]; return d; });
+    const T2 = [[1, 0, 0], ...[0, 1, 2].map(k => { const t = 109.47 * Math.PI / 180, ph = k * 2 * Math.PI / 3; return [Math.cos(t), Math.sin(t) * Math.cos(ph), Math.sin(t) * Math.sin(ph)]; })];
+    const a1 = [at('N', n), ...T2.slice(1).map(d => at('H', scl(d, 1.03))), at('H', scl(T2[0], 1.03))];
+    const tr = []; [1, 2, 3].forEach(k => { const mo0 = sigma(a0, 0, k, .25, null, 1), mo1 = sigma(a1, 0, k, .25, null, 1); tr.push({ e: 2, src: 0, k: 'σ', from: mo0, to: mo1, k1: 'σ', mix: [0, k] }); });
+    tr.push({ e: 2, src: 0, k: 'lp', from: one(hyb(0, [1, 0, 0], .3)), to: sigma(a1, 0, 4, .25, null, 1), k1: 'σ' });
+    R.push({ id: 'nh4', name: '氨接住一个质子：铵离子', eq: 'NH₃ + H⁺ → NH₄⁺', kind: '配位键', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['氨分子的氮上有一对孤对电子，H⁺ 没有电子', 'H⁺ 落在孤对电子上，这对电子变成新的 N–H 键', '两个电子都来自氮，这叫配位键；成键后四个 N–H 键完全等价'] }); })();
+  // 9 水 + 质子 → 水合氢离子（酸）
+  (() => { const o = [0, 0, 0], w = waterGeo(o), a0 = [at('O', o), at('H', w.h1), at('H', w.h2), at('H', [-3.2, 0, 1.6])];
+    const hs = pyramid(o, .98, 112).map(p => [p[0], p[1], p[2]]), a1 = [at('O', o), at('H', hs[0]), at('H', hs[1]), at('H', hs[2])];
+    const tr = [{ e: 2, src: 0, k: 'σ', from: sigma(a0, 0, 1, .2, null, .75), to: sigma(a1, 0, 1, .25, null, .75), k1: 'σ' }, { e: 2, src: 0, k: 'σ', from: sigma(a0, 0, 2, .2, null, .75), to: sigma(a1, 0, 2, .25, null, .75), k1: 'σ' },
+      { e: 2, src: 0, k: 'lp', from: one(hyb(0, w.l1, .3)), to: sigma(a1, 0, 3, .25, null, .75), k1: 'σ' }, { e: 2, src: 0, k: 'lp', from: one(hyb(0, w.l2, .3)), to: one(hyb(0, [-1, 0, 0], .3)), k1: 'lp' }];
+    R.push({ id: 'h3o', name: '水接住质子：水合氢离子', eq: 'H₂O + H⁺ → H₃O⁺', kind: '酸 · 配位键', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['酸性溶液里的 H⁺ 不会单独存在', '它落在水分子的一对孤对电子上', '形成三角锥形的 H₃O⁺，剩下一对孤对电子'] }); })();
+  // 10 中和：H₃O⁺ + OH⁻ → 2 H₂O（质子转移）
+  (() => { const oa = [-1.5, 0, 0], ob = [1.5, 0, 0], hs = pyramid(oa, .98, 112).map(p => [2 * oa[0] - p[0], p[1], p[2]]);
+    // H₃O⁺ 的一个 H（hs[0]）朝向 OH⁻
+    const a0 = [at('O', [-2.6, 0, 0]), at('H', sh([-2.6, 0, 0], [.98, 0, 0])), at('H', sh([-2.6, 0, 0], [-.35, .91, 0])), at('H', sh([-2.6, 0, 0], [-.35, -.46, .79])), at('O', [1.6, 0, 0]), at('H', [2.55, 0, .2])];
+    const wa = waterGeo([-1.8, 0, 0], .96, 104.5, Math.PI), a1 = [at('O', [-1.8, 0, 0]), at('H', [-.1, 0, 0]), at('H', sh([-1.8, 0, 0], [-.35, .91, 0])), at('H', sh([-1.8, 0, 0], [-.35, -.46, .79])), at('O', [.85, 0, 0]), at('H', [1.6, 0, .55])];
+    const tr = [{ e: 2, src: 0, k: 'σ', from: sigma(a0, 0, 1, .25, null, .75), to: one(hyb(0, [1, 0, 0], .3)), k1: 'lp' },
+      { e: 2, src: 0, k: 'σ', from: sigma(a0, 0, 2, .25, null, .75), to: sigma(a1, 0, 2, .25, null, .75), k1: 'σ' }, { e: 2, src: 0, k: 'σ', from: sigma(a0, 0, 3, .25, null, .75), to: sigma(a1, 0, 3, .25, null, .75), k1: 'σ' },
+      { e: 2, src: 4, k: 'lp', from: one(hyb(4, [-1, 0, 0], .3)), to: sigma(a1, 4, 1, .25, null, .75), k1: 'σ' }, { e: 2, src: 4, k: 'σ', from: sigma(a0, 4, 5, .25, null, .75), to: sigma(a1, 4, 5, .25, null, .75), k1: 'σ' },
+      { e: 2, src: 4, k: 'lp', from: one(hyb(4, [.2, 1, -.3], .3)), to: one(hyb(4, [.2, 1, -.3], .3)), k1: 'lp' }, { e: 2, src: 4, k: 'lp', from: one(hyb(4, [.2, -1, -.3], .3)), to: one(hyb(4, [.2, -.6, -1], .3)), k1: 'lp' },
+      { e: 2, src: 0, k: 'lp', from: one(hyb(0, [-.6, -.2, -.8], .3)), to: one(hyb(0, [-.6, -.2, -.8], .3)), k1: 'lp' }];
+    R.push({ id: 'neut', name: '酸碱中和：质子转移', eq: 'H₃O⁺ + OH⁻ → 2H₂O', kind: '质子转移', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['OH⁻ 的孤对电子伸向 H₃O⁺ 的一个氢', '氢原子核（质子）跳到 OH⁻ 上，带不走电子', '原来那根 O–H 键的两个电子留在左边的氧上，成为孤对电子'] }); })();
+  // 11 氯气均裂（光照）
+  (() => { const a0 = [at('Cl', [-1.0, 0, 0]), at('Cl', [1.0, 0, 0])], a1 = [at('Cl', [-2.8, 0, 0]), at('Cl', [2.8, 0, 0])];
+    const tr = [{ e: 1, src: 0, k: 'σ', from: sigma(a0, 0, 1, .15, .15), to: one(P(0, [1, 0, 0])), k1: 'ao' }, { e: 1, src: 1, k: 'σ', from: sigma(a0, 0, 1, .15, .15), to: one(P(1, [-1, 0, 0])), k1: 'ao' }];
+    [0, 1].forEach(a => { [[0, 1, 0], [0, 0, 1]].forEach(d => tr.push({ e: 2, src: a, k: 'lp', from: one(P(a, d)), to: one(P(a, d)), k1: 'lp' })); tr.push({ e: 2, src: a, k: 'lp', from: one(S(a)), to: one(S(a)), k1: 'lp' }); });
+    R.push({ id: 'cl2', name: '氯气在光照下均裂', eq: 'Cl–Cl → Cl· + ·Cl', kind: '均裂 · 自由基', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['紫外光把 Cl–Cl 键的能量（约 243 kJ/mol）补足', '成键的两个电子一边一个', '得到两个各带一个未成对电子的氯原子：自由基'] }); })();
+  // 12 氯化氢在水中电离（异裂）
+  (() => { const a0 = [at('Cl', [-1.27, 0, 0]), at('H', [0, 0, 0]), at('O', [2.4, 0, 0]), at('H', [2.9, .8, 0]), at('H', [2.9, -.8, 0])];
+    const a1 = [at('Cl', [-2.6, 0, 0]), at('H', [.95, 0, 0]), at('O', [1.9, 0, 0]), at('H', [2.3, .8, .35]), at('H', [2.3, -.8, .35])];
+    const tr = [{ e: 2, src: 0, k: 'σ', from: sigma(a0, 1, 0, null, .15, 1.4), to: one(P(0, [1, 0, 0])), k1: 'lp' },
+      { e: 2, src: 2, k: 'lp', from: one(hyb(2, [-1, 0, 0], .3)), to: sigma(a1, 1, 2, null, .25, 1.35), k1: 'σ' },
+      { e: 2, src: 2, k: 'σ', from: sigma(a0, 2, 3, .25, null, .75), to: sigma(a1, 2, 3, .25, null, .75), k1: 'σ' }, { e: 2, src: 2, k: 'σ', from: sigma(a0, 2, 4, .25, null, .75), to: sigma(a1, 2, 4, .25, null, .75), k1: 'σ' }];
+    [[0, 1, 0], [0, 0, 1]].forEach(d => tr.push({ e: 2, src: 0, k: 'lp', from: one(P(0, d)), to: one(P(0, d)), k1: 'lp' }));
+    tr.push({ e: 2, src: 0, k: 'lp', from: one(S(0)), to: one(S(0)), k1: 'lp' }, { e: 2, src: 2, k: 'lp', from: one(hyb(2, [-.3, 0, -1], .3)), to: one(hyb(2, [-.3, 0, -1], .3)), k1: 'lp' });
+    R.push({ id: 'hcl', name: '氯化氢溶于水', eq: 'HCl + H₂O → Cl⁻ + H₃O⁺', kind: '异裂 · 电离', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['H–Cl 键的电子本来就偏向氯', '水分子的孤对电子接住氢', '成键的两个电子全部留给氯，得到 Cl⁻：这叫异裂'] }); })();
+  // 13 乙烯与溴加成（π 键打开）
+  (() => { const c1 = [-.67, 0, 0], c2 = [.67, 0, 0], hp = (c, sx, sy) => sh(c, [sx * .55, sy * .93, 0]);
+    const a0 = [at('C', c1), at('C', c2), at('H', hp(c1, -1, 1)), at('H', hp(c1, -1, -1)), at('H', hp(c2, 1, 1)), at('H', hp(c2, 1, -1)), at('Br', [-1.2, 0, 3.2]), at('Br', [1.2, 0, 3.2])];
+    const d1 = [-.77, 0, 0], d2 = [.77, 0, 0], h3 = (c, sx, sy) => sh(c, [sx * .4, sy * .9, -.35]);
+    const a1 = [at('C', d1), at('C', d2), at('H', h3(d1, -1, 1)), at('H', h3(d1, -1, -1)), at('H', h3(d2, 1, 1)), at('H', h3(d2, 1, -1)), at('Br', sh(d1, [-.45, 0, 1.88])), at('Br', sh(d2, [.45, 0, 1.88]))];
+    const tr = [{ e: 2, src: 0, k: 'π', from: pi(0, 1, [0, 0, 1]), to: sigma(a1, 0, 6, .25, .15, 1.2), k1: 'σ', note: 'π' },
+      { e: 2, src: 6, k: 'σ', from: sigma(a0, 6, 7, .15, .15), to: sigma(a1, 1, 7, .25, .15, 1.2), k1: 'σ' },
+      { e: 2, src: 0, k: 'σ', from: sigma(a0, 0, 1, .33, .33), to: sigma(a1, 0, 1, .25, .25), k1: 'σ' }];
+    [[0, 2], [0, 3], [1, 4], [1, 5]].forEach(([c, h]) => tr.push({ e: 2, src: c, k: 'σ', from: sigma(a0, c, h, .33, null), to: sigma(a1, c, h, .25, null), k1: 'σ' }));
+    [6, 7].forEach(b => { tr.push({ e: 2, src: b, k: 'lp', from: one(S(b)), to: one(S(b)), k1: 'lp' }, { e: 2, src: b, k: 'lp', from: one(P(b, [0, 1, 0])), to: one(P(b, [0, 1, 0])), k1: 'lp' }, { e: 2, src: b, k: 'lp', from: one(P(b, [0, 0, 1])), to: one(P(b, [b === 6 ? -1 : 1, 0, .3])), k1: 'lp' }); });
+    R.push({ id: 'c2h4br2', name: '乙烯与溴加成', eq: 'CH₂=CH₂ + Br₂ → CH₂Br–CH₂Br', kind: 'π 键打开', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['C=C 双键里有一个 π 键，电子云在分子平面上下', 'π 电子比 σ 电子更外露，容易被进攻', 'π 键打开，两个碳各接上一个溴：双键变单键（真实机理经过溴鎓离子，这里只画始末）'] }); })();
+  // 14 甲烷与氯自由基（夺氢）
+  (() => { const c = [0, 0, 0], hs = TET.map(d => scl(d, 1.09)), cl0 = scl(TET[0], 3.4);
+    const a0 = [at('C', c), ...hs.map(p => at('H', p)), at('Cl', cl0)];
+    const a1 = [at('C', c), at('H', scl(TET[0], 2.3)), ...[1, 2, 3].map(k => { const d = TET[k], t = nrm(sh(d, scl(TET[0], .34))); return at('H', scl(t, 1.08)); }), at('Cl', scl(TET[0], 3.57))];
+    const tr = [{ e: 1, src: 0, k: 'σ', from: sigma(a0, 0, 1, .25, null), to: one(P(0, TET[0])), k1: 'ao' }, { e: 1, src: 1, k: 'σ', from: sigma(a0, 0, 1, .25, null), to: sigma(a1, 1, 5, null, .15, 1.3), k1: 'σ' },
+      { e: 1, src: 5, k: 'ao', from: one(P(5, scl(TET[0], -1))), to: sigma(a1, 1, 5, null, .15, 1.3), k1: 'σ' }];
+    [2, 3, 4].forEach(k => tr.push({ e: 2, src: 0, k: 'σ', from: sigma(a0, 0, k, .25, null), to: sigma(a1, 0, k, .33, null), k1: 'σ' }));
+    const pa = nrm([1, -1, 0]), pb = nrm([1, 1, -2]); tr.push({ e: 2, src: 5, k: 'lp', from: one(S(5)), to: one(S(5)), k1: 'lp' }, { e: 2, src: 5, k: 'lp', from: one(P(5, pa)), to: one(P(5, pa)), k1: 'lp' }, { e: 2, src: 5, k: 'lp', from: one(P(5, pb)), to: one(P(5, pb)), k1: 'lp' });
+    R.push({ id: 'ch4cl', name: '氯自由基夺走甲烷的氢', eq: 'CH₄ + Cl· → ·CH₃ + HCl', kind: '自由基反应', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['氯自由基有一个未成对电子', '它从甲烷上拉走一个氢原子（连同一个电子）', '碳上留下一个未成对电子：甲基自由基，链式反应继续'] }); })();
+  // 16 苯：三个定域 π 键 → 离域 π 环
+  (() => { const ring = k => { const t = k * Math.PI / 3; return [Math.cos(t), Math.sin(t)]; };
+    const a = []; for (let k = 0; k < 6; k++) { const [c, s] = ring(k); a.push(at('C', [1.39 * c, 1.39 * s, 0])); } for (let k = 0; k < 6; k++) { const [c, s] = ring(k); a.push(at('H', [2.47 * c, 2.47 * s, 0])); }
+    const z = [0, 0, 1], pk = (k, c) => ({ c, ao: P(k, z) });
+    const mo = [[0, 1, 2, 3, 4, 5].map(k => pk(k, 1)), [0, 1, 2, 3, 4, 5].map(k => pk(k, Math.cos(k * Math.PI / 3))), [1, 2, 4, 5].map(k => pk(k, Math.sin(k * Math.PI / 3)))];
+    const tr = []; [[0, 1], [2, 3], [4, 5]].forEach(([i, j], m) => { tr.push({ e: 1, src: i, k: 'π', from: pi(i, j, z), to: mo[m], k1: 'π' }, { e: 1, src: j, k: 'π', from: pi(i, j, z), to: mo[m], k1: 'π' }); });
+    R.push({ id: 'benz', name: '苯：π 电子绕成一个环', eq: '凯库勒式 C₆H₆ → 离域 π 体系', kind: '离域 · 共轭', atoms0: a, atoms1: a, tracks: tr,
+      steps: ['如果只看凯库勒式，6 个 π 电子被关在三个双键里', '实际上 6 个 p 轨道肩并肩连成一圈，π 电子分布在整个环的上下两面', '离域让苯格外稳定，六个 C–C 键长完全相等（1.39 Å）'] }); })();
+  // 17 金属钠：价电子变成电子海
+  (() => { const d = 3.7, sq = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([x, y]) => [x * d / 2, y * d / 2, 0]);
+    const a0 = sq.map(p => at('Na', p.map(v => v * 1.9))), a1 = sq.map(p => at('Na', p));
+    const mo1 = [0, 1, 2, 3].map(k => ({ c: 1, ao: S(k) })), mo2 = [0, 1, 2, 3].map(k => ({ c: k < 2 ? 1 : -1, ao: S(k) }));
+    const tr = [0, 1, 2, 3].map(k => ({ e: 1, src: k, k: 'ao', from: one(S(k)), to: k < 2 ? mo1 : mo2, k1: 'σ' }));
+    R.push({ id: 'na4', name: '钠原子聚成金属：电子海', eq: '4 Na· → Na₄（金属键示意）', kind: '金属键', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['每个钠原子只有一个松散的 3s 电子', '原子靠近后，3s 轨道互相重叠，电子不再属于某一个原子', '大量原子时这些电子形成“电子海”，所以金属导电、有光泽、能延展'] }); })();
+  // ===== 更多有代表性的反应 =====
+  const rotYp = (c, ang) => p => { const x = p[0] - c[0], z = p[2] - c[2], C = Math.cos(ang), S2 = Math.sin(ang); return [c[0] + x * C + z * S2, p[1], c[2] - x * S2 + z * C]; };
+  const two = (src1, src2, from, to, k, k1) => [{ e: 1, src: src1, k, from, to, k1 }, { e: 1, src: src2, k, from, to, k1 }];
+  // 18 SN2：氢氧根从背面进攻，溴离子离开，构型翻转（瓦尔登翻转）
+  (() => { const tet = (sx, ph) => { const t = 109.47 * Math.PI / 180; return [sx * Math.cos(Math.PI - t) * -1 * -1, 0, 0].map((_, i) => i === 0 ? -sx * .334 * 1.09 : i === 1 ? .943 * 1.09 * Math.cos(ph) : .943 * 1.09 * Math.sin(ph)); };
+    const phs = [0, 2 * Math.PI / 3, 4 * Math.PI / 3];
+    // 0 C, 1-3 H, 4 Br, 5 O, 6 H(O)
+    const a0 = [at('C', [0, 0, 0]), ...phs.map(p => at('H', tet(1, p))), at('Br', [1.94, 0, 0]), at('O', [-3.3, 0, 0]), at('H', [-4.2, .35, 0])];
+    const a1 = [at('C', [0, 0, 0]), ...phs.map(p => at('H', tet(-1, p))), at('Br', [3.6, 0, 0]), at('O', [-1.43, 0, 0]), at('H', [-1.75, .9, 0])];
+    const tr = [];
+    [1, 2, 3].forEach(h => tr.push(...two(0, h, sigma(a0, 0, h, .25, null), sigma(a1, 0, h, .25, null), 'σ', 'σ')));
+    tr.push(...two(0, 4, sigma(a0, 0, 4, .25, .15, 1.2), one(hyb(4, [-1, 0, 0], .15)), 'σ', 'lp'));
+    tr.push({ e: 2, src: 4, k: 'lp', from: one(hyb(4, [1, 0, 0], .6)), to: one(hyb(4, [1, 0, 0], .6)), k1: 'lp' }, { e: 2, src: 4, k: 'lp', from: one(P(4, [0, 1, 0])), to: one(P(4, [0, 1, 0])), k1: 'lp' }, { e: 2, src: 4, k: 'lp', from: one(P(4, [0, 0, 1])), to: one(P(4, [0, 0, 1])), k1: 'lp' });
+    tr.push({ e: 2, src: 5, k: 'lp', from: one(hyb(5, [1, 0, 0], .3)), to: sigma(a1, 5, 0, .3, .25, .8), k1: 'σ' });
+    tr.push({ e: 2, src: 5, k: 'lp', from: one(P(5, [0, 0, 1])), to: one(hyb(5, [-.3, -.55, .78], .3)), k1: 'lp' }, { e: 2, src: 5, k: 'lp', from: one(P(5, [.2, -1, 0])), to: one(hyb(5, [-.3, -.55, -.78], .3)), k1: 'lp' });
+    tr.push(...two(5, 6, sigma(a0, 5, 6, .2, null, .75), sigma(a1, 5, 6, .25, null, .75), 'σ', 'σ'));
+    R.push({ id: 'sn2', name: '亲核取代 SN2：背面进攻', eq: 'HO⁻ + CH₃Br → HOCH₃ + Br⁻', kind: '有机机理 · 构型翻转', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['OH⁻ 带一对“多余”的孤对电子，从溴的正对面接近碳', '孤对电子变成新的 C–O 键，同时 C–Br 键的电子整对退到溴上', '三个氢像被风吹翻的伞一样翻到另一边；溴带着两个电子成为 Br⁻ 离开'] }); })();
+  // 19 狄尔斯–阿尔德：6 个 π 电子同时重排成两个新 σ 键和一个新 π 键
+  (() => { const z0 = 1.75;
+    const a0 = [at('C', [-1.4, -.75, z0]), at('C', [-.68, .45, z0]), at('C', [.68, .45, z0]), at('C', [1.4, -.75, z0]), at('C', [.67, -1.05, -z0]), at('C', [-.67, -1.05, -z0])];
+    const a1 = [at('C', [-1.35, -.75, .45]), at('C', [-.68, .5, .15]), at('C', [.68, .5, .15]), at('C', [1.35, -.75, .45]), at('C', [.77, -1.4, -.85]), at('C', [-.77, -1.4, -.85])];
+    const z = [0, 0, 1], pn = nrm([0, -.35, 1]);
+    const p12 = pi(0, 1, z), p34 = pi(2, 3, z), p56 = pi(4, 5, z), s16 = sigma(a1, 0, 5, .25, .25), s45 = sigma(a1, 3, 4, .25, .25), p23 = pi(1, 2, pn);
+    const tr = [{ e: 1, src: 0, k: 'π', from: p12, to: s16, k1: 'σ' }, { e: 1, src: 1, k: 'π', from: p12, to: p23, k1: 'π' }, { e: 1, src: 2, k: 'π', from: p34, to: p23, k1: 'π' },
+      { e: 1, src: 3, k: 'π', from: p34, to: s45, k1: 'σ' }, { e: 1, src: 4, k: 'π', from: p56, to: s45, k1: 'σ' }, { e: 1, src: 5, k: 'π', from: p56, to: s16, k1: 'σ' }];
+    R.push({ id: 'da', name: '狄尔斯–阿尔德：六个 π 电子一起转圈', eq: '丁二烯 + 乙烯 → 环己烯', kind: '周环反应 · 协同', atoms0: a0, atoms1: a1, tracks: tr, only: '只画参与反应的 6 个 π 电子，氢原子和 σ 骨架省略',
+      steps: ['上面是丁二烯（两个 π 键），下面是乙烯（一个 π 键），p 轨道上下相对', '三对 π 电子同时移动，不经过离子或自由基：协同反应', '结果是两个新的 C–C σ 键和中间一个新的 π 键，闭合成六元环'] }); })();
+  // 20 路易斯酸碱：BF₃ 的空 p 轨道接住 NH₃ 的孤对电子
+  (() => { const F3 = k => { const f = Math.PI / 2 + k * 2 * Math.PI / 3; return [Math.cos(f), Math.sin(f)]; };
+    const n0 = [-3.4, 0, 0], n1 = [-1.65, 0, 0];
+    // 0 B, 1-3 F, 4 N, 5-7 H
+    const a0 = [at('B', [0, 0, 0]), ...[0, 1, 2].map(k => at('F', [0, 1.31 * F3(k)[0], 1.31 * F3(k)[1]])), at('N', n0), ...pyramid(n0).map(p => at('H', p))];
+    const a1 = [at('B', [0, 0, 0]), ...[0, 1, 2].map(k => at('F', [.44, 1.23 * F3(k)[0], 1.23 * F3(k)[1]])), at('N', n1), ...pyramid(n1).map(p => at('H', p))];
+    const tr = [{ e: 2, src: 4, k: 'lp', from: one(hyb(4, [1, 0, 0], .3)), to: sigma(a1, 4, 0, .3, .3, .55), k1: 'σ' }];
+    [1, 2, 3].forEach(f => { tr.push(...two(0, f, sigma(a0, 0, f, .33, .3, 1.6), sigma(a1, 0, f, .25, .3, 1.6), 'σ', 'σ'));
+      const d0 = nrm(a0[f].p), d1 = nrm(sub(a1[f].p, [0, 0, 0])), t = nrm([0, -a0[f].p[2], a0[f].p[1]]);
+      tr.push({ e: 2, src: f, k: 'lp', from: one(hyb(f, d0, .7)), to: one(hyb(f, d1, .7)), k1: 'lp' }, { e: 2, src: f, k: 'lp', from: one(P(f, [1, 0, 0])), to: one(P(f, [1, 0, 0])), k1: 'lp' }, { e: 2, src: f, k: 'lp', from: one(P(f, t)), to: one(P(f, t)), k1: 'lp' }); });
+    [5, 6, 7].forEach(h => tr.push(...two(4, h, sigma(a0, 4, h, .25, null), sigma(a1, 4, h, .25, null), 'σ', 'σ')));
+    R.push({ id: 'bf3', name: '路易斯酸碱：空轨道接住孤对电子', eq: 'BF₃ + :NH₃ → F₃B–NH₃', kind: '配位键 · 路易斯酸碱', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['硼只有 6 个价电子，垂直于 BF₃ 平面有一个空的 2p 轨道', '氨的孤对电子正对着这个空轨道靠近', '一对电子被共享，形成 B–N 配位键；BF₃ 从平面变成三角锥'] }); })();
+  // 21 负氢进攻羰基：π 键的电子退到氧上
+  (() => { // 0 C, 1 O, 2 H, 3 H, 4 H⁻
+    const a0 = [at('C', [0, 0, 0]), at('O', [1.21, 0, 0]), at('H', [-.55, .94, 0]), at('H', [-.55, -.94, 0]), at('H', [-.7, 0, 3.0])];
+    const a1 = [at('C', [0, 0, 0]), at('O', [1.36, 0, 0]), at('H', [-.36, .89, -.5]), at('H', [-.36, -.89, -.5]), at('H', [-.36, 0, 1.03])];
+    const tr = [{ e: 2, src: 4, k: 'lp', from: one(S(4)), to: sigma(a1, 0, 4, .25, null), k1: 'σ' }];
+    tr.push(...two(0, 1, pi(0, 1, [0, 0, 1], 1.4), one(P(1, [0, 0, 1])), 'π', 'lp'));
+    tr.push(...two(0, 1, sigma(a0, 0, 1, .33, .3, 1.3), sigma(a1, 0, 1, .25, .3, 1.3), 'σ', 'σ'));
+    [2, 3].forEach(h => tr.push(...two(0, h, sigma(a0, 0, h, .33, null), sigma(a1, 0, h, .25, null), 'σ', 'σ')));
+    tr.push({ e: 2, src: 1, k: 'lp', from: one(hyb(1, [.5, .87, 0], .4)), to: one(hyb(1, [.5, .87, 0], .4)), k1: 'lp' }, { e: 2, src: 1, k: 'lp', from: one(hyb(1, [.5, -.87, 0], .4)), to: one(hyb(1, [.5, -.87, 0], .4)), k1: 'lp' });
+    R.push({ id: 'hco', name: '负氢加到羰基上：π 键被推开', eq: 'H⁻ + H₂C=O → H₃C–O⁻', kind: '有机机理 · 亲核加成', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['C=O 的 π 电子偏向氧，碳一侧电子稀薄，从上方看是个“缺口”', 'H⁻ 的一对电子从上方进攻碳，形成新的 C–H 键', '原来 π 键的两个电子被整对推到氧上，氧带上负电荷；碳从平面变成四面体'] }); })();
+  // 22 氢键：两个水分子之间
+  (() => { const o1 = [0, 0, 0], h1 = [.96, 0, 0], h2 = [-.24, .93, 0];
+    const mk = d => { const o2 = [d, 0, 0], w = waterGeo(o2), r = rotYp(o2, -.98), rd = rotYp([0, 0, 0], -.98); return { o2, H: [r(w.h1), r(w.h2)], l1: rd(w.l1), l2: rd(w.l2) }; };
+    const A = mk(5.2), B = mk(2.9);
+    const a0 = [at('O', o1), at('H', h1), at('H', h2), at('O', A.o2), at('H', A.H[0]), at('H', A.H[1])], a1 = [at('O', o1), at('H', h1), at('H', h2), at('O', B.o2), at('H', B.H[0]), at('H', B.H[1])];
+    const tr = [];
+    tr.push(...two(0, 1, sigma(a0, 0, 1, .25, null, .75), sigma(a1, 0, 1, .25, null, .68), 'σ', 'σ'));
+    tr.push(...two(0, 2, sigma(a0, 0, 2, .25, null, .75), sigma(a1, 0, 2, .25, null, .75), 'σ', 'σ'));
+    tr.push({ e: 2, src: 0, k: 'lp', from: one(hyb(0, [-.6, -.3, .74], .3)), to: one(hyb(0, [-.6, -.3, .74], .3)), k1: 'lp' }, { e: 2, src: 0, k: 'lp', from: one(hyb(0, [-.6, -.3, -.74], .3)), to: one(hyb(0, [-.6, -.3, -.74], .3)), k1: 'lp' });
+    [4, 5].forEach(h => tr.push(...two(3, h, sigma(a0, 3, h, .25, null, .75), sigma(a1, 3, h, .25, null, .75), 'σ', 'σ')));
+    tr.push({ e: 2, src: 3, k: 'lp', from: one(hyb(3, A.l1, .3)), to: [{ c: 1, ao: hyb(3, B.l1, .3) }, { c: .14, ao: S(1) }], k1: 'lp' }, { e: 2, src: 3, k: 'lp', from: one(hyb(3, A.l2, .3)), to: one(hyb(3, B.l2, .3)), k1: 'lp' });
+    R.push({ id: 'hb', name: '氢键：两个水分子互相拉住', eq: 'H₂O + H₂O → H₂O···H–OH', kind: '分子间作用', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['左边水分子的 H 带部分正电，右边水分子的氧有孤对电子', '孤对电子朝着这个 H 靠近，距离约 1.9 Å', '电子云只轻微偏移：氢键主要是静电吸引，强度只有共价键的十分之一左右'] }); })();
+  // 23 锌置换铜：两个电子从锌跑到铜离子上
+  (() => { const a0 = [at('Zn', [-2.4, 0, 0]), at('Cu', [2.4, 0, 0])], a1 = a0;
+    const tr = [{ e: 1, src: 0, k: 'ao', from: one(S(0)), to: one(S(1)), k1: 'ao' }, { e: 1, src: 0, k: 'ao', from: one(S(0)), to: one(S(1)), k1: 'ao' }];
+    R.push({ id: 'zncu', name: '锌置换铜：电子从一种金属跑到另一种', eq: 'Zn + Cu²⁺ → Zn²⁺ + Cu', kind: '氧化还原', atoms0: a0, atoms1: a1, tracks: tr, only: '只画转移的两个 4s 电子，3d 电子和溶液中的水分子省略',
+      steps: ['锌原子外层有两个 4s 电子，束缚比较松', 'Cu²⁺ 对电子的吸引更强（标准电极电势 +0.34 V，锌是 −0.76 V）', '两个电子从锌转移到铜：锌被氧化成 Zn²⁺，铜离子被还原成铜原子'] }); })();
+  // 24 乙烯吸收紫外光：一个 π 电子跳到 π*
+  (() => { const a = [at('C', [-.67, 0, 0]), at('C', [.67, 0, 0]), at('H', [-1.23, .92, 0]), at('H', [-1.23, -.92, 0]), at('H', [1.23, .92, 0]), at('H', [1.23, -.92, 0])];
+    const z = [0, 0, 1], piB = pi(0, 1, z), piA = [{ c: 1, ao: P(0, z) }, { c: -1, ao: P(1, z) }];
+    const tr = [{ e: 1, src: 0, k: 'π', from: piB, to: piB, k1: 'π', col: '#5CE1E6' }, { e: 1, src: 1, k: 'π', from: piB, to: piA, k1: 'π*', cols: ['#5CE1E6', '#FF7AB6'] }];
+    tr.push(...two(0, 1, sigma(a, 0, 1, .33, .33), sigma(a, 0, 1, .33, .33), 'σ', 'σ'));
+    [[0, 2], [0, 3], [1, 4], [1, 5]].forEach(([c, h]) => tr.push(...two(c, h, sigma(a, c, h, .33, null), sigma(a, c, h, .33, null), 'σ', 'σ')));
+    R.push({ id: 'uv', name: '吸收紫外光：电子跳到反键轨道', eq: 'C₂H₄ + hν → C₂H₄*（π → π*）', kind: '光激发', atoms0: a, atoms1: a, tracks: tr,
+      steps: ['基态时两个 π 电子都在成键 π 轨道里，集中在两个碳之间的上下方', '吸收约 165 nm 的紫外光，一个电子跳到反键 π* 轨道', 'π* 在两个碳正中间有一个节面：电子不再把两个碳拉在一起，C=C 变弱、可以扭转'] }); })();
+  // 25 酮–烯醇互变：氢从碳搬到氧，π 键跟着换位置
+  (() => { // 0 C1(甲基) 1 C2 2 O 3 H1(迁移) 4 H2 5 H3 6 H4
+    const a0 = [at('C', [-1.25, -.7, 0]), at('C', [0, .1, 0]), at('O', [1.05, -.5, 0]), at('H', [-.9, -1.73, 0]), at('H', [-2.15, -.35, .5]), at('H', [-1.4, -.2, -.95]), at('H', [.05, 1.2, 0])];
+    const a1 = [at('C', [-1.15, -.65, 0]), at('C', [0, .05, 0]), at('O', [1.2, -.55, 0]), at('H', [1.25, -1.5, 0]), at('H', [-2.08, -.1, 0]), at('H', [-1.2, -1.74, 0]), at('H', [.05, 1.15, 0])];
+    const z = [0, 0, 1], tr = [];
+    tr.push(...two(0, 3, sigma(a0, 0, 3, .25, null), pi(0, 1, z), 'σ', 'π'));
+    tr.push(...two(1, 2, pi(1, 2, z, 1.4), sigma(a1, 2, 3, .25, null, .75), 'π', 'σ'));
+    tr.push(...two(0, 1, sigma(a0, 0, 1, .25, .33), sigma(a1, 0, 1, .33, .33), 'σ', 'σ'));
+    tr.push(...two(1, 2, sigma(a0, 1, 2, .33, .3, 1.3), sigma(a1, 1, 2, .33, .3, 1.3), 'σ', 'σ'));
+    tr.push(...two(1, 6, sigma(a0, 1, 6, .33, null), sigma(a1, 1, 6, .33, null), 'σ', 'σ'));
+    [4, 5].forEach(h => tr.push(...two(0, h, sigma(a0, 0, h, .25, null), sigma(a1, 0, h, .33, null), 'σ', 'σ')));
+    tr.push({ e: 2, src: 2, k: 'lp', from: one(hyb(2, [.4, .92, 0], .4)), to: one(hyb(2, [.6, .8, 0], .4)), k1: 'lp' }, { e: 2, src: 2, k: 'lp', from: one(hyb(2, [.7, -.7, 0], .4)), to: one(P(2, z)), k1: 'lp' });
+    R.push({ id: 'keto', name: '酮–烯醇互变：氢搬家，双键换位', eq: 'CH₃–CHO ⇌ CH₂=CH–OH', kind: '有机机理 · 互变异构', atoms0: a0, atoms1: a1, tracks: tr,
+      steps: ['乙醛：C=O 双键，甲基上有三个 C–H', '一个 H⁺ 从碳上离开、跑到氧上（实际需要酸或碱帮忙搬运）', '原来 C–H 键的电子变成 C=C 的 π 键，原来 C=O 的 π 电子用来连接新的 O–H'] }); })();
+  // 15 铁的氧化（失电子）
+  (() => { const a0 = [at('Fe', [0, 0, 0])], a1 = [at('Fe', [0, 0, 0])];
+    R.push({ id: 'fe', name: '铁失去电子：氧化', eq: 'Fe → Fe²⁺ + 2e⁻', kind: '氧化', atoms0: a0, atoms1: a1, atomOnly: true,
+      steps: ['铁的最外层是 4s²，3d 上有 6 个电子', '氧化时先失去的是外层的 4s 电子，不是 3d', '离子变小了：电子云收缩，Fe²⁺ 的价层是 3d⁶'], tracks: [] }); })();
+  const GRP = { h2: 0, hf: 0, h2o: 0, ch4: 0, n2: 0, co2: 0, nacl: 1, fe: 1, zncu: 1, nh4: 2, h3o: 2, neut: 2, bf3: 2, cl2: 3, hcl: 3, ch4cl: 3, c2h4br2: 4, sn2: 4, hco: 4, keto: 4, da: 4, benz: 5, na4: 5, uv: 5, hb: 5 };
+  const GN = ['共用电子：共价键是怎么形成的', '交出电子：离子与氧化还原', '借出孤对电子：配位与酸碱', '键的断裂：均裂与异裂', '有机反应：电子推着电子走', '特殊的电子云：离域、金属、激发、分子间'];
+  const EXTRA = {
+    benz: { legend: [['#FF6B6B', '原来第 1 个双键的 π 电子'], ['#FFD27A', '原来第 2 个双键的 π 电子'], ['#5CE1E6', '原来第 3 个双键的 π 电子']], col: j => ['#FF6B6B', '#FFD27A', '#5CE1E6'][j >> 1] },
+    da: { legend: [['#FF6B6B', '丁二烯左边 π 键的电子'], ['#FFD27A', '丁二烯右边 π 键的电子'], ['#5CE1E6', '乙烯 π 键的电子']], col: j => ['#FF6B6B', '#FFD27A', '#5CE1E6'][j >> 1] },
+    uv: { act: true, legend: [['#8FA3C0', 'σ 骨架电子'], ['#5CE1E6', 'π 电子'], ['#FF7AB6', '被激发到 π* 的电子']], col: (j, t) => t.col || t.cols ? null : '#8FA3C0' },
+    sn2: { cm: 'k', act: true }, hco: { cm: 'k', act: true }, keto: { cm: 'k', act: true }, bf3: { cm: 'k', act: true }, c2h4br2: { cm: 'k', act: true }, nh4: { cm: 'k' }, h3o: { cm: 'k' },
+  };
+  R.forEach(r => { const x = EXTRA[r.id]; if (!x) return; if (x.legend) r.legend = x.legend; if (x.cm) r.cm = x.cm; if (x.act) r.act = true; if (x.col) r.tracks.forEach((t, j) => { const c = x.col(j, t); if (c) t.col = c; }); });
+  const PL = { benz: { n: [0, 0, 1], off: .75 }, uv: { n: [0, 0, 1], off: .7 }, keto: { n: [0, 0, 1], off: .7 }, hco: { n: [0, 1, 0] }, da: { n: [1, 0, 0] }, co2: { n: [0, 0, 1] } };
+  R.forEach(r => { r.grp = GRP[r.id]; if (PL[r.id]) r.plane = PL[r.id]; }); R.sort((a, b) => a.grp - b.grp);
+  G.MOL = { R, GN, el, moSample, moFn, aoVal, rng };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>// iso.js —— 把电子密度画成“物体”：等值面（行进四面体）和截面热图 + 等高线
+(function (G) {
+  // 立方网格：中心 c，半边长 half，每边 N 个点；下标 i = x + N*(y + N*z)
+  function grid(N, c, half) { const h = 2 * half / (N - 1); return { N, c, half, h, o: [c[0] - half, c[1] - half, c[2] - half] }; }
+  function fill(g, f, out) {
+    const N = g.N, a = out || new Float32Array(N * N * N); let i = 0;
+    for (let z = 0; z < N; z++) { const Z = g.o[2] + z * g.h; for (let y = 0; y < N; y++) { const Y = g.o[1] + y * g.h; for (let x = 0; x < N; x++, i++) a[i] = f(g.o[0] + x * g.h, Y, Z); } }
+    return a;
+  }
+  // 找一个阈值，使 ρ > 阈值 的区域装下 frac 的电子（对数直方图）
+  function level(a, frac) {
+    let mx = 0, S = 0; for (let i = 0; i < a.length; i++) { const v = a[i]; if (v > mx) mx = v; if (v > 0) S += v; }
+    if (mx <= 0) return 1e9;
+    const B = 600, lo = Math.log(mx) - 18, k = B / 18, H = new Float64Array(B);
+    for (let i = 0; i < a.length; i++) { const v = a[i]; if (v <= 0) continue; let b = Math.floor((Math.log(v) - lo) * k); if (b < 0) continue; if (b >= B) b = B - 1; H[b] += v; }
+    let acc = 0; for (let b = B - 1; b >= 0; b--) { acc += H[b]; if (acc >= frac * S) return Math.exp(lo + b / k); }
+    return Math.exp(lo);
+  }
+  const CO = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]];
+  const TETS = [[0, 5, 1, 6], [0, 1, 2, 6], [0, 2, 3, 6], [0, 3, 7, 6], [0, 7, 4, 6], [0, 4, 5, 6]];
+  // 行进四面体。groups: [{a: Float32Array, c: [r,g,b]}] 用来给顶点上色；cut(x,y,z) 为真的格子跳过（剖开）
+  function march(g, a, iso, groups, cut) {
+    const N = g.N, NN = N * N, h = g.h, o = g.o;
+    let cap = 1 << 16, P = new Float32Array(cap * 3), Nr = new Float32Array(cap * 3), Cl = new Float32Array(cap * 3), n = 0;
+    const grow = () => { cap *= 2; const p2 = new Float32Array(cap * 3), n2 = new Float32Array(cap * 3), c2 = new Float32Array(cap * 3); p2.set(P); n2.set(Nr); c2.set(Cl); P = p2; Nr = n2; Cl = c2; };
+    const idx = new Int32Array(8), val = new Float32Array(8), cx = new Int32Array(8), cy = new Int32Array(8), cz = new Int32Array(8);
+    const gr = (x, y, z, d) => { const i = x + N * (y + N * z); if (d === 0) { const a1 = x < N - 1 ? a[i + 1] : a[i], a0 = x > 0 ? a[i - 1] : a[i]; return a1 - a0; } if (d === 1) { const a1 = y < N - 1 ? a[i + N] : a[i], a0 = y > 0 ? a[i - N] : a[i]; return a1 - a0; } const a1 = z < N - 1 ? a[i + NN] : a[i], a0 = z > 0 ? a[i - NN] : a[i]; return a1 - a0; };
+    const G = groups || [];
+    function vert(p, q) {
+      if (n >= cap) grow();
+      const t = (iso - val[p]) / ((val[q] - val[p]) || 1e-30);
+      P[n * 3] = o[0] + (cx[p] + (cx[q] - cx[p]) * t) * h; P[n * 3 + 1] = o[1] + (cy[p] + (cy[q] - cy[p]) * t) * h; P[n * 3 + 2] = o[2] + (cz[p] + (cz[q] - cz[p]) * t) * h;
+      for (let d = 0; d < 3; d++) Nr[n * 3 + d] = -(gr(cx[p], cy[p], cz[p], d) * (1 - t) + gr(cx[q], cy[q], cz[q], d) * t);
+      if (G.length) { let r = 0, gg = 0, b = 0, w = 0; for (const gp of G) { const v = Math.max(0, gp.a[idx[p]] * (1 - t) + gp.a[idx[q]] * t); r += gp.c[0] * v; gg += gp.c[1] * v; b += gp.c[2] * v; w += v; } w = w || 1; Cl[n * 3] = r / w; Cl[n * 3 + 1] = gg / w; Cl[n * 3 + 2] = b / w; }
+      else { Cl[n * 3] = Cl[n * 3 + 1] = Cl[n * 3 + 2] = 1; }
+      n++;
+    }
+    for (let z = 0; z < N - 1; z++) for (let y = 0; y < N - 1; y++) for (let x = 0; x < N - 1; x++) {
+      let inside = 0;
+      for (let k = 0; k < 8; k++) { const X = x + CO[k][0], Y = y + CO[k][1], Z = z + CO[k][2], i = X + N * (Y + N * Z); idx[k] = i; val[k] = a[i]; cx[k] = X; cy[k] = Y; cz[k] = Z; if (val[k] > iso) inside++; }
+      if (inside === 0 || inside === 8) continue;
+      if (cut && cut(o[0] + (x + .5) * h, o[1] + (y + .5) * h, o[2] + (z + .5) * h)) continue;
+      for (const T of TETS) {
+        const ins = [], out = []; for (const k of T) (val[k] > iso ? ins : out).push(k);
+        if (ins.length === 0 || ins.length === 4) continue;
+        if (ins.length === 1) { vert(ins[0], out[0]); vert(ins[0], out[1]); vert(ins[0], out[2]); }
+        else if (ins.length === 3) { vert(out[0], ins[0]); vert(out[0], ins[1]); vert(out[0], ins[2]); }
+        else { vert(ins[0], out[0]); vert(ins[0], out[1]); vert(ins[1], out[1]); vert(ins[0], out[0]); vert(ins[1], out[1]); vert(ins[1], out[0]); }
+      }
+    }
+    return { pos: P.subarray(0, n * 3), nor: Nr.subarray(0, n * 3), col: Cl.subarray(0, n * 3), n };
+  }
+  // 3D 平滑：每个方向 [1,2,1]/4，去掉网格锯齿
+  function blur(a, N, pass = 1) {
+    const t = new Float32Array(a.length), st = [1, N, N * N];
+    for (let p = 0; p < pass; p++) for (const d of [0, 1, 2]) {
+      const s = st[d];
+      for (let i = 0; i < a.length; i++) { const c = d === 0 ? i % N : d === 1 ? ((i / N) | 0) % N : (i / (N * N)) | 0; const l = c > 0 ? a[i - s] : a[i], r = c < N - 1 ? a[i + s] : a[i]; t[i] = (l + 2 * a[i] + r) / 4; }
+      a.set(t);
+    }
+    return a;
+  }
+  // 三线性取值
+  function sample(g, a, x, y, z) {
+    const N = g.N, fx = (x - g.o[0]) / g.h, fy = (y - g.o[1]) / g.h, fz = (z - g.o[2]) / g.h;
+    if (fx < 0 || fy < 0 || fz < 0 || fx > N - 1 || fy > N - 1 || fz > N - 1) return 0;
+    const X = Math.min(N - 2, fx | 0), Y = Math.min(N - 2, fy | 0), Z = Math.min(N - 2, fz | 0), u = fx - X, v = fy - Y, w = fz - Z, i = X + N * (Y + N * Z), NN = N * N;
+    const c00 = a[i] * (1 - u) + a[i + 1] * u, c10 = a[i + N] * (1 - u) + a[i + N + 1] * u, c01 = a[i + NN] * (1 - u) + a[i + NN + 1] * u, c11 = a[i + NN + N] * (1 - u) + a[i + NN + N + 1] * u;
+    return (c00 * (1 - v) + c10 * v) * (1 - w) + (c01 * (1 - v) + c11 * v) * w;
+  }
+  // 截面：平面 (o, u, v)，边长 2*ext；画对数密度热图 + 每半个数量级一条等高线；iso 那条线加粗
+  // signed=true 时 a 为带符号的 ψ，颜色按正负
+  function slice(ctx, S, g, a, groups, pl, opts = {}) {
+    const img = ctx.createImageData(S, S), D = img.data, L = new Int16Array(S * S), V = new Float32Array(S * S), Cc = new Float32Array(S * S * 3);
+    let mx = 0;
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+      const s = (i / (S - 1) * 2 - 1) * pl.ext, t = (1 - j / (S - 1) * 2) * pl.ext, x = pl.o[0] + pl.u[0] * s + pl.v[0] * t, y = pl.o[1] + pl.u[1] * s + pl.v[1] * t, z = pl.o[2] + pl.u[2] * s + pl.v[2] * t;
+      const v = sample(g, a, x, y, z), k = j * S + i; V[k] = v; const av = opts.signed ? v * v : v; if (av > mx) mx = av;
+      if (opts.signed) { const c = v >= 0 ? opts.pos : opts.neg; Cc[k * 3] = c[0]; Cc[k * 3 + 1] = c[1]; Cc[k * 3 + 2] = c[2]; }
+      else if (groups && groups.length) { let r = 0, gg = 0, b = 0, w = 0; for (const gp of groups) { const q = Math.max(0, sample(g, gp.a, x, y, z)); r += gp.c[0] * q; gg += gp.c[1] * q; b += gp.c[2] * q; w += q; } w = w || 1; Cc[k * 3] = r / w; Cc[k * 3 + 1] = gg / w; Cc[k * 3 + 2] = b / w; }
+      else { Cc[k * 3] = Cc[k * 3 + 1] = Cc[k * 3 + 2] = 1; }
+    }
+    mx = mx || 1; const dec = opts.decades || 4, isoL = opts.iso ? Math.log10((opts.signed ? opts.iso * opts.iso : opts.iso) / mx) : null;
+    const lv = new Float32Array(S * S);
+    for (let k = 0; k < S * S; k++) { const av = opts.signed ? V[k] * V[k] : V[k]; const l = av > 0 ? Math.log10(av / mx) : -99; lv[k] = l; L[k] = Math.max(-dec - 1, Math.floor(l)); }
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+      const k = j * S + i, l = lv[k], b = Math.max(0, Math.min(1, 1 + l / dec)), bb = Math.pow(b, 1.5);
+      let r = Cc[k * 3] * bb, gg = Cc[k * 3 + 1] * bb, bl = Cc[k * 3 + 2] * bb, al = .25 + .75 * b;
+      const kr = i < S - 1 ? k + 1 : k, kd = j < S - 1 ? k + S : k;
+      if (L[k] > -dec - 1 && (L[k] !== L[kr] || L[k] !== L[kd])) { r = r * .45 + .5; gg = gg * .45 + .5; bl = bl * .45 + .5; al = Math.max(al, .8); }
+      if (isoL !== null && ((l > isoL) !== (lv[kr] > isoL) || (l > isoL) !== (lv[kd] > isoL))) { r = 1; gg = 1; bl = 1; al = 1; }
+      if (opts.signed && ((V[k] > 0) !== (V[kr] > 0) || (V[k] > 0) !== (V[kd] > 0)) && b > .05) { r = .9; gg = .9; bl = .95; al = 1; }
+      const ex = Math.min(i, S - 1 - i, j, S - 1 - j) / (S * .06), rr = opts.round ? Math.hypot(i / (S - 1) * 2 - 1, j / (S - 1) * 2 - 1) : 0;
+      al *= Math.min(1, ex) * (opts.round ? Math.max(0, Math.min(1, (1 - rr) / .12)) : 1);
+      D[k * 4] = r * 255; D[k * 4 + 1] = gg * 255; D[k * 4 + 2] = bl * 255; D[k * 4 + 3] = al * 235;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  // 表面着色器：实体（不透明，带高光）或外壳（菲涅耳半透明）
+  function surfMat(THREE, shell) {
+    return new THREE.ShaderMaterial({
+      transparent: !!shell, depthWrite: !shell, clipping: true, side: THREE.DoubleSide, vertexColors: true,
+      uniforms: { uA: { value: shell ? .55 : 1 }, uShell: { value: shell ? 1 : 0 } },
+      vertexShader: '#include <clipping_planes_pars_vertex>\nvarying vec3 vN; varying vec3 vV; varying vec3 vC; void main(){ vC = color; vN = normalize(normalMatrix * normal); vec4 mvPosition = modelViewMatrix * vec4(position,1.0); vV = mvPosition.xyz; gl_Position = projectionMatrix * mvPosition;\n#include <clipping_planes_vertex>\n}',
+      fragmentShader: `#include <clipping_planes_pars_fragment>
+        uniform float uA; uniform float uShell; varying vec3 vN; varying vec3 vV; varying vec3 vC;
+        void main(){
+#include <clipping_planes_fragment>
+          vec3 N = normalize(vN), V = normalize(-vV); float back = 1.0; if (dot(N, V) < 0.0) { N = -N; back = 0.55; }
+          vec3 L1 = normalize(vec3(.5,.8,.6)), L2 = normalize(vec3(-.7,-.2,.4));
+          float d = max(dot(N,L1),0.0)*.75 + max(dot(N,L2),0.0)*.25; float sp = pow(max(dot(reflect(-L1,N),V),0.0), 36.0);
+          float rim = pow(1.0 - abs(dot(N,V)), 2.2);
+          if (uShell > .5) { gl_FragColor = vec4(vC*(.55+.6*d) + sp*.35 + rim*.25*vC, uA*(.10 + .9*rim)); }
+          else { vec3 c = vC*(.22 + .9*d)*back + sp*.45*back + rim*.18*vC; gl_FragColor = vec4(c, 1.0); } }`,
+    });
+  }
+  function meshFrom(THREE, m, mat) {
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(m.pos.slice(), 3)); g.setAttribute('normal', new THREE.BufferAttribute(m.nor.slice(), 3)); g.setAttribute('color', new THREE.BufferAttribute(m.col.slice(), 3));
+    return new THREE.Mesh(g, mat);
+  }
+  G.ISO = { grid, fill, level, march, sample, slice, surfMat, meshFrom, blur };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(() => {
+  const css = getComputedStyle(document.documentElement), C = k => css.getPropertyValue(k).trim();
+  const LCOL = [C('--s'), C('--p'), C('--d'), C('--f')], POS = C('--pos'), NEG = C('--neg');
+  const $ = id => document.getElementById(id);
+  const st = { rm: 'pts', inner: false, Z: 6, color: 'l', comp: true, spin: true, play: false, hidden: new Set(), atom: null };
+  try { const z = +(localStorage.getItem('ec-z')); if (z >= 1 && z <= 118) st.Z = z; } catch (e) {}
+  if (/^#z\d+$/.test(location.hash)) st.Z = Math.min(118, Math.max(1, +location.hash.slice(2)));
+
+  // ---------- three.js ----------
+  const cv = $('cv'), renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(38, 4 / 3, .01, 1000), group = new THREE.Group(); scene.add(group);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
+    uniforms: { uSize: { value: 18 }, uA: { value: 1 } },
+    vertexShader: 'uniform float uSize; varying vec3 vC; void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = uSize / -mv.z; gl_Position = projectionMatrix * mv; }',
+    fragmentShader: 'uniform float uA; varying vec3 vC; void main(){ vec2 d = gl_PointCoord - .5; float r = dot(d,d); if (r > .25) discard; gl_FragColor = vec4(vC, .32 * uA * (1. - r * 4.)); }',
+  });
+  let pts = null; const axes = new THREE.Group(); scene.add(axes);
+  function axisLines(L) {
+    axes.clear(); const m = new THREE.LineBasicMaterial({ color: 0x2a3550, transparent: true, opacity: .8 });
+    [[L, 0, 0], [0, L, 0], [0, 0, L]].forEach(v => { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-v[0], -v[1], -v[2]), new THREE.Vector3(...v)]); axes.add(new THREE.Line(g, m)); });
+  }
+  function resize() { const r = cv.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); }
+  new ResizeObserver(resize).observe(cv);
+
+  const hex = h => new THREE.Color(h);
+  let Rfit = 1;
+  function build() {
+    const a = st.atom; if (!a) return;
+    // 半径参考：最外层轨道 95% 分位
+    const radii = []; a.forEach(o => { for (let i = 0; i < o.pts.length; i += 16) radii.push(Math.hypot(o.pts[i], o.pts[i + 1], o.pts[i + 2])); }); radii.sort((x, y) => x - y);
+    Rfit = radii[Math.floor(radii.length * .97)] || 1;
+    const map = r => st.comp ? Math.sqrt(r * Rfit) : r;
+    const vis = a.filter(o => !st.hidden.has(o.key)), n = vis.reduce((s, o) => s + o.pts.length / 4, 0);
+    const P = new Float32Array(n * 3), Cl = new Float32Array(n * 3); let k = 0;
+    const nmax = Math.max(...a.map(o => o.n));
+    for (const o of vis) {
+      const base = hex(LCOL[o.l]), dim = .45 + .55 * (o.n / nmax);
+      for (let i = 0; i < o.pts.length; i += 4) {
+        const x = o.pts[i], y = o.pts[i + 1], z = o.pts[i + 2], r = Math.hypot(x, y, z) || 1e-9, s = map(r) / r;
+        P[k * 3] = x * s; P[k * 3 + 1] = z * s; P[k * 3 + 2] = y * s;
+        const c = st.color === 'l' ? base : hex(o.pts[i + 3] > 0 ? POS : NEG), w = st.color === 'l' ? dim : 1;
+        Cl[k * 3] = c.r * w; Cl[k * 3 + 1] = c.g * w; Cl[k * 3 + 2] = c.b * w; k++;
+      }
+    }
+    if (pts) { group.remove(pts); pts.geometry.dispose(); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(Cl, 3));
+    pts = new THREE.Points(g, mat); group.add(pts);
+    const D = map(Rfit) * 3.1; camera.position.set(0, D * .28, D); camera.lookAt(0, 0, 0);
+    mat.uniforms.uSize.value = D * (n > 40000 ? 3 : n > 12000 ? 4 : 5.5) * (renderer.getPixelRatio());
+    axisLines(map(Rfit) * 1.25); buildIso();
+    // 比例尺：1 Å（真实）或 √ 压缩下标注
+    const px = cv.getBoundingClientRect().width, worldW = 2 * D * Math.tan(19 * Math.PI / 180) * camera.aspect;
+    const target = st.comp ? Rfit : (Rfit > 2 ? 1 : Rfit > .5 ? .5 : .1), len = map(target) / worldW * px;
+    $('sbar').style.width = Math.max(10, Math.min(220, len)) + 'px'; $('stxt').textContent = st.comp ? `≈ ${Rfit.toFixed(2)} Å（压缩）` : `${target} Å`;
+  }
+
+  // ---------- 包络面 / 实体 / 截面（原子） ----------
+  const isoObj = new THREE.Group(); group.add(isoObj);
+  const shellMat = ISO.surfMat(THREE, true), solidMat = ISO.surfMat(THREE, false), cutMat = ISO.surfMat(THREE, false), rgb = h => { const c = hex(h); return [c.r, c.g, c.b]; };
+  let ag = null; renderer.localClippingEnabled = true; cutMat.clippingPlanes = [new THREE.Plane(new THREE.Vector3(-.35, 0, -1).normalize(), 0)];
+  function atomGrid() {
+    const key = [st.Z, st.comp, Rfit.toFixed(4), [...st.hidden].sort().join()].join('|'); if (ag && ag.key === key) return ag;
+    const half = Rfit * 1.3, N = 60, g = ISO.grid(N, [0, 0, 0], half), M = N * N * N;
+    const Rr = new Float32Array(M), U = new Float32Array(M * 3), J = new Float32Array(M); let i = 0;
+    for (let z = 0; z < N; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++, i++) { const X = g.o[0] + x * g.h, Y = g.o[1] + y * g.h, Zd = g.o[2] + z * g.h, d = Math.hypot(X, Y, Zd) || 1e-6, r = st.comp ? d * d / Rfit : d; Rr[i] = r; U[i * 3] = X / d; U[i * 3 + 1] = Zd / d; U[i * 3 + 2] = Y / d; J[i] = st.comp ? (r * r / (d * d)) * (2 * d / Rfit) : 1; }
+    const tot = new Float32Array(M), shells = {}, lg = [0, 1, 2, 3].map(() => new Float32Array(M)), tmp = new Float32Array(M), rad = {};
+    for (const o of st.atom) { if (st.hidden.has(o.key)) continue;
+      const so = EC.config(st.Z).find(q => q.key === o.key), f = EC.orbitals(so).find(q => q.plain === o.plain).f;
+      let Rv = rad[o.key]; if (!Rv) { const tab = EC.radialTable(so.n, so.l, EC.zeff(st.Z, so)); Rv = rad[o.key] = new Float32Array(M); for (let k = 0; k < M; k++) { const v = tab.R(Rr[k]); Rv[k] = v * v * J[k]; } }
+      let S = 0; for (let k = 0; k < M; k++) { const a = f(U[k * 3], U[k * 3 + 1], U[k * 3 + 2]); tmp[k] = Rv[k] * a * a; S += tmp[k]; }
+      if (!(S > 0)) continue; const w = o.e / S, sh = shells[o.key] || (shells[o.key] = new Float32Array(M)), L = lg[o.l];
+      for (let k = 0; k < M; k++) { const v = tmp[k] * w; tot[k] += v; sh[k] += v; L[k] += v; } }
+    ISO.blur(tot, N); Object.values(shells).forEach(a => ISO.blur(a, N)); lg.forEach(a => ISO.blur(a, N));
+    ag = { key, g, tot, shells, groups: lg.map((a, l) => ({ a, c: rgb(LCOL[l]) })).filter((q, l) => st.atom.some(o => o.l === l && !st.hidden.has(o.key))) };
+    return ag;
+  }
+  function clearObj(o) { o.children.slice().forEach(c => { o.remove(c); if (c.geometry) c.geometry.dispose(); if (c.material && c.material.map) { c.material.map.dispose(); c.material.dispose(); } if (c.children && c.children.length) clearObj(c); }); }
+  function buildIso() {
+    clearObj(isoObj); if (pts) pts.visible = st.rm === 'pts' || st.rm === 'shell'; mat.uniforms.uA.value = st.rm === 'shell' ? .4 : 1; axes.visible = st.rm !== 'slice';
+    if (st.rm === 'pts' || !st.atom) return;
+    const A = atomGrid();
+    if (st.rm === 'shell' || st.rm === 'solid') { Object.keys(A.shells).forEach(key => { const a = A.shells[key], l = 'spdf'.indexOf(key[1]); isoObj.add(ISO.meshFrom(THREE, ISO.march(A.g, a, ISO.level(a, .9), [{ a, c: rgb(LCOL[l]) }]), st.rm === 'shell' ? shellMat : cutMat)); }); isoObj.add(new THREE.Mesh(new THREE.SphereGeometry(A.g.half * .015, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }))); }
+    else { const S = 420, c = document.createElement('canvas'); c.width = c.height = S; ISO.slice(c.getContext('2d'), S, A.g, A.tot, A.groups, { o: [0, 0, 0], u: [1, 0, 0], v: [0, 1, 0], ext: A.g.half * .95 }, { iso: ISO.level(A.tot, .9), decades: 4, round: true });
+      isoObj.add(new THREE.Mesh(new THREE.PlaneGeometry(2 * A.g.half * .95, 2 * A.g.half * .95), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, side: THREE.DoubleSide, depthWrite: false }))); }
+  }
+  // ---------- 拆开看 ----------
+  const mcv = $('mcv'), mr = new THREE.WebGLRenderer({ canvas: mcv, antialias: true, alpha: true }); mr.setPixelRatio(Math.min(2, devicePixelRatio || 1)); mr.setScissorTest(true);
+  let minis = [];
+  function buildMinis() {
+    minis.forEach(m => clearObj(m.obj)); minis = [];
+    const keys = new Set(st.atom.filter(o => !st.hidden.has(o.key)).map(o => o.key));
+    if (st.inner) { const nmax = Math.max(...st.atom.map(o => o.n)); keys.clear(); st.atom.forEach(o => { const full = st.atom.filter(q => q.key === o.key).reduce((a, q) => a + q.e, 0) === 2 * (2 * o.l + 1); if (!(o.n < nmax && (full || o.l < 2))) keys.add(o.key); }); }
+    const list = []; [...keys].forEach(k => { const os = st.atom.filter(o => o.key === k); os.forEach((o, i) => list.push([k, i, o])); });
+    list.slice(0, 10).forEach(([k, i, o]) => {
+      const one = EC.sampleOne(st.Z, k, i, 7000), n = one.pts.length / 4, P = new Float32Array(n * 3), Cl = new Float32Array(n * 3);
+      let rr = []; for (let j = 0; j < n; j++) rr.push(Math.hypot(one.pts[j * 4], one.pts[j * 4 + 1], one.pts[j * 4 + 2])); rr.sort((a, b) => a - b); const R = rr[Math.floor(n * .95)];
+      const cp = hex(POS), cn = hex(NEG);
+      for (let j = 0; j < n; j++) { P[j * 3] = one.pts[j * 4]; P[j * 3 + 1] = one.pts[j * 4 + 2]; P[j * 3 + 2] = one.pts[j * 4 + 1]; const c = one.pts[j * 4 + 3] > 0 ? cp : cn; Cl[j * 3] = c.r; Cl[j * 3 + 1] = c.g; Cl[j * 3 + 2] = c.b; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(Cl, 3));
+      const m = mat.clone(); m.uniforms = { uSize: { value: R * 3.2 * 3.4 * mr.getPixelRatio() }, uA: { value: 1 } };
+      const sc = new THREE.Scene(), obj = new THREE.Group(), q = new THREE.Quaternion(); sc.add(obj);
+      if (st.rm === 'pts') obj.add(new THREE.Points(g, m));
+      else {
+        const so = EC.config(st.Z).find(x => x.key === k), tab = EC.radialTable(so.n, so.l, EC.zeff(st.Z, so)), f = EC.orbitals(so)[i].f, N = 41, gg = ISO.grid(N, [0, 0, 0], R * 1.25);
+        const psi = ISO.fill(gg, (X, Y, Zd) => { const r = Math.hypot(X, Y, Zd) || 1e-6; return tab.R(r) * f(X / r, Zd / r, Y / r); }), lv = Math.sqrt(ISO.level(psi.map(v => v * v), .85));
+        if (st.rm === 'slice') {
+          const c0 = 20, sm = [0, 0, 0]; for (let z = 0; z < N; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const v = psi[x + N * (y + N * z)] ** 2; if (z === c0) sm[0] += v; if (y === c0) sm[1] += v; if (x === c0) sm[2] += v; }
+          const B = [[[1, 0, 0], [0, 1, 0], [0, 0, 1]], [[1, 0, 0], [0, 0, -1], [0, 1, 0]], [[0, 0, -1], [0, 1, 0], [1, 0, 0]]][sm.indexOf(Math.max(...sm))];
+          const S = 200, cvs = document.createElement('canvas'); cvs.width = cvs.height = S; ISO.slice(cvs.getContext('2d'), S, gg, psi, null, { o: [0, 0, 0], u: B[0], v: B[1], ext: gg.half }, { signed: true, pos: rgb(POS), neg: rgb(NEG), iso: lv, decades: 3 });
+          const pm = new THREE.Mesh(new THREE.PlaneGeometry(2 * gg.half, 2 * gg.half), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cvs), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+          pm.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(...B.map(v => new THREE.Vector3(...v)))); q.copy(pm.quaternion).invert(); obj.add(pm);
+        } else {
+          const neg = psi.map(v => -v);
+          obj.add(ISO.meshFrom(THREE, ISO.march(gg, psi, lv, [{ a: psi, c: rgb(POS) }]), solidMat)); obj.add(ISO.meshFrom(THREE, ISO.march(gg, neg, lv, [{ a: neg, c: rgb(NEG) }]), solidMat));
+        }
+      }
+      const cam = new THREE.PerspectiveCamera(38, 1, .001, 1000), D = R * 3.2; cam.position.set(0, D * .3, D); cam.lookAt(0, 0, 0);
+      minis.push({ sc, cam, obj, q, lab: one.lab, e: o.e });
+    });
+    $('olab').innerHTML = minis.map(m => `<span>${m.lab.replace(/^(\d[spdf])/, '<b>$1</b>')} · ${m.e}e</span>`).join('');
+  }
+  function renderMinis() {
+    const r = mcv.getBoundingClientRect(); mr.setSize(r.width, r.height, false); const n = minis.length || 1, w = r.width / n, h = r.height - 22;
+    mr.setScissor(0, 0, r.width, r.height); mr.clear();
+    minis.forEach((m, i) => { const s = Math.min(w, h); m.cam.aspect = w / h; m.cam.updateProjectionMatrix(); m.obj.quaternion.copy(group.quaternion).multiply(m.q); mr.setViewport(i * w, 22, w, h); mr.setScissor(i * w, 22, w, h); mr.render(m.sc, m.cam); });
+  }
+  // ---------- 拖动旋转 ----------
+  let rotY = .6, rotX = .25, drag = null;
+  cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY, rotY, rotX]; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+  cv.addEventListener('pointermove', e => { if (!drag) return; rotY = drag[2] + (e.clientX - drag[0]) * .01; rotX = Math.max(-1.4, Math.min(1.4, drag[3] + (e.clientY - drag[1]) * .01)); });
+  addEventListener('pointerup', () => { drag = null; cv.style.cursor = 'grab'; });
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let last = performance.now(), tPlay = 0;
+  function frame(t) {
+    const dt = Math.min(.05, (t - last) / 1000); last = t;
+    if (st.rm === 'slice' && !drag) { rotY = reduce ? 0 : Math.sin(t / 3000) * .3; rotX = .08; } else if (st.spin && !drag && !reduce) rotY += dt * .35;
+    group.rotation.set(rotX, rotY, 0); axes.rotation.copy(group.rotation);
+    if (st.play) { tPlay += dt; if (tPlay > 2.6) { tPlay = 0; select(st.Z % 118 + 1); } }
+    requestAnimationFrame(frame); if ($('sec-a1').hidden) return; renderer.render(scene, camera); renderMinis();
+  }
+
+  // ---------- 侧栏 ----------
+  function chips() {
+    const keys = [...new Set(st.atom.map(o => o.key))], el = $('chips'); el.innerHTML = '';
+    keys.forEach(k => { const o = st.atom.find(q => q.key === k), e = st.atom.filter(q => q.key === k).reduce((s, q) => s + q.e, 0);
+      const b = document.createElement('button'); b.className = 'chip'; b.style.setProperty('--c', LCOL[o.l]); b.setAttribute('aria-pressed', st.hidden.has(k) ? 'false' : 'true');
+      b.innerHTML = `<b></b>${k}<span style="color:var(--fg3)">${e}</span>`; b.onclick = () => { st.hidden.has(k) ? st.hidden.delete(k) : st.hidden.add(k); b.setAttribute('aria-pressed', st.hidden.has(k) ? 'false' : 'true'); build(); }; el.appendChild(b); });
+  }
+  function radialPlot() {
+    const c = $('rad'), g = c.getContext('2d'), W = c.width, H = c.height; g.clearRect(0, 0, W, H);
+    const conf = EC.config(st.Z), rmax = Rfit * 1.15, N = 300, tot = new Float32Array(N + 1);
+    const curves = conf.map(s => { const t = EC.radialTable(s.n, s.l, EC.zeff(st.Z, s)), arr = new Float32Array(N + 1);
+      for (let i = 0; i <= N; i++) { const r = rmax * i / N; let j = Math.min(t.rs.length - 2, Math.floor(r / (t.rs[1] || 1e-9))); arr[i] = r > t.rs[t.rs.length - 1] ? 0 : t.ps[j] * s.e; tot[i] += arr[i]; } return [s, arr]; });
+    let mx = 0; for (let i = 0; i <= N; i++) mx = Math.max(mx, tot[i]); mx = mx || 1;
+    const X = i => 30 + i / N * (W - 40), Y = v => H - 34 - Math.min(1.1, v / mx) * (H - 52);
+    g.strokeStyle = '#1E2638'; g.lineWidth = 1; g.beginPath(); g.moveTo(30, H - 34); g.lineTo(W - 10, H - 34); g.stroke();
+    curves.forEach(([s, arr]) => { g.strokeStyle = LCOL[s.l]; g.globalAlpha = .75; g.lineWidth = 2; g.beginPath(); for (let i = 0; i <= N; i++) i ? g.lineTo(X(i), Y(arr[i])) : g.moveTo(X(i), Y(arr[i])); g.stroke(); });
+    g.globalAlpha = 1; g.strokeStyle = '#E7ECF5'; g.lineWidth = 2.5; g.beginPath(); for (let i = 0; i <= N; i++) i ? g.lineTo(X(i), Y(tot[i])) : g.moveTo(X(i), Y(tot[i])); g.stroke();
+    g.fillStyle = '#5E6A82'; g.font = '20px "IBM Plex Mono", monospace'; g.textAlign = 'center';
+    const step = rmax > 4 ? 1 : rmax > 2 ? .5 : rmax > .8 ? .25 : .1; for (let r = 0; r <= rmax; r += step) g.fillText(r.toFixed(step < .5 ? 2 : 1), X(r / rmax * N), H - 10);
+    g.textAlign = 'left'; g.fillText('Å', W - 28, H - 10);
+  }
+  function facts() {
+    const conf = EC.config(st.Z), out = conf[conf.length - 1], blk = EC.block(st.Z), [p, gcol] = EC.pos(st.Z);
+    const per = p > 7 ? (p === 9 ? 6 : 7) : p, outer = conf.filter(s => s.n === Math.max(...conf.map(q => q.n))).reduce((a, b) => a + b.e, 0);
+    $('facts').innerHTML = `<dt>原子序数</dt><dd>${st.Z}</dd><dt>周期 · 区</dt><dd>${per} · ${blk} 区</dd><dt>最外层电子</dt><dd>${outer}</dd><dt>轨道数</dt><dd>${st.atom.length}（占据）</dd><dt>价层 Z<sub>eff</sub></dt><dd>${EC.zeff(st.Z, out).toFixed(2)}（${out.key}）</dd>${st.Z >= 104 ? '<dt>说明</dt><dd>构型为理论预测</dd>' : ''}`;
+  }
+  function select(Z) {
+    st.Z = Z; st.hidden.clear(); st.atom = EC.sampleAtom(Z, Z <= 10 ? 3200 : Z <= 36 ? 1800 : 900, 90000);
+    if (!st.inner) { const nmax = Math.max(...st.atom.map(o => o.n)); st.atom.forEach(o => { const full = st.atom.filter(q => q.key === o.key).reduce((a, q) => a + q.e, 0) === 2 * (2 * o.l + 1); if (o.n < nmax && (full || o.l < 2)) st.hidden.add(o.key); }); }
+    try { localStorage.setItem('ec-z', Z); } catch (e) {}
+    $('hz').textContent = 'Z = ' + Z; $('hs').textContent = EC.SYM[Z - 1]; $('hn').textContent = EC.NAME[Z - 1]; $('hc').textContent = EC.configStr(Z);
+    document.querySelectorAll('.cell').forEach(c => c.setAttribute('aria-current', +c.dataset.z === Z ? 'true' : 'false'));
+    chips(); build(); buildMinis(); radialPlot(); facts();
+  }
+  // ---------- 周期表 ----------
+  const pt = $('pt'), BC = { s: 'var(--s)', p: 'var(--p)', d: 'var(--d)', f: 'var(--f)' };
+  for (let Z = 1; Z <= 118; Z++) {
+    const [r, c] = EC.pos(Z), b = document.createElement('button'), conf = EC.config(Z), nmax = Math.max(...conf.map(s => s.n));
+    const val = conf.filter(s => s.n === nmax || (s.l >= 2 && s.n >= nmax - 2 && s.e < 2 * (2 * s.l + 1))).map(s => s.key + s.e).join(' ');
+    b.className = 'cell'; b.dataset.z = Z; b.style.gridRow = r <= 7 ? r : r; b.style.gridColumn = c; b.style.setProperty('--c', BC[EC.block(Z)]);
+    b.innerHTML = `<span class="n">${Z}</span><span class="s">${EC.SYM[Z - 1]}</span><span class="c">${EC.NAME[Z - 1]}</span>`; b.title = `${EC.NAME[Z - 1]} ${EC.configStr(Z)}`;
+    b.onclick = () => { st.play = false; $('play').setAttribute('aria-pressed', 'false'); select(Z); $('view').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'nearest' }); };
+    pt.appendChild(b);
+  }
+  [[6, 3, '57–71'], [7, 3, '89–103']].forEach(([r, c, t]) => { const d = document.createElement('div'); d.className = 'ph'; d.style.gridRow = r; d.style.gridColumn = c; d.textContent = t; pt.appendChild(d); });
+  // ---------- 控件 ----------
+  const tog = (on, off, f) => { $(on).onclick = () => { $(on).setAttribute('aria-pressed', 'true'); $(off).setAttribute('aria-pressed', 'false'); f(); build(); }; };
+  tog('cm-l', 'cm-ph', () => st.color = 'l'); tog('cm-ph', 'cm-l', () => st.color = 'ph');
+  tog('sc-t', 'sc-c', () => st.comp = false); tog('sc-c', 'sc-t', () => st.comp = true);
+  const showAll = v => { st.inner = v; $('sh-a').setAttribute('aria-pressed', v); $('sh-v').setAttribute('aria-pressed', !v); select(st.Z); };
+  $('sh-v').onclick = () => showAll(false); $('sh-a').onclick = () => showAll(true);
+  $('am').querySelectorAll('button').forEach(b => b.onclick = () => { st.rm = b.dataset.m; $('am').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b)); build(); buildMinis(); });
+  window.__atom = { mode: m => $('am').querySelector(`[data-m=${m}]`).click(), select: z => select(z) };
+  $('spin').onclick = () => { st.spin = !st.spin; $('spin').setAttribute('aria-pressed', st.spin); };
+  $('play').onclick = () => { st.play = !st.play; tPlay = 0; $('play').setAttribute('aria-pressed', st.play); };
+  addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input')) return; if (e.key === 'ArrowRight') select(st.Z % 118 + 1); if (e.key === 'ArrowLeft') select((st.Z + 116) % 118 + 1); });
+
+  // ---------- 标签页 ----------
+  function showTab(t) { const r = t === 'r'; $('tab-a').setAttribute('aria-selected', !r); $('tab-r').setAttribute('aria-selected', r); $('sec-a1').hidden = r; $('sec-a2').hidden = r; $('sec-r').hidden = !r; if (r) { rx.ensure(); } }
+  $('tab-a').onclick = () => { history.replaceState(null, '', '#atoms'); showTab('a'); }; $('tab-r').onclick = () => { history.replaceState(null, '', '#reactions'); showTab('r'); };
+  // ---------- 化学反应 ----------
+  const rx = (() => {
+    const ECOL = { H: '#F2F4F8', B: '#FF9EC4', C: '#A9B4C2', N: '#6FA8FF', O: '#FF6B6B', F: '#9BE15D', Na: '#C49BFF', Cl: '#5FD39A', Br: '#E0894B', Fe: '#FFB25C', Zn: '#9FC3F0', Cu: '#F0A060' };
+    const KCOL = { 'σ': '#FFD27A', 'π': '#5CE1E6', 'π*': '#FF7AB6', lp: '#C79BFF', ao: '#8FA3C0' }, KNAME = { 'σ': 'σ 键电子', 'π': 'π 键电子', 'π*': '反键 π* 电子', lp: '孤对电子', ao: '未成对电子' };
+    let act = false, inner, ready = false, rr, sc, cam, grp, pts, nuc = [], cur = null, u = 0, playing = true, cmode = 'src', rm = 'pts', t0 = performance.now();
+    let isoG, shellM, solidM, iso = null, isoTok = null, isoE = -1, isoDirty = true, Qb = new THREE.Quaternion();
+    const cvr = $('rcv'), PE = 900, D3 = p => [p[0], p[2], p[1]], rgb = h => { const c = new THREE.Color(h); return [c.r, c.g, c.b]; };
+    function morton(P, n) { const k = new Array(n); let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; for (let i = 0; i < n; i++) for (let d = 0; d < 3; d++) { mn[d] = Math.min(mn[d], P[i * 4 + d]); mx[d] = Math.max(mx[d], P[i * 4 + d]); }
+      const q = (v, d) => Math.min(1023, Math.max(0, ((v - mn[d]) / ((mx[d] - mn[d]) || 1) * 1023) | 0)), sp = x => { x &= 1023; x = (x | (x << 16)) & 0x30000FF; x = (x | (x << 8)) & 0x300F00F; x = (x | (x << 4)) & 0x30C30C3; x = (x | (x << 2)) & 0x9249249; return x; };
+      for (let i = 0; i < n; i++) k[i] = [sp(q(P[i * 4], 0)) | (sp(q(P[i * 4 + 1], 1)) << 1) | (sp(q(P[i * 4 + 2], 2)) << 2), i]; k.sort((a, b) => a[0] - b[0]); return k.map(x => x[1]); }
+    function init() {
+      rr = new THREE.WebGLRenderer({ canvas: cvr, antialias: true, alpha: true }); rr.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+      sc = new THREE.Scene(); cam = new THREE.PerspectiveCamera(36, 16 / 10, .01, 500); grp = new THREE.Group(); sc.add(grp);
+      inner = new THREE.Group(); grp.add(inner); isoG = new THREE.Group(); inner.add(isoG); shellM = ISO.surfMat(THREE, true); solidM = ISO.surfMat(THREE, false);
+      new ResizeObserver(() => { const r = cvr.getBoundingClientRect(); rr.setSize(r.width, r.height, false); cam.aspect = r.width / r.height; cam.updateProjectionMatrix(); }).observe(cvr);
+      const L = $('rlist'); let lg = -1;
+      MOL.R.forEach((r, i) => { if (r.grp !== lg) { lg = r.grp; const h = document.createElement('div'); h.className = 'rgh'; h.textContent = MOL.GN[r.grp]; L.appendChild(h); }
+        const b = document.createElement('button'); b.setAttribute('role', 'option'); b.dataset.i = i; b.innerHTML = `<span class="k">${String(i + 1).padStart(2, '0')} · ${r.kind}</span><span>${r.name}</span><span class="q">${r.eq}</span>`; b.onclick = () => load(i); L.appendChild(b); });
+      $('rplay').onclick = () => { playing = !playing; $('rplay').setAttribute('aria-pressed', playing); $('rplay').textContent = playing ? '播放' : '已暂停'; t0 = performance.now() - u * 10000; };
+      $('rscrub').oninput = e => { playing = false; $('rplay').setAttribute('aria-pressed', 'false'); $('rplay').textContent = '已暂停'; u = e.target.value / 1000; };
+      const tg = (on, off, m) => { $(on).onclick = () => { $(on).setAttribute('aria-pressed', 'true'); $(off).setAttribute('aria-pressed', 'false'); cmode = m; recolor(); legend(); iso = null; if (rm !== 'pts') computeIso(); }; };
+      tg('rc-src', 'rc-k', 'src'); tg('rc-k', 'rc-src', 'k');
+      $('rm').querySelectorAll('button').forEach(b => b.onclick = () => setMode(b.dataset.m));
+      $('ract').onclick = () => setAct(!act);
+      ready = true; const m = /^#r=(\w+)/.exec(location.hash), j = m ? MOL.R.findIndex(r => r.id === m[1]) : -1; load(Math.max(0, j)); requestAnimationFrame(loop);
+    }
+    function setAct(v) { act = v; $('ract').setAttribute('aria-pressed', act); iso = null; isoDirty = true; if (rm !== 'pts') computeIso(); }
+    function setMode(m) { rm = m; $('rm').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m)); isoDirty = true; if (m !== 'pts') computeIso(); }
+    function load(i) {
+      const r = MOL.R[i]; $('rlist').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', +b.dataset.i === i));
+      $('rkind').textContent = r.kind; $('rname').textContent = r.name; $('req').textContent = r.eq;
+      $('rsteps').innerHTML = r.steps.map((s, k) => `<li><b>${['反应前', '反应中', '反应后'][k]}</b>${s}</li>`).join('');
+      const tr = [], rnd = MOL.rng(97 + i);
+      if (r.id === 'fe') {
+        const Z = 26, os = EC.config(Z).find(q => q.key === '3d'), d = EC.orbitals(os);
+        d.forEach((o, k) => { const p = EC.sampleOne(Z, '3d', k, PE * o.e).pts; tr.push({ e: o.e, src: 0, k: 'ao', k1: 'ao', p0: p, p1: p, col: '#FFB25C' }); });
+        const p4 = EC.sampleOne(Z, '4s', 0, PE * 2).pts, p4b = new Float32Array(p4); for (let j = 0; j < p4b.length; j += 4) { const s = 5.5; p4b[j] *= s; p4b[j + 1] *= s; p4b[j + 2] *= s; }
+        tr.push({ e: 2, src: 0, k: 'lp', k1: 'lp', p0: p4, p1: p4b, fade: true, col: '#5CE1E6' });
+      } else r.tracks.forEach(t => { const n = Math.round(PE * t.e); tr.push({ ...t, p0: MOL.moSample(t.from, r.atoms0, n, rnd), p1: MOL.moSample(t.to, r.atoms1, n, rnd) }); });
+      tr.forEach(t => t.spec = !t.fade && !t.cols && t.k === t.k1 && JSON.stringify(t.from) === JSON.stringify(t.to));
+      act = !!r.act; $('ract').setAttribute('aria-pressed', act); cmode = r.cm || 'src'; $('rc-src').setAttribute('aria-pressed', cmode === 'src'); $('rc-k').setAttribute('aria-pressed', cmode === 'k');
+      tr.forEach(t => { const n = t.p0.length / 4, o0 = morton(t.p0, n), o1 = morton(t.p1, n); t.idx = [o0, o1]; t.n = n; });
+      const N = tr.reduce((a, t) => a + t.n, 0), P = new Float32Array(N * 3), Cl = new Float32Array(N * 3);
+      if (pts) { inner.remove(pts); pts.geometry.dispose(); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(Cl, 3));
+      pts = new THREE.Points(g, mat.clone()); inner.add(pts);
+      nuc.forEach(m => inner.remove(m)); nuc = r.atoms0.map(a => { const m = new THREE.Mesh(new THREE.SphereGeometry(.09, 16, 12), new THREE.MeshBasicMaterial({ color: ECOL[a.el] || '#fff' })); inner.add(m); return m; });
+      $('rlabels').innerHTML = r.atoms0.map(a => `<span>${a.el}</span>`).join('');
+      const gF = rGrid(r); inner.position.set(-gF.c[0], -gF.c[1], -gF.c[2]);
+      let R = 0; [r.atoms0, r.atoms1].forEach(A => A.forEach(a => { const p = D3(a.p); R = Math.max(R, Math.hypot(p[0] - gF.c[0], p[1] - gF.c[1], p[2] - gF.c[2])); }));
+      const ex = { fe: 2.6, zncu: 3.6, na4: 3.0 }[r.id] || 1.5; R = Math.max(R, 1.2) + ex + .3;
+      const D = R * 2.5; cam.position.set(0, D * .32, D); cam.lookAt(0, 0, 0); pts.material.uniforms = { uSize: { value: D * 4.2 * rr.getPixelRatio() }, uA: { value: 1 } };
+      cur = { i, r, tr, N, D }; recolor(); legend(); u = 0; t0 = performance.now();
+      iso = null; clearIso(); if (rm !== 'pts') computeIso();
+    }
+    const colA = t => (t.cols && t.cols[0]) || t.col || (cmode === 'src' ? ECOL[cur.r.atoms0[t.src].el] : KCOL[t.k]) || '#fff', colB = t => (t.cols && t.cols[1]) || t.col || (cmode === 'src' ? ECOL[cur.r.atoms0[t.src].el] : KCOL[t.k1]) || '#fff';
+    function recolor() {
+      if (!cur) return; let k = 0;
+      cur.cA = new Float32Array(cur.N * 3); cur.cB = new Float32Array(cur.N * 3);
+      for (const t of cur.tr) { const a = new THREE.Color(colA(t)), b = new THREE.Color(colB(t));
+        for (let j = 0; j < t.n; j++, k++) { cur.cA[k * 3] = a.r; cur.cA[k * 3 + 1] = a.g; cur.cA[k * 3 + 2] = a.b; cur.cB[k * 3] = b.r; cur.cB[k * 3 + 1] = b.g; cur.cB[k * 3 + 2] = b.b; } }
+    }
+    function legend() {
+      if (!cur) return; const r = cur.r, only = r.only ? `<span>（${r.only}）</span>` : '';
+      if (r.legend) { $('rleg').innerHTML = r.legend.map(([c, t]) => `<span style="--c:${c}"><b></b>${t}</span>`).join('') + only; return; }
+      if (r.id === 'fe') { $('rleg').innerHTML = '<span style="--c:#FFB25C"><b></b>3d 电子（留下）</span><span style="--c:#5CE1E6"><b></b>4s 电子（被夺走）</span>'; return; }
+      if (cmode === 'src') { const els = [...new Set(r.atoms0.map(a => a.el))]; $('rleg').innerHTML = els.map(e => `<span style="--c:${ECOL[e]}"><b></b>来自 ${e} 的电子</span>`).join('') + only; }
+      else { const ks = [...new Set(cur.tr.flatMap(t => [t.k, t.k1]))]; $('rleg').innerHTML = ks.map(k => `<span style="--c:${KCOL[k]}"><b></b>${KNAME[k]}</span>`).join('') + only; }
+    }
+    // ---------- 等值面 / 截面 ----------
+    function rGrid(r) {
+      const P = [...r.atoms0, ...r.atoms1].map(a => D3(a.p)), mn = [0, 1, 2].map(d => Math.min(...P.map(p => p[d]))), mx = [0, 1, 2].map(d => Math.max(...P.map(p => p[d])));
+      let m = 2; if (r.id === 'fe') m = 6; else for (const a of r.atoms0) { const e = MOL.el(a.el); m = Math.max(m, 1.9 * (2 * e.ns + 1) / (2 * e.zeta) * .529); }
+      m = Math.min(m, 6); const c = mn.map((v, d) => (v + mx[d]) / 2), ext = Math.max(...mn.map((v, d) => (mx[d] - v) / 2));
+      return ISO.grid(48, c, ext + m);
+    }
+    const nrm = v => { const l = Math.hypot(...v) || 1; return v.map(x => x / l); }, cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    function planeOf(r, g) {
+      const P = r.atoms1.map(a => D3(a.p)), c = [0, 1, 2].map(d => P.reduce((s, p) => s + p[d], 0) / P.length);
+      const C = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; P.forEach(p => { for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) C[i][j] += (p[i] - c[i]) * (p[j] - c[j]); });
+      const mul = v => C.map(row => dot(row, v)), pw = (v, n = 60) => { for (let k = 0; k < n; k++) v = nrm(mul(v)); return v; };
+      let e1 = pw([1, .3, .2]); const l1 = dot(e1, mul(e1)); C.forEach((row, i) => row.forEach((x, j) => C[i][j] = x - l1 * e1[i] * e1[j]));
+      let e2 = pw(nrm(cross(e1, [.3, .7, .2]))); const l2 = dot(e2, mul(e2)); let n;
+      if (r.plane) n = nrm(D3(r.plane.n)); else if (l1 < 1e-3) n = [0, 0, 1]; else if (l2 < .02 * l1) { n = nrm([0, 0, 1].map((x, i) => x - e1[i] * e1[2])); if (Math.hypot(...n) < .5) n = [1, 0, 0]; } else n = nrm(cross(e1, e2));
+      if (dot(n, [0, 0, 1]) < 0) n = n.map(x => -x);
+      let uu = l1 < 1e-3 ? [1, 0, 0] : e1; uu = nrm(uu.map((x, i) => x - dot(uu, n) * n[i])); if (Math.hypot(...uu) < .5) uu = nrm(cross([0, 1, 0], n));
+      let v = cross(n, uu); if (v[1] < 0) { uu = uu.map(x => -x); v = v.map(x => -x); }
+      const off = r.plane && r.plane.off || 0, o = c.map((x, i) => x + n[i] * off);
+      return { o, u: uu, v, n, ext: g.half * .92 };
+    }
+    async function computeIso() {
+      if (!cur) return; const i = cur.i, r = cur.r, key = i + '|' + cmode + '|' + act; if (iso && iso.key === key) return;
+      const tok = {}; isoTok = tok; const g = rGrid(r), M = g.N ** 3;
+      const still = r.atoms0.every((a, j) => a.p.every((v, d) => v === r.atoms1[j].p[d])), K = still && r.id !== 'fe' ? 2 : 7, kf = [];
+      const busy = $('rbusy'); busy.hidden = false;
+      for (let k = 0; k < K; k++) {
+        busy.textContent = `计算等值面 ${k + 1}/${K}`;
+        const e = k / (K - 1), atoms = r.atoms0.map((a, j) => ({ el: a.el, p: a.p.map((v, d) => v + (r.atoms1[j].p[d] - v) * e) }));
+        const tot = new Float32Array(M), groups = {};
+        const add = (col, w, src) => { if (w <= 0) return; const gA = groups[col] || (groups[col] = new Float32Array(M)); for (let q = 0; q < M; q++) { const v = src[q] * w; gA[q] += v; tot[q] += v; } };
+        const normd = a => { let S = 0; for (let q = 0; q < M; q++) S += a[q]; if (S > 0) for (let q = 0; q < M; q++) a[q] /= S; return a; };
+        if (r.id === 'fe') {
+          const Z = 26, orb = key => { const s = EC.config(Z).find(q => q.key === key); return [EC.radialTable(s.n, s.l, EC.zeff(Z, s)), EC.orbitals(s)]; };
+          const [t3, o3] = orb('3d'), [t4, o4] = orb('4s'), sc2 = 1 + 4.5 * e;
+          o3.forEach(o => add('#FFB25C', o.e, normd(ISO.fill(g, (X, Y, Zd) => { const rr2 = Math.hypot(X, Y, Zd) || 1e-6, v = t3.R(rr2) * o.f(X / rr2, Zd / rr2, Y / rr2); return v * v; }))));
+          add('#5CE1E6', 2 * (1 - e), normd(ISO.fill(g, (X, Y, Zd) => { const rr2 = Math.hypot(X, Y, Zd) / sc2 || 1e-6, v = t4.R(rr2); return v * v; })));
+          await new Promise(res => setTimeout(res, 0)); if (isoTok !== tok) return;
+        } else {
+          const cache = new Map(), dens = mo => { if (cache.has(mo)) return cache.get(mo); const f = MOL.moFn(mo, atoms), a = normd(ISO.fill(g, (X, Y, Zd) => { const v = f(X, Zd, Y); return v * v; })); cache.set(mo, a); return a; };
+          for (const t of cur.tr) { if (act && t.spec) continue; if (e < 1) add(colA(t), (1 - e) * t.e, dens(t.from)); if (e > 0) add(colB(t), e * t.e, dens(t.to)); await new Promise(res => setTimeout(res, 0)); if (isoTok !== tok) return; }
+        }
+        kf.push({ e, tot, groups });
+      }
+      const cols = [...new Set(kf.flatMap(f => Object.keys(f.groups)))];
+      iso = { key, g, kf, cols, plane: planeOf(r, g), work: { tot: new Float32Array(M), groups: cols.map(c => ({ a: new Float32Array(M), c: rgb(c) })) } };
+      const pl = iso.plane, Mb = new THREE.Matrix4().makeBasis(new THREE.Vector3(...pl.u), new THREE.Vector3(...pl.v), new THREE.Vector3(...pl.n)); Qb.setFromRotationMatrix(Mb).invert(); iso.planeQ = new THREE.Quaternion().setFromRotationMatrix(Mb);
+      busy.hidden = true; isoDirty = true;
+    }
+    function clearIso() { if (!isoG) return; isoG.children.slice().forEach(c => { isoG.remove(c); c.geometry.dispose(); if (c.material.map) { c.material.map.dispose(); c.material.dispose(); } }); }
+    function updateIso(e) {
+      if (rm === 'pts' || !iso) { if (isoG.children.length) clearIso(); return; }
+      if (!isoDirty && Math.abs(e - isoE) < 1e-4) return; isoDirty = false; isoE = e;
+      const K = iso.kf.length, x = e * (K - 1), k = Math.min(K - 2, Math.floor(x)), w = x - k, A = iso.kf[k], B = iso.kf[k + 1], W = iso.work, M = W.tot.length;
+      for (let q = 0; q < M; q++) W.tot[q] = A.tot[q] * (1 - w) + B.tot[q] * w;
+      iso.cols.forEach((c, j) => { const a = A.groups[c], b = B.groups[c], o = W.groups[j].a; for (let q = 0; q < M; q++) o[q] = (a ? a[q] : 0) * (1 - w) + (b ? b[q] : 0) * w; });
+      clearIso(); const lv = ISO.level(W.tot, .9);
+      if (rm === 'slice') { const S = 400, c = document.createElement('canvas'); c.width = c.height = S; const pl = iso.plane; ISO.slice(c.getContext('2d'), S, iso.g, W.tot, W.groups, pl, { iso: lv, decades: 4 });
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(2 * pl.ext, 2 * pl.ext), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+        m.quaternion.copy(iso.planeQ); m.position.set(...pl.o); isoG.add(m); }
+      else isoG.add(ISO.meshFrom(THREE, ISO.march(iso.g, W.tot, lv, W.groups), rm === 'shell' ? shellM : solidM));
+    }
+    const ease = x => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x), qw = new THREE.Quaternion(), Yax = new THREE.Vector3(0, 1, 0), Xax = new THREE.Vector3(1, 0, 0), qx = new THREE.Quaternion();
+    function loop(t) {
+      requestAnimationFrame(loop); if ($('sec-r').hidden || !cur) return;
+      if (playing) { u = ((t - t0) / 10000) % 1; $('rscrub').value = Math.round(u * 1000); }
+      const e = ease((u - .25) / .45), P = pts.geometry.attributes.position.array, C = pts.geometry.attributes.color.array; let k = 0;
+      pts.visible = rm === 'pts' || rm === 'shell'; pts.material.uniforms.uA.value = rm === 'shell' ? .35 : 1;
+      if (pts.visible) {
+        for (const t of cur.tr) { const [o0, o1] = t.idx, fade = (act && t.spec) ? 0 : t.fade ? 1 - ease((u - .45) / .25) : 1;
+          for (let j = 0; j < t.n; j++, k++) { const a = o0[j] * 4, b = o1[j] * 4; P[k * 3] = t.p0[a] + (t.p1[b] - t.p0[a]) * e; P[k * 3 + 1] = t.p0[a + 2] + (t.p1[b + 2] - t.p0[a + 2]) * e; P[k * 3 + 2] = t.p0[a + 1] + (t.p1[b + 1] - t.p0[a + 1]) * e;
+            for (let c = 0; c < 3; c++) C[k * 3 + c] = (cur.cA[k * 3 + c] + (cur.cB[k * 3 + c] - cur.cA[k * 3 + c]) * e) * fade; } }
+        pts.geometry.attributes.position.needsUpdate = true; pts.geometry.attributes.color.needsUpdate = true;
+      }
+      updateIso(e);
+      const r = cur.r, spans = $('rlabels').children, rect = cvr.getBoundingClientRect();
+      if (rm === 'slice' && iso) { qw.setFromAxisAngle(Yax, reduce ? 0 : Math.sin(t / 3000) * .3); qx.setFromAxisAngle(Xax, .1); grp.quaternion.copy(qx).multiply(qw).multiply(Qb); }
+      else grp.rotation.set(.12, reduce ? .5 : .5 + Math.sin(t / 4000) * .45, 0);
+      r.atoms0.forEach((a, i) => { const b = r.atoms1[i].p, p = [a.p[0] + (b[0] - a.p[0]) * e, a.p[2] + (b[2] - a.p[2]) * e, a.p[1] + (b[1] - a.p[1]) * e]; nuc[i].position.set(...p);
+        grp.updateMatrixWorld(true); const v = new THREE.Vector3(...p).applyMatrix4(inner.matrixWorld).project(cam); if (spans[i]) { spans[i].style.left = ((v.x + 1) / 2 * rect.width) + 'px'; spans[i].style.top = ((1 - v.y) / 2 * rect.height - 14) + 'px'; } });
+      const st2 = u < .3 ? 0 : u < .72 ? 1 : 2; [...$('rsteps').children].forEach((li, i) => li.classList.toggle('on', i === st2));
+      rr.render(sc, cam);
+    }
+    // 给录屏/截图用的接口
+    window.__rx = { load: id => load(MOL.R.findIndex(r => r.id === id)), mode: setMode, color: m => $(m === 'src' ? 'rc-src' : 'rc-k').click(), at: v => { playing = false; u = v; }, ready: () => rm === 'pts' || (!!iso && $('rbusy').hidden) };
+    return { ensure() { if (!ready) init(); } };
+  })();
+  if (location.hash === '#reactions' || location.hash.startsWith('#r=')) showTab('r');
+  addEventListener('hashchange', () => { if (/^#z\d+$/.test(location.hash)) select(Math.min(118, Math.max(1, +location.hash.slice(2)))); });
+  resize(); select(st.Z); requestAnimationFrame(frame);
+})();
+</script>

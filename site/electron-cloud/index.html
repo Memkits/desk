@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>电子云</title>
+<link rel="stylesheet" href="video.css">
+<body>
+<div id="stage"></div>
+<div class="top" id="top"></div>
+<div class="sub" id="sub"></div>
+<div id="veil"></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js'; window.THREE = THREE;
+const EP = +(new URLSearchParams(location.search).get('ep') || 1);
+for (const f of [`tl_e${EP}.js`, 'ec.js', 'mol.js', 'iso.js', 'lib.js', `s${EP}.js`, 'engine.js', '../_shared/player.js']) await new Promise((res, rej) => { const s = document.createElement('script'); s.src = f; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
+</script>
+</body></html>
