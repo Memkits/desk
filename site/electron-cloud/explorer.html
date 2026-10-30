@@ -59,6 +59,19 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 .ph{font:500 11px var(--body);color:var(--fg3);display:flex;align-items:center;justify-content:center;text-align:center;border:1px dashed var(--line);border-radius:6px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--fg2);margin-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}.legend b{width:12px;height:12px;border-radius:3px;background:var(--c)}
+.why{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.why{grid-template-columns:minmax(0,1fr)}}
+.wintro{grid-column:1/-1;color:var(--fg2);font-size:15px;max-width:76ch;margin:0}
+.wintro b{color:var(--fg)}
+.wc{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.wc h3{margin:0;font:700 19px/1.3 var(--display)}.wc h3 i{font:600 13px var(--mono);font-style:normal;color:var(--accent);margin-right:8px}
+.wc p{margin:0;font-size:14px;color:var(--fg2)}.wc p b{color:var(--fg)}
+.wv{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#121a2e 0,var(--bg) 75%);touch-action:none}
+.wv canvas{display:block;width:100%;height:100%;cursor:grab}.wv .hint{position:absolute;right:10px;bottom:8px;font:500 11px var(--body);color:var(--fg3);pointer-events:none}
+.wctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}.wctl label{font:600 12px var(--body);color:var(--fg3);letter-spacing:.06em}
+.wctl input[type=range]{flex:1 1 160px;accent-color:var(--accent)}.wctl .val{font:600 15px var(--mono);color:var(--accent);min-width:4.5ch}
+.wo{font:500 13.5px var(--body);color:var(--fg);min-height:1.6em}.wo b{color:var(--accent);font-family:var(--mono)}.wo .ok{color:var(--d)}.wo .bad{color:var(--s)}
+.wc .seg button{padding:5px 11px}
 [hidden]{display:none!important}
 .tabs{display:flex;gap:6px}.tabs button[aria-selected="true"]{background:var(--fg);color:var(--bg)}
 .rx{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px}
@@ -85,7 +98,7 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 <div class="wrap">
   <header>
     <h1>电子云周期表</h1>
-    <nav class="tabs" role="tablist"><button role="tab" id="tab-a" aria-selected="true">原子</button><button role="tab" id="tab-r" aria-selected="false">化学反应</button></nav>
+    <nav class="tabs" role="tablist"><button role="tab" id="tab-a" aria-selected="true">原子</button><button role="tab" id="tab-r" aria-selected="false">化学反应</button><button role="tab" id="tab-w" aria-selected="false">为什么是这些形状</button></nav>
     <div class="sub">从氢到鿫，按元素周期表的顺序画出每个原子里被占据的轨道。点表示在那里找到电子的概率：越密越可能。也可以换成包络面（装下 90% 电子的边界）、剖开的实体，或穿过原子核的截面。拖动可旋转。</div>
   </header>
 
@@ -128,6 +141,36 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
       <div class="legend" id="rleg"></div>
       <p class="note">画法：只画价电子。每对电子用一个定域轨道表示（σ 键、π 键、孤对电子），由斯莱特型原子轨道和杂化轨道线性组合得到，再按 |ψ|² 采样成点。包络面装下 90% 的价电子；截面用亮度表示密度（每半个数量级一条等高线，白线是 90% 包络）。反应过程中的电子云是从反应物的分布平滑移到产物的分布，表示电子“去了哪里”，并不是真实的反应路径；过渡态、溶剂和催化剂都省略了。</p>
     </div>
+  </section>
+
+  <section class="why" id="sec-w" hidden>
+    <p class="wintro">轨道的形状不是规定出来的。电子是波，被原子核关住以后，只有<b>首尾相接、自己和自己对得上</b>的振动花纹能稳定存在——就像琴弦、鼓面上只能出现特定的振动方式。下面八个小实验从一维走到三维，一步步得到 s、p、d、f 和化学键的形状。每个 3D 视图都可以拖动旋转；金色 = 波为正，蓝色 = 波为负。</p>
+    <div class="wc"><h3><i>01</i>琴弦：两头固定</h3><p>波跑到墙上反射回来，和自己叠加。只有装下<b>整数个半波长</b>时，叠加结果才稳定：节点（黄点）永远不动，这就是驻波。弯得越厉害，能量越高。</p>
+      <div class="wv"><canvas id="w1cv" aria-label="琴弦驻波"></canvas></div>
+      <div class="wctl"><label>半波长个数</label><div class="seg" id="w1n"></div><button id="w1t" aria-pressed="false">拆成两列行波</button></div><div class="wo" id="w1o"></div></div>
+    <div class="wc"><h3><i>02</i>圆环：绕一圈要接上</h3><p>波绕着圆环走，一圈又一圈地和自己叠加（细线是每一圈，彩色帘子是叠加结果）。拖动滑块：一圈不是整数个波长时，几圈下来就互相抵消了。<b>量子化</b>就是这么来的。</p>
+      <div class="wv" id="w2"><canvas aria-label="圆环上的波"></canvas><span class="hint">拖动旋转</span></div>
+      <div class="wctl"><label>一圈几个波长</label><input type="range" id="w2s" min="100" max="500" value="300" step="1" aria-label="一圈几个波长"><span class="val" id="w2v"></span><button id="w2r">取整</button></div><div class="wo" id="w2o"></div></div>
+    <div class="wc"><h3><i>03</i>鼓面：二维的驻波</h3><p>圆形鼓面上，节点变成了线：沿<b>半径</b>方向的驻波给出圆形节点，绕<b>圆心</b>方向的驻波给出穿过圆心的节线。绕一圈必须接上，所以节线是整数条。</p>
+      <div class="wv" id="w3"><canvas aria-label="鼓面振动模式"></canvas><span class="hint">拖动旋转</span></div>
+      <div class="wctl"><label>节线</label><div class="seg" id="w3m"></div><label>圆形节点</label><div class="seg" id="w3j"></div></div><div class="wo" id="w3o"></div></div>
+    <div class="wc"><h3><i>04</i>球面：s、p、d、f 的来历</h3><p>原子是三维的，“绕圈”的部分发生在<b>球面</b>上。球面上能接得上的振动花纹，节面数是整数 l，每个 l 恰好有 2l + 1 种。把振幅“鼓起来”，就是课本上 p、d、f 的波瓣。</p>
+      <div class="wv" id="w4"><canvas aria-label="球面振动"></canvas><span class="hint">拖动旋转</span></div>
+      <div class="wctl"><div class="seg" id="w4l"></div></div><div class="wctl"><div class="seg" id="w4i"></div></div>
+      <div class="wctl"><label>鼓起来</label><input type="range" id="w4s" min="0" max="100" value="0" aria-label="球面振动到波瓣"></div><div class="wo" id="w4o"></div></div>
+    <div class="wc"><h3><i>05</i>漏斗：沿半径的驻波</h3><p>原子核像一个漏斗（高度 = 势能，示意）。波浮在电子的能量高度上：靠近核处动能大、波长短，往外波长变长；过了黄圈（能量用完处）波不再振荡，迅速衰减，所以电子云没有硬边界。</p>
+      <div class="wv" id="w5"><canvas aria-label="势能漏斗中的径向波"></canvas><span class="hint">拖动旋转</span></div>
+      <div class="wctl"><label>轨道</label><div class="seg" id="w5n"></div></div><div class="wo" id="w5o"></div></div>
+    <div class="wc"><h3><i>06</i>波也会转圈：m 的意思</h3><p>m = ±1 的 2p 波是一个绕 z 轴转圈的圆环（颜色表示相位）。正反两个方向的转圈波相加，就变成原地起伏的 p<sub>x</sub>，正如琴弦上两列行波合成驻波。</p>
+      <div class="wv" id="w6"><canvas aria-label="转圈的波"></canvas><span class="hint">拖动旋转</span></div>
+      <div class="wctl"><div class="seg" id="w6m"></div></div><div class="wo" id="w6o"></div></div>
+    <div class="wc"><h3><i>07</i>叠加：杂化轨道</h3><p>同一个原子上的 2s 和 2p 相加：同号的一侧加强成大瓣，异号的一侧抵消成小瓣。拖动滑块改变两者的比例。</p>
+      <div class="wv" id="w7"><canvas aria-label="sp 杂化"></canvas><span class="hint">拖动旋转</span></div>
+      <div class="wctl"><label>2s 比例</label><input type="range" id="w7s" min="0" max="100" value="50" aria-label="2s 的比例"></div><div class="wo" id="w7o"></div></div>
+    <div class="wc"><h3><i>08</i>两个原子：成键与反键</h3><p>两个氢原子的 1s 波相遇。同号相加时电子聚在两核之间，异号相加时中间出现节面。拉开或推近两个原子看看。</p>
+      <div class="wv" id="w8"><canvas aria-label="氢分子的成键与反键轨道"></canvas><span class="hint">拖动旋转</span></div>
+      <div class="wctl"><div class="seg" id="w8m"></div><label>核间距</label><input type="range" id="w8s" min="50" max="300" value="74" aria-label="核间距"><span class="val" id="w8v"></span></div><div class="wo" id="w8o"></div></div>
+    <p class="note" style="grid-column:1/-1">画法：01–03 是经典的弦与鼓（贝塞尔函数）；04 用实球谐函数；05 用氢原子精确的 s 径向函数，漏斗形状和半径缩放只是示意；06 按 |ψ|² 采样 2p 的点；07、08 画装下 85% 概率的包络面，08 用斯莱特型 1s 轨道的线性组合（未归一化重叠）。</p>
   </section>
 </div>
 
@@ -240,6 +283,13 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
     const s = config(Z).find(q => q.key === key), o = orbitals(s)[idx], tab = radialTable(s.n, s.l, zeff(Z, s));
     return { key, n: s.n, l: s.l, lab: o.lab, plain: o.plain, e: o.e, pts: sampleOrb(o, tab, np, rng(seed * 7919 + Z * 131 + idx)) };
   }
+  // 视频用：类氢轨道（任意 n,l）与自定义构型（离子）
+  function sampleH(n, l, idx, np = 6000, seed = 5, Z = 1) { const s = { n, l, key: n + 'spdf'[l], e: 2 * (2 * l + 1) }, o = orbitals(s)[idx], tab = radialTable(n, l, Z); return { lab: o.lab, plain: o.plain, f: o.f, tab, pts: sampleOrb(o, tab, np, rng(seed * 31 + n * 7 + l * 3 + idx)) }; }
+  function sampleConf(Z, conf, perE = 1500, maxPts = 60000, seed = 7) {
+    const rnd = rng(seed * 1000 + Z), ne = conf.reduce((a, s) => a + s.e, 0), pe = Math.min(perE * ne, maxPts) / ne, out = [];
+    for (const s of conf) { const Ze = zeff(Z, s, conf), tab = radialTable(s.n, s.l, Ze); for (const o of orbitals(s)) out.push({ key: s.key, n: s.n, l: s.l, lab: o.lab, plain: o.plain, e: o.e, zeff: Ze, pts: sampleOrb(o, tab, Math.max(60, Math.round(pe * o.e)), rnd) }); }
+    return out;
+  }
   // 周期表位置
   function pos(Z) {
     if (Z === 1) return [1, 1]; if (Z === 2) return [1, 18];
@@ -251,7 +301,7 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
     if (Z <= 88) return [7, Z - 86]; return [7, Z - 100];
   }
   function block(Z) { if (Z === 2) return 's'; const c = config(Z), last = ORDER.filter(k => c.some(s => s.key === k)).pop(); if ((Z >= 57 && Z <= 71) || (Z >= 89 && Z <= 103)) return 'f'; return LL[parse(last).l]; }
-  G.EC = { SYM, NAME, config, configStr, zeff, orbitals, radialTable, sampleAtom, sampleOne, pos, block, A0, LL };
+  G.EC = { sampleH, sampleConf, SYM, NAME, config, configStr, zeff, orbitals, radialTable, sampleAtom, sampleOne, pos, block, A0, LL };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
 <script>// mol.js —— 分子与化学反应的电子云（斯莱特型轨道 + 杂化 + 定域键的 LCAO 近似）
@@ -686,6 +736,213 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
   G.ISO = { grid, fill, level, march, sample, slice, surfMat, meshFrom, blur };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
+<script>// “为什么是这些形状”标签页：七个可拖动、可调参数的小实验
+(function (G) {
+  const $ = id => document.getElementById(id);
+  const css = getComputedStyle(document.documentElement), CV = k => css.getPropertyValue(k).trim();
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let made = false, THREE, CP, CN, CG;
+  // ---------- 数学 ----------
+  function lagN(k, a, x) { if (k === 0) return 1; let L0 = 1, L1 = 1 + a - x; for (let i = 1; i < k; i++) { const L2 = ((2 * i + 1 + a - x) * L1 - (i + a) * L0) / (i + 1); L0 = L1; L1 = L2; } return L1; }
+  const RH = (n, l) => r => { const rho = 2 * r / n; return Math.pow(rho, l) * Math.exp(-rho / 2) * lagN(n - l - 1, 2 * l + 1, rho); };
+  const J = (m, x) => { let s = 0, f = 1, g = 1; for (let i = 1; i <= m; i++) g *= i; for (let k = 0; k < 40; k++) { if (k) { f *= k; g *= (k + m); } s += (k % 2 ? -1 : 1) * Math.pow(x / 2, 2 * k + m) / (f * g); } return s; };
+  const BZ = { 0: [2.4048, 5.5201, 8.6537], 1: [3.8317, 7.0156, 10.1735], 2: [5.1356, 8.4172, 11.6198] };
+  const ANG = l => EC.orbitals({ n: l + 1, l, key: '', e: 2 * (2 * l + 1) });
+  const signCol = (arr, i, v, k = 3) => { const c = v >= 0 ? CP : CN, a = .28 + .72 * Math.min(1, Math.abs(v) * k); arr[i * 3] = c.r * a; arr[i * 3 + 1] = c.g * a; arr[i * 3 + 2] = c.b * a; };
+
+  // ---------- 视图：拖动旋转，只在可见时渲染 ----------
+  const views = [];
+  function view(id, o = {}) {
+    const box = $(id), cv = box.querySelector('canvas'), r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+    r.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+    const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(o.fov || 32, 4 / 3, .01, 500), grp = new THREE.Group(); sc.add(grp);
+    sc.add(new THREE.AmbientLight(0xffffff, .5)); const L = new THREE.DirectionalLight(0xffffff, .75); L.position.set(2, 4, 3); sc.add(L); const L2 = new THREE.DirectionalLight(0x8899ff, .25); L2.position.set(-3, -1, 2); sc.add(L2);
+    const v = { box, cv, r, sc, cam, grp, D: o.D || 8, yaw: o.yaw ?? .5, pitch: o.pitch ?? .35, tgt: o.tgt || [0, 0, 0], spin: o.spin ?? .12, held: 0, vis: false, upd: null, h: 300 };
+    let drag = null;
+    cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+    cv.addEventListener('pointermove', e => { if (!drag) return; v.yaw -= (e.clientX - drag[0]) * .008; v.pitch = Math.max(-1.45, Math.min(1.45, v.pitch + (e.clientY - drag[1]) * .008)); drag = [e.clientX, e.clientY]; v.held = performance.now(); });
+    const up = () => { drag = null; cv.style.cursor = ''; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+    new ResizeObserver(() => { const b = cv.getBoundingClientRect(); if (!b.width) return; r.setSize(b.width, b.height, false); cam.aspect = b.width / b.height; cam.updateProjectionMatrix(); v.h = b.height; }).observe(cv);
+    new IntersectionObserver(es => es.forEach(e => v.vis = e.isIntersecting)).observe(box);
+    views.push(v); return v;
+  }
+  function place(v) { const D = v.D / Math.min(1, v.cam.aspect), c = Math.cos(v.pitch); v.cam.position.set(v.tgt[0] + D * c * Math.sin(v.yaw), v.tgt[1] + D * Math.sin(v.pitch), v.tgt[2] + D * c * Math.cos(v.yaw)); v.cam.lookAt(...v.tgt); }
+  let last = 0;
+  function loop(now) {
+    requestAnimationFrame(loop); if ($('sec-w').hidden) { last = now; return; }
+    const dt = Math.min(.1, (now - last) / 1000), t = now / 1000; last = now;
+    for (const v of views) { if (!v.vis) continue; if (!reduce && now - v.held > 2500) v.yaw += v.spin * dt; place(v); v.upd && v.upd(reduce ? t * .5 : t); v.r.render(v.sc, v.cam); }
+    if (str.vis) str.draw(reduce ? t * .5 : t);
+  }
+
+  // ---------- 小工具 ----------
+  function surface(parent, N, M, fn, o = {}) {
+    const g = new THREE.BufferGeometry(), P = new Float32Array((N + 1) * (M + 1) * 3), C = new Float32Array((N + 1) * (M + 1) * 3), I = [];
+    for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) { const a = i * (M + 1) + j, b = a + M + 1; I.push(a, b, a + 1, b, b + 1, a + 1); }
+    g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); g.setIndex(I);
+    const m = new THREE.Mesh(g, o.mat || new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })); parent.add(m);
+    const upd = (...args) => { let k = 0; for (let i = 0; i <= N; i++) for (let j = 0; j <= M; j++, k++) { const r = fn(i / N, j / M, ...args); P[k * 3] = r[0]; P[k * 3 + 1] = r[1]; P[k * 3 + 2] = r[2]; signCol(C, k, r[3], o.ck || 3); }
+      g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true; g.computeVertexNormals(); };
+    return { m, g, upd };
+  }
+  const ring = (parent, R, col = 0x41507a, w = .02) => { const m = new THREE.Mesh(new THREE.TorusGeometry(R, w, 8, 160), new THREE.MeshBasicMaterial({ color: col })); m.rotation.x = Math.PI / 2; parent.add(m); return m; };
+  const dot = (parent, p, col = 0xffd27a, s = .07) => { const m = new THREE.Mesh(new THREE.SphereGeometry(s, 12, 8), new THREE.MeshBasicMaterial({ color: col })); m.position.set(...p); parent.add(m); return m; };
+  const clear = g => { g.children.slice().forEach(c => { g.remove(c); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }); };
+  // 分段按钮：返回 set(value)
+  function seg(id, items, on, init) {
+    const el = $(id); el.innerHTML = items.map(([v, lab]) => `<button data-v="${v}" aria-pressed="false">${lab}</button>`).join('');
+    const set = v => { [...el.children].forEach(b => b.setAttribute('aria-pressed', b.dataset.v === String(v))); on(v); };
+    el.onclick = e => { const b = e.target.closest('button'); if (b) set(isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v); };
+    set(init); return set;
+  }
+  const say = (id, html) => { const e = $(id); if (e.innerHTML !== html) e.innerHTML = html; };
+
+  // ---------- 1 琴弦（2D） ----------
+  const str = { vis: false, n: 2, trav: false };
+  function initString() {
+    const cv = $('w1cv'), g = cv.getContext('2d');
+    new IntersectionObserver(es => es.forEach(e => str.vis = e.isIntersecting)).observe(cv);
+    str.draw = t => {
+      const b = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); if (!b.width) return;
+      if (cv.width !== Math.round(b.width * dpr)) { cv.width = Math.round(b.width * dpr); cv.height = Math.round(b.height * dpr); }
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); const W = b.width, H = b.height; g.clearRect(0, 0, W, H);
+      const X0 = 28, L = W - 56, n = str.n, k = n * Math.PI / L, w = 1.2 + n * .35, A = Math.min(56, H * .2);
+      const ys = str.trav ? [H * .3, H * .7] : [H * .5];
+      const line = (y0, f, col, lw, dash) => { g.strokeStyle = col; g.lineWidth = lw; g.setLineDash(dash || []); g.beginPath(); for (let i = 0; i <= 240; i++) { const x = i / 240 * L, y = y0 - f(x) * A; i ? g.lineTo(X0 + x, y) : g.moveTo(X0 + x, y); } g.stroke(); g.setLineDash([]); };
+      g.fillStyle = '#8a96b0'; ys.forEach(y => { g.fillRect(X0 - 8, y - A - 14, 6, 2 * A + 28); g.fillRect(X0 + L + 2, y - A - 14, 6, 2 * A + 28); });
+      if (str.trav) {
+        line(ys[0], x => .5 * Math.sin(k * x - w * t), CV('--pos'), 2.5, [8, 6]); line(ys[0], x => .5 * Math.sin(k * x + w * t), CV('--neg'), 2.5, [8, 6]);
+        g.fillStyle = CV('--fg2'); g.font = '500 13px ' + CV('--body'); g.fillText('向右跑（金）+ 撞墙反射回来（蓝）', X0, ys[0] - A - 20 + 6);
+      }
+      const y1 = ys[ys.length - 1]; g.strokeStyle = '#2c3854'; g.lineWidth = 1; g.beginPath(); g.moveTo(X0, y1); g.lineTo(X0 + L, y1); g.stroke();
+      line(y1, x => Math.sin(k * x) * Math.cos(w * t), CV('--fg'), 3.5);
+      for (let q = 1; q < n; q++) { g.fillStyle = CV('--accent'); g.beginPath(); g.arc(X0 + L * q / n, y1, 6, 0, 7); g.fill(); }
+      if (str.trav) { g.fillStyle = CV('--fg2'); g.fillText('叠加：驻波，黄点永远不动', X0, y1 - A - 20 + 6); }
+    };
+    seg('w1n', [1, 2, 3, 4, 5].map(n => [n, n]), n => { str.n = n; say('w1o', `装下 <b>${n}</b> 个半波长 · <b>${n - 1}</b> 个节点 · 能量 ∝ ${n}² = <b>${n * n}</b>`); }, 2);
+    const tb = $('w1t'); tb.onclick = () => { str.trav = !str.trav; tb.setAttribute('aria-pressed', str.trav); };
+  }
+
+  // ---------- 2 圆环 ----------
+  function initRing() {
+    const v = view('w2', { D: 10.5, pitch: .5, tgt: [0, .5, 0] }), R = 2.4, NP = 6; ring(v.grp, R);
+    const laps = Array.from({ length: NP }, () => { const g = new THREE.BufferGeometry(), P = new Float32Array(241 * 3); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); v.grp.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xff8f6b, transparent: true, opacity: .4 }))); return { g, P }; });
+    // 叠加结果画成一圈“帘子”：从圆环立到波的高度，金正蓝负
+    const sum = new Float32Array(241); let q = 3;
+    const cur = surface(v.grp, 1, 240, (u, w) => { const th = w * 2 * Math.PI; return [R * Math.cos(th), u * .9 * sum[Math.round(w * 240)], R * Math.sin(th), sum[Math.round(w * 240)]]; }, { ck: 3 });
+    cur.m.material.transparent = true; cur.m.material.opacity = .85;
+    const sl = $('w2s'), upd = () => { q = +sl.value / 100; const amp = Math.abs(Math.sin(Math.PI * q * NP) / (NP * Math.sin(Math.PI * q))) || 0, ok = Math.abs(q - Math.round(q)) < .005;
+      say('w2v', q.toFixed(2)); say('w2o', ok ? '<span class="ok">每一圈都和自己对齐：波留下来</span>' : `<span class="bad">每圈错开一点：绕 ${NP} 圈后只剩 ${Math.round((isFinite(amp) ? amp : 1) * 100)}%</span>`); };
+    sl.oninput = upd; $('w2r').onclick = () => { sl.value = Math.max(1, Math.round(+sl.value / 100)) * 100; upd(); }; upd();
+    v.upd = t => { sum.fill(0);
+      laps.forEach((L, p) => { for (let i = 0; i <= 240; i++) { const th = i / 240 * 2 * Math.PI, val = Math.cos(q * (th + 2 * Math.PI * p) - t * 2); sum[i] += val / NP; L.P[i * 3] = R * Math.cos(th); L.P[i * 3 + 1] = .3 * val + 1.9; L.P[i * 3 + 2] = R * Math.sin(th); } L.g.attributes.position.needsUpdate = true; });
+      cur.upd(); };
+  }
+
+  // ---------- 3 鼓面 ----------
+  function initDrum() {
+    const v = view('w3', { D: 6, pitch: .5 }), Rr = 1.6; ring(v.grp, Rr, 0x8a96b0, .025);
+    let m = 1, j = 1, s = null;
+    const build = () => { if (s) { v.grp.remove(s.m); s.g.dispose(); } const kz = BZ[m][j]; s = surface(v.grp, 50, 120, (u, w, t) => { const th = w * 2 * Math.PI, h = J(m, kz * u) * Math.cos(m * th) / (m ? .58 : 1) * .7 * Math.cos(t * kz * .5); return [u * Rr * Math.cos(th), h, u * Rr * Math.sin(th), h * 2.4]; }, { ck: 2.5 });
+      say('w3o', `<b>${j}</b> 圈圆形节点（沿半径）· <b>${m}</b> 条穿过圆心的节线（绕圆心）`); };
+    seg('w3m', [[0, 0], [1, 1], [2, 2]], x => { m = x; build(); }, 1);
+    seg('w3j', [[0, 0], [1, 1], [2, 2]], x => { j = x; build(); }, 1);
+    v.upd = t => s.upd(t);
+  }
+
+  // ---------- 4 振动的球面 ----------
+  function initSphere() {
+    const v = view('w4', { D: 5.4, pitch: .3 });
+    const sg = new THREE.SphereGeometry(1, 96, 64), U = sg.attributes.position.array.slice(), n = U.length / 3, F = new Float32Array(n), C = new Float32Array(n * 3);
+    sg.setAttribute('color', new THREE.BufferAttribute(C, 3)); v.grp.add(new THREE.Mesh(sg, new THREE.MeshLambertMaterial({ vertexColors: true })));
+    const ax = new THREE.Group(); v.grp.add(ax); [[1.7, 0, 0], [0, 1.7, 0], [0, 0, 1.7]].forEach((p, i) => { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-p[0], -p[1], -p[2]), new THREE.Vector3(...p)]); ax.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0x2a3550 }))); });
+    let l = 1, idx = 2, morph = 0;
+    const setF = () => { const f = ANG(l)[idx].f; let mx = 0; for (let i = 0; i < n; i++) { F[i] = f(U[i * 3], U[i * 3 + 2], U[i * 3 + 1]); mx = Math.max(mx, Math.abs(F[i])); } for (let i = 0; i < n; i++) F[i] /= mx || 1; };
+    const pat = () => { const os = ANG(l); idx = Math.min(idx, os.length - 1);
+      seg('w4i', os.map((o, i) => [i, l ? o.lab.replace(/^/, 'spdf'[l]) : 's']), i => { idx = i; setF(); }, idx);
+      say('w4o', l ? `<b>${l}</b> 个节面 · 同一个 l 共有 <b>${2 * l + 1}</b> 种花纹` : '没有节面：整个球一起胀缩 · 只有 <b>1</b> 种'); };
+    seg('w4l', [[0, 's（l=0）'], [1, 'p（l=1）'], [2, 'd（l=2）'], [3, 'f（l=3）']], x => { l = x; idx = x === 1 ? 2 : 0; pat(); }, 1);
+    const sl = $('w4s'); sl.oninput = () => { morph = +sl.value / 100; }; sl.value = 0;
+    v.upd = t => { const a = Math.cos(t * 2.2), P = sg.attributes.position.array, e = .22;
+      for (let i = 0; i < n; i++) { const f = F[i], s = (1 - morph) * (1 + e * f * a) + morph * (Math.abs(f) * 1.15 + .02); P[i * 3] = U[i * 3] * s; P[i * 3 + 1] = U[i * 3 + 1] * s; P[i * 3 + 2] = U[i * 3 + 2] * s; signCol(C, i, f * (a + (1 - a) * Math.min(1, morph * 2)), 2.2); }
+      sg.attributes.position.needsUpdate = true; sg.attributes.color.needsUpdate = true; sg.computeVertexNormals(); };
+  }
+
+  // ---------- 5 漏斗 ----------
+  function initFunnel() {
+    const v = view('w5', { D: 11.5, pitch: .5, tgt: [0, -1.4, 0] }), RM = 3.2, VY = r => Math.max(-4.2, -1.1 / Math.max(r, .05));
+    surface(v.grp, 60, 120, (u, w) => { const r = .02 + u * RM, th = w * 2 * Math.PI; return [r * Math.cos(th), VY(r), r * Math.sin(th), 0]; }, { mat: new THREE.MeshBasicMaterial({ color: 0x41507a, wireframe: true, transparent: true, opacity: .3 }) }).upd();
+    const waves = [1, 2, 3].map(n => { const Rn = RH(n, 0), rmax = 2.2 * n * n + 6, sc = RM / rmax, E = VY(2 * n * n * sc), gg = new THREE.Group(); v.grp.add(gg);
+      let mx = 0; for (let i = 1; i < 400; i++) { const r = i / 400 * rmax; mx = Math.max(mx, Math.abs(Rn(r) * Math.sqrt(r))); }
+      const s = surface(gg, 80, 120, (u, w, t) => { const r = u * rmax, th = w * 2 * Math.PI, val = Rn(r) * Math.sqrt(r) / mx * Math.cos(t * 2); return [r * sc * Math.cos(th), E + val, r * sc * Math.sin(th), val]; }, { ck: 2 });
+      const tr = ring(gg, 2 * n * n * sc, 0xffd27a, .03); tr.position.y = E;
+      const pl = new THREE.Mesh(new THREE.RingGeometry(0, RM, 64), new THREE.MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: .06, side: THREE.DoubleSide, depthWrite: false })); pl.rotation.x = -Math.PI / 2; pl.position.y = E; gg.add(pl);
+      return { n, gg, s }; });
+    let n = 2; seg('w5n', [[1, '1s'], [2, '2s'], [3, '3s']], x => { n = x; waves.forEach(w => w.gg.visible = w.n === n); say('w5o', `${n}s：沿半径 <b>${n - 1}</b> 个节点 · 能量 −13.6/${n * n} eV · 黄圈半径 ${2 * n * n} a₀`); }, 2);
+    v.upd = t => waves[n - 1].s.upd(t);
+  }
+
+  // ---------- 6 转圈的波 ----------
+  function initSpin() {
+    const v = view('w6', { D: 26, pitch: 1.0, spin: .05 });
+    const A = EC.sampleH(2, 1, 0, 12000, 3), B = EC.sampleH(2, 1, 1, 12000, 4), N = 24000, PP = new Float32Array(N * 4); PP.set(A.pts, 0); PP.set(B.pts, A.pts.length);
+    const P = new Float32Array(N * 3), Cc = new Float32Array(N * 3), PH = new Float32Array(N);
+    for (let i = 0; i < N; i++) { const x = PP[i * 4], y = PP[i * 4 + 1], z = PP[i * 4 + 2]; P[i * 3] = x; P[i * 3 + 1] = z; P[i * 3 + 2] = -y; PH[i] = Math.atan2(y, x); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(Cc, 3));
+    const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true, uniforms: { uSize: { value: 18 } },
+      vertexShader: 'uniform float uSize; varying vec3 vC; void main(){ vC = color; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = uSize / -mv.z; gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'varying vec3 vC; void main(){ vec2 d = gl_PointCoord - .5; float r = dot(d,d); if (r > .25) discard; gl_FragColor = vec4(vC, .4 * (1. - r * 4.)); }' });
+    v.grp.add(new THREE.Points(g, mat)); dot(v.grp, [0, 0, 0], 0xffffff, .15);
+    const col = new THREE.Color(); let mode = '1';
+    seg('w6m', [['1', 'm = +1'], ['-1', 'm = −1'], ['x', '两者相加 → p<sub>x</sub>']], x => { mode = String(x);
+      say('w6o', mode === 'x' ? '逆时针 + 顺时针 = 原地起伏的驻波：两瓣交替变号' : `颜色 = 相位，${mode === '1' ? '逆' : '顺'}时针绕 z 轴转圈；密度处处一样，是个圆环`); }, '1');
+    v.upd = t => { mat.uniforms.uSize.value = v.h * .3;
+      for (let i = 0; i < N; i++) { if (mode === 'x') { const c = Math.cos(PH[i]), a = Math.cos(t * 2), s = c * a >= 0 ? CP : CN, k = Math.min(1, c * c * 1.6) * (.3 + .7 * Math.abs(a)); Cc[i * 3] = s.r * k; Cc[i * 3 + 1] = s.g * k; Cc[i * 3 + 2] = s.b * k; }
+        else { col.setHSL((((+mode * PH[i] - t * 2) / (2 * Math.PI)) % 1 + 1) % 1, .85, .55); Cc[i * 3] = col.r; Cc[i * 3 + 1] = col.g; Cc[i * 3 + 2] = col.b; } }
+      g.attributes.color.needsUpdate = true; };
+  }
+
+  // ---------- 7 叠加：sp 杂化 ----------
+  const SOLID = () => ISO.surfMat(THREE, false), rgb = c => [c.r, c.g, c.b];
+  function lobes(parent, G, psi, mat, frac = .85) {
+    const lv = Math.sqrt(ISO.level(psi.map(x => x * x), frac)), neg = psi.map(x => -x), grp = new THREE.Group();
+    grp.add(ISO.meshFrom(THREE, ISO.march(G, psi, lv, [{ a: psi, c: rgb(CP) }]), mat)); grp.add(ISO.meshFrom(THREE, ISO.march(G, neg, lv, [{ a: neg, c: rgb(CN) }]), mat));
+    parent.add(grp); return grp;
+  }
+  function initHyb() {
+    const v = view('w7', { D: 40, pitch: .3, yaw: .15, spin: .06 }), mat = SOLID(), Gd = ISO.grid(48, [0, 0, 0], 15);
+    const nrm = a => { let s = 0; for (const x of a) s += x * x; const k = 1 / Math.sqrt(s); return a.map(x => x * k); };
+    const R2s = RH(2, 0), R2p = RH(2, 1);
+    const s0 = nrm(ISO.fill(Gd, (X, Y, Z) => R2s(Math.hypot(X, Y, Z)))), p0 = nrm(ISO.fill(Gd, (X, Y, Z) => { const r = Math.hypot(X, Y, Z) || 1e-6; return R2p(r) * X / r; }));
+    dot(v.grp, [0, 0, 0], 0xffffff, .25); let cur = null, pend = 0;
+    const sl = $('w7s'), build = () => { pend = 0; const u = +sl.value / 100, a = Math.sin(u * Math.PI / 2), c = Math.cos(u * Math.PI / 2);
+      if (cur) { v.grp.remove(cur); cur.children.forEach(m => m.geometry.dispose()); } cur = lobes(v.grp, Gd, p0.map((x, i) => c * x - a * s0[i]), mat);
+      const ps = Math.round(a * a * 100); say('w7o', `s 占 <b>${ps}%</b>，p 占 <b>${100 - ps}%</b>${ps === 50 ? '：正好是 sp 杂化' : ps === 0 ? '：纯 2p' : ps === 100 ? '：纯 2s' : ''}`); };
+    sl.oninput = () => { if (!pend) pend = requestAnimationFrame(build); }; sl.value = 50; build();
+  }
+
+  // ---------- 8 两个原子：成键与反键 ----------
+  function initBond() {
+    const v = view('w8', { D: 8.5, pitch: .3, spin: .08 }), mat = SOLID(); let sg = 1, d = .74, cur = null, pend = 0;
+    const nucs = [dot(v.grp, [0, 0, 0], 0xffffff, .06), dot(v.grp, [0, 0, 0], 0xffffff, .06)];
+    const build = () => { pend = 0; const atoms = [{ el: 'H', p: [-d / 2, 0, 0] }, { el: 'H', p: [d / 2, 0, 0] }], S0 = a => ({ a, s: 1, p: [0, 0, 0] });
+      const f = MOL.moFn([{ c: 1, ao: S0(0) }, { c: sg, ao: S0(1) }], atoms), G = ISO.grid(44, [0, 0, 0], 2.1 + d / 2), psi = ISO.fill(G, (X, Y, Z) => f(X, Z, Y));
+      if (cur) { v.grp.remove(cur); cur.children.forEach(m => m.geometry.dispose()); } cur = lobes(v.grp, G, psi, mat);
+      nucs[0].position.x = -d / 2; nucs[1].position.x = d / 2; say('w8v', d.toFixed(2) + ' Å');
+      say('w8o', sg > 0 ? '同号：两个波在中间相加，电子聚在两核之间，把它们拉在一起 → <b>成键</b>' : '异号：中间互相抵消，出现一个节面，两核之间几乎没有电子 → <b>反键</b>'); };
+    seg('w8m', [[1, '同号相加'], [-1, '异号相加']], x => { sg = x; build(); }, 1);
+    const sl = $('w8s'); sl.oninput = () => { d = +sl.value / 100; if (!pend) pend = requestAnimationFrame(build); };
+  }
+
+  function ensure() {
+    if (made) return; made = true; THREE = G.THREE;
+    CP = new THREE.Color(CV('--pos')); CN = new THREE.Color(CV('--neg'));
+    initString(); initRing(); initDrum(); initSphere(); initFunnel(); initSpin(); initHyb(); initBond();
+    requestAnimationFrame(loop);
+  }
+  G.WHY = { ensure };
+})(window);
+</script>
 <script>
 (() => {
   const css = getComputedStyle(document.documentElement), C = k => css.getPropertyValue(k).trim();
@@ -888,8 +1145,8 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
   addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input')) return; if (e.key === 'ArrowRight') select(st.Z % 118 + 1); if (e.key === 'ArrowLeft') select((st.Z + 116) % 118 + 1); });
 
   // ---------- 标签页 ----------
-  function showTab(t) { const r = t === 'r'; $('tab-a').setAttribute('aria-selected', !r); $('tab-r').setAttribute('aria-selected', r); $('sec-a1').hidden = r; $('sec-a2').hidden = r; $('sec-r').hidden = !r; if (r) { rx.ensure(); } }
-  $('tab-a').onclick = () => { history.replaceState(null, '', '#atoms'); showTab('a'); }; $('tab-r').onclick = () => { history.replaceState(null, '', '#reactions'); showTab('r'); };
+  function showTab(t) { ['a', 'r', 'w'].forEach(k => $('tab-' + k).setAttribute('aria-selected', k === t)); $('sec-a1').hidden = t !== 'a'; $('sec-a2').hidden = t !== 'a'; $('sec-r').hidden = t !== 'r'; $('sec-w').hidden = t !== 'w'; if (t === 'r') rx.ensure(); if (t === 'w') WHY.ensure(); }
+  $('tab-a').onclick = () => { history.replaceState(null, '', '#atoms'); showTab('a'); }; $('tab-r').onclick = () => { history.replaceState(null, '', '#reactions'); showTab('r'); }; $('tab-w').onclick = () => { history.replaceState(null, '', '#why'); showTab('w'); };
   // ---------- 化学反应 ----------
   const rx = (() => {
     const ECOL = { H: '#F2F4F8', B: '#FF9EC4', C: '#A9B4C2', N: '#6FA8FF', O: '#FF6B6B', F: '#9BE15D', Na: '#C49BFF', Cl: '#5FD39A', Br: '#E0894B', Fe: '#FFB25C', Zn: '#9FC3F0', Cu: '#F0A060' };
@@ -1046,7 +1303,7 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
     window.__rx = { load: id => load(MOL.R.findIndex(r => r.id === id)), mode: setMode, color: m => $(m === 'src' ? 'rc-src' : 'rc-k').click(), at: v => { playing = false; u = v; }, ready: () => rm === 'pts' || (!!iso && $('rbusy').hidden) };
     return { ensure() { if (!ready) init(); } };
   })();
-  if (location.hash === '#reactions' || location.hash.startsWith('#r=')) showTab('r');
+  if (location.hash === '#reactions' || location.hash.startsWith('#r=')) showTab('r'); else if (location.hash === '#why') showTab('w');
   addEventListener('hashchange', () => { if (/^#z\d+$/.test(location.hash)) select(Math.min(118, Math.max(1, +location.hash.slice(2)))); });
   resize(); select(st.Z); requestAnimationFrame(frame);
 })();
