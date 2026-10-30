@@ -9,7 +9,7 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 | `site/algebraic-effects/` | 《代数作用》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/algebraic-effects/` |
 | `site/type-annotations/` | 《类型标注》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/type-annotations/` |
 | `site/web-color/` | 《Web 的颜色》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/web-color/` |
-| `site/electron-cloud/` | 《电子云》四集的场景代码（`?ep=1..4`，three.js 点云 + 等值面 / 截面，原子模型 `ec.js`、反应模型 `mol.js`、等值面 `iso.js`）与互动页 `explorer.html`；稿子、字幕与工具在 `sources/electron-cloud/` |
+| `site/electron-cloud/` | 《电子云》四集 + 番外的场景代码（`?ep=1..5`，番外用琴弦、鼓面、振动球面推出轨道形状，three.js 点云 + 等值面 / 截面，原子模型 `ec.js`、反应模型 `mol.js`、等值面 `iso.js`）与互动页 `explorer.html`；稿子、字幕与工具在 `sources/electron-cloud/` |
 | `site/calcite/` | 《方解石》两集的场景代码（`?ep=1/2`，含 3D 绘图库 `g3.js`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/calcite/` |
 | `site/jit-aot/` | 《JIT 与 AOT：性能上限与成本实测》报告页；案例代码（JS / Lua / Rust / C）、原始数据和 Markdown 原文在 `sources/jit-aot/` |
 | `site/text-and-tree/` | 《文本与树》三集加番外的场景代码，`?ep=1/2/3/4`；稿子、字幕、工具在 `sources/text-and-tree/` |

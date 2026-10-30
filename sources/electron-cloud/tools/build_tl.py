@@ -3,7 +3,7 @@ import json, os, sys, glob, hashlib
 S = json.load(open('script.json'))
 A = json.load(open('audio.json')) if os.path.exists('audio.json') else {}
 LEAD, TAIL, FIRST, GAP, END = 1.2, 2.5, 1.0, .55, 1.2
-for ep in (1, 2, 3, 4):
+for ep in (1, 2, 3, 4, 5):
     t = LEAD; scenes = []
     for s in [x for x in S if x['ep'] == ep]:
         bs = []; lt = FIRST

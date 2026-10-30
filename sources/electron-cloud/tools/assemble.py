@@ -2,7 +2,7 @@
 import sys, json, os, glob, subprocess, wave, numpy as np
 ep = sys.argv[1]; CRF = sys.argv[2] if len(sys.argv) > 2 else '26'
 TL = json.load(open(f'tl_e{ep}.json')); A = json.load(open('audio.json'))
-name = {'1': '电子云_第1集_电子云是什么', '2': '电子云_第2集_走遍周期表', '3': '电子云_第3集_化学反应上', '4': '电子云_第4集_化学反应下'}[ep]
+name = {'1': '电子云_第1集_电子云是什么', '2': '电子云_第2集_走遍周期表', '3': '电子云_第3集_化学反应上', '4': '电子云_第4集_化学反应下', '5': '电子云_番外_为什么是这些形状'}[ep]
 vids = sorted(glob.glob(f'out/e{ep}/*.mp4')); assert len(vids) == len(TL['scenes']), (len(vids), len(TL['scenes']))
 os.makedirs('work', exist_ok=True)
 open(f'work/list{ep}.txt', 'w').write(''.join(f"file '{os.path.abspath(v)}'\n" for v in vids))

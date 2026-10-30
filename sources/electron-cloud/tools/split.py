@@ -1,6 +1,6 @@
 import sys, json, os, glob, subprocess
 ep = sys.argv[1]; TL = json.load(open(f'tl_e{ep}.json'))
-name = {'1': '电子云_第1集_电子云是什么', '2': '电子云_第2集_走遍周期表', '3': '电子云_第3集_化学反应上', '4': '电子云_第4集_化学反应下'}[ep]
+name = {'1': '电子云_第1集_电子云是什么', '2': '电子云_第2集_走遍周期表', '3': '电子云_第3集_化学反应上', '4': '电子云_第4集_化学反应下', '5': '电子云_番外_为什么是这些形状'}[ep]
 out = f'final/{name}.mp4'; starts = [s['start'] for s in TL['scenes']]
 # 分段
 LIM = float(sys.argv[2]) * 1e6 if len(sys.argv) > 2 else 22e6

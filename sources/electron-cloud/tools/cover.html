@@ -9,13 +9,13 @@ img{display:block;-webkit-mask-image:radial-gradient(ellipse at center,#000 55%,
 </style><body><div class="L" id="L"><span class="ep" id="ep"></span><h1 id="h1"></h1><div class="st" id="st"></div><div class="badge" id="bd"></div></div><div class="R" id="R"></div>
 <script>
 const q = new URLSearchParams(location.search), ep = +(q.get('ep') || 1), ar = q.get('ar') || '169';
-const TITLE = '电子云', E = { 1: ['第一集', '电子云是什么', '概率地图 · 轨道形状 · 节点 · 相位'], 2: ['第二集', '走遍周期表', '118 种元素 · 4s 与 3d · 镧系收缩'], 3: ['第三集', '化学反应（上）', '共价键 · 离子键 · 孤对电子'], 4: ['第四集', '化学反应（下）', '断键 · 有机机理 · 离域 · 氢键'] }[ep];
+const TITLE = '电子云', E = { 1: ['第一集', '电子云是什么', '概率地图 · 轨道形状 · 节点 · 相位'], 2: ['第二集', '走遍周期表', '118 种元素 · 4s 与 3d · 镧系收缩'], 3: ['第三集', '化学反应（上）', '共价键 · 离子键 · 孤对电子'], 4: ['第四集', '化学反应（下）', '断键 · 有机机理 · 离域 · 氢键'], 5: ['番外', '为什么是这些形状', '驻波 · 节点 · 球面花纹 · 叠加'] }[ep];
 const $ = id => document.getElementById(id);
 $('ep').textContent = E[0]; $('h1').textContent = TITLE; $('st').textContent = E[1]; $('bd').textContent = E[2];
 const W = { '169': [1920, 1080], '43': [1440, 1080], '916': [1080, 1920] }[ar];
 document.body.style.width = W[0] + 'px'; document.body.style.height = W[1] + 'px';
 const L = $('L').style, R = $('R');
-if (ar === '169') { L.left = '140px'; L.top = '250px'; R.style.cssText = 'left:860px;top:90px'; R.innerHTML = `<img src="c${ep}.png" style="width:1040px">`; }
-else if (ar === '43') { L.left = '100px'; L.top = '110px'; R.style.cssText = 'left:420px;top:330px'; R.innerHTML = `<img src="c${ep}.png" style="width:1000px">`; $('h1').style.fontSize = '150px'; $('st').style.fontSize = '54px'; }
-else { L.left = '100px'; L.top = '170px'; R.style.cssText = 'left:-40px;top:820px'; R.innerHTML = `<img src="c${ep}.png" style="width:1160px"><div style="margin-top:20px;text-align:center;font:700 44px 'Noto Serif CJK SC',serif;color:#A3AEC3">把电子云真的算出来、画出来</div>`; $('h1').style.fontSize = '190px'; $('st').style.fontSize = '72px'; }
+if (ar === '169') { L.left = '140px'; L.top = '250px'; R.style.cssText = ep === 5 ? 'left:760px;top:300px' : 'left:860px;top:90px'; R.innerHTML = `<img src="c${ep}.png" style="width:${ep === 5 ? 1140 : 1040}px">`; }
+else if (ar === '43') { L.left = '100px'; L.top = '110px'; R.style.cssText = ep === 5 ? 'left:180px;top:620px' : 'left:420px;top:330px'; R.innerHTML = `<img src="c${ep}.png" style="width:1000px">`; $('h1').style.fontSize = '150px'; $('st').style.fontSize = '54px'; }
+else { L.left = '100px'; L.top = '170px'; R.style.cssText = ep === 5 ? 'left:-160px;top:900px' : 'left:-40px;top:820px'; R.innerHTML = `<img src="c${ep}.png" style="width:${ep === 5 ? 1400 : 1160}px"><div style="margin-top:20px;text-align:center;font:700 44px 'Noto Serif CJK SC',serif;color:#A3AEC3">把电子云真的算出来、画出来</div>`; $('h1').style.fontSize = '190px'; $('st').style.fontSize = '72px'; }
 </script></body></html>
