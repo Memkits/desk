@@ -10,6 +10,7 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 | `site/type-annotations/` | 《类型标注》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/type-annotations/` |
 | `site/web-color/` | 《Web 的颜色》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/web-color/` |
 | `site/electron-cloud/` | 《电子云》四集 + 番外的场景代码（`?ep=1..5`，番外用琴弦、鼓面、振动球面推出轨道形状，three.js 点云 + 等值面 / 截面，原子模型 `ec.js`、反应模型 `mol.js`、等值面 `iso.js`）与互动页 `explorer.html`；稿子、字幕与工具在 `sources/electron-cloud/` |
+| `site/china-arch/` | 《卫星上的中国考古》五集的场景代码（`?ep=1..5`，`geomap.js` 卫星时间地图）与互动地图 `explorer.html`；稿子、字幕与工具在 `sources/china-arch/` |
 | `site/calcite/` | 《方解石》两集的场景代码（`?ep=1/2`，含 3D 绘图库 `g3.js`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/calcite/` |
 | `site/jit-aot/` | 《JIT 与 AOT：性能上限与成本实测》报告页；案例代码（JS / Lua / Rust / C）、原始数据和 Markdown 原文在 `sources/jit-aot/` |
 | `site/text-and-tree/` | 《文本与树》三集加番外的场景代码，`?ep=1/2/3/4`；稿子、字幕、工具在 `sources/text-and-tree/` |
@@ -21,6 +22,8 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 | `scripts/build.mjs` | 构建脚本 |
 
 视频页面就是逐帧渲染视频时用的同一套代码，浏览器中观看时没有配音，字幕按时间轴同步。
+
+大文件不入库：视频、配音、高分辨率卫星图都不放进仓库。《卫星上的中国考古》的底图与遗址近景在浏览器里直接从 NASA GIBS 和 EOX 拉瓦片拼成。
 
 ## 本地查看
 
@@ -36,7 +39,7 @@ npx serve dist              # 或任意静态服务器
 推送到 `main` 后由 GitHub Actions（`.github/workflows/upload.yaml`）完成：
 
 1. `ASSET_BASE=https://cos-sh.tiye.me/<owner>/<repo>/ node scripts/build.mjs`：给每个 HTML 注入 `<base>`，图片、脚本、样式都从 COS 加载；页面之间的链接按当前页面地址解析。
-2. `dist/` 全部上传到 COS（`worktools/cos-upload-action`）。
+2. 对比上一次推送（PR 对比目标分支），只把 `site/` 下有改动的项目目录（以及 `site/` 根目录下改动的文件）上传到 COS（`worktools/cos-upload-action`）；只有 `scripts/` 改动时才全量上传，只改了 `sources/` 等则跳过上传。
 3. 只把 HTML 入口 rsync 到 `tiye.me:/web-assets/repo/<owner>/<repo>`。
 
 PR 只上传到 COS 的 `pr/<编号>/...` 前缀，不同步服务器。需要的 secrets：`COS_BUCKET`、`COS_SECRET_ID`、`COS_SECRET_KEY`、`rsync_private_key`。
