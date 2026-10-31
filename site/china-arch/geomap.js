@@ -71,20 +71,38 @@
     M.sites = G.ARCH.S.map(s => { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, color: KC[s.k], transparent: true, depthWrite: false, depthTest: false, sizeAttenuation: false, opacity: 0 })); m.position.set(X(s.lon), .002, Z(s.lat)); m.renderOrder = 10; sc.add(m); return { ...s, m, a: 0 }; });
     M.KC = KC;
 
+    // 远程模式：浏览器里直接从 NASA GIBS / EOX 拉瓦片拼图，仓库里不放大图
+    const GIBS = (lay, L) => (r, c) => `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/${lay}/default/2004-08-01/500m/${L}/${r}/${c}.jpeg`;
+    const EOX = (lay, z) => (r, c) => `https://tiles.maps.eox.at/wmts/1.0.0/${lay}/default/g/${z}/${r}/${c}.jpg`;
+    function mosaic(urlOf, c0, c1, r0, r1, ts) {
+      const cv = document.createElement('canvas'); cv.width = (c1 - c0 + 1) * ts; cv.height = (r1 - r0 + 1) * ts; const g = cv.getContext('2d'); g.fillStyle = '#0b1220'; g.fillRect(0, 0, cv.width, cv.height);
+      const tex = new THREE.CanvasTexture(cv); tex.anisotropy = o.aniso ?? 4; tex.minFilter = THREE.LinearMipmapLinearFilter;
+      const jobs = []; for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) jobs.push([r, c]);
+      let k = 0, last = 0; const one = () => new Promise(res => { if (k >= jobs.length) return res(false); const [r, c] = jobs[k++], im = new Image(); im.crossOrigin = 'anonymous';
+        im.onload = () => { g.drawImage(im, (c - c0) * ts, (r - r0) * ts, ts, ts); const now = performance.now(); if (now - last > 900) { last = now; tex.needsUpdate = true; } res(true); }; im.onerror = () => res(true); im.src = urlOf(r, c); });
+      const done = Promise.all(Array.from({ length: 8 }, async () => { while (await one()); })).then(() => { tex.needsUpdate = true; });
+      return { tex, done };
+    }
+    const small = () => Math.min(screen.width, screen.height) < 820;
     M.load = async (sel) => {
-      const tasks = [ld('cn', 'img/cn_L6.jpg'), ld('east', 'img/east_L7.jpg'), ld('mask', 'img/lgm_mask.png'), ld('world', 'img/world_L3.jpg')];
-      await Promise.all(tasks);
+      if (o.remote) {
+        const q = small() ? 256 : 512;
+        const cn = mosaic(GIBS('BlueMarble_NextGeneration', 6), 55, 70, 8, 16, q), east = mosaic(GIBS('BlueMarble_NextGeneration', 7), 125, 134, 21, 29, q), wd = mosaic(GIBS('BlueMarble_NextGeneration', 3), 0, 9, 0, 4, 256);
+        texs.cn = cn.tex; texs.east = east.tex; texs.world = wd.tex; await ld('mask', 'img/lgm_mask.png'); M.loading = Promise.all([cn.done, east.done, wd.done]);
+      } else await Promise.all([ld('cn', 'img/cn_L6.jpg'), ld('east', 'img/east_L7.jpg'), ld('mask', 'img/lgm_mask.png'), ld('world', 'img/world_L3.jpg')]);
       world.map = texs.world; world.color.set(0xd8d8d8); world.needsUpdate = true;
       M.worldMesh = plane(-180, 180, -90, 90, world, -.02); M.worldMesh.renderOrder = -20;
       baseMat.uniforms.tA.value = texs.cn; baseMat.uniforms.tM.value = texs.mask; baseMat.uniforms.tE.value = texs.east; plane(67.5, 139.5, 13.5, 54, baseMat, 0).renderOrder = -10;
       const sj = await fetch(base + 'sites/sites.json').then(r => r.json());
       const want = sel || G.ARCH.S.filter(s => s.cl).map(s => s.cl);
       await Promise.all(sj.sites.filter(q => want.includes(q.nm)).map(async q => {
-        const file = (G.ARCH.IMG && G.ARCH.IMG[q.nm]) || q.nm; const t = await ld('cl_' + q.nm, 'sites/' + file + '.jpg'); if (!t) return;
+        const file = (G.ARCH.IMG && G.ARCH.IMG[q.nm]) || q.nm, mat = closeMat(); let fetchTex = null;
+        if (o.remote) { const lay = file.endsWith('_2023') ? 's2cloudless-2023_3857' : 's2cloudless_3857'; fetchTex = () => { const m = mosaic(EOX(lay, q.z), q.x0, q.x0 + q.N - 1, q.y0, q.y0 + q.N - 1, small() ? 128 : 256); mat.uniforms.tA.value = m.tex; return m.done; }; }
+        else { const t = await ld('cl_' + q.nm, 'sites/' + file + '.jpg'); if (!t) return; mat.uniforms.tA.value = t; }
         const [lo0, la0] = merc2ll(q.x0, q.y0, q.z), [lo1, la1] = merc2ll(q.x0 + q.N, q.y0 + q.N, q.z);
         // 墨卡托小窗口：纬度方向近似线性
-        const mat = closeMat(); mat.uniforms.tA.value = t; const m = plane(lo0, lo1, la1, la0, mat, .002); m.renderOrder = 2; m.visible = false;
-        M.close[q.nm] = { m, mat, lon: (lo0 + lo1) / 2, lat: (la0 + la1) / 2, w: lo1 - lo0 };
+        const m = plane(lo0, lo1, la1, la0, mat, .002); m.renderOrder = 2; m.visible = false;
+        M.close[q.nm] = { m, mat, lon: (lo0 + lo1) / 2, lat: (la0 + la1) / 2, w: lo1 - lo0, fetchTex, loaded: !fetchTex };
       }));
     };
     // ---------- 相机 ----------
@@ -118,7 +136,7 @@
         else if (st.sites instanceof Set) a = st.sites.has(s.id) ? 1 : 0;
         if (st.focus && st.focus !== s.id) a *= .55;
         s.a = a; s.m.material.opacity = a; s.m.visible = a > .01; const k = st.focus === s.id ? 1.6 : 1; s.m.scale.set(ps * k, ps * k, 1); });
-      Object.entries(M.close).forEach(([nm, c]) => { const a = (st.close && st.close[nm]) || 0; c.mat.uniforms.uA.value = a; c.m.visible = a > .003; });
+      Object.entries(M.close).forEach(([nm, c]) => { const a = (st.close && st.close[nm]) || 0; if (a > 0 && !c.loaded) { c.loaded = true; c.fetchTex(); } c.mat.uniforms.uA.value = a; c.m.visible = a > .003 && !!c.mat.uniforms.tA.value; });
       r.render(sc, cam);
     };
     return M;

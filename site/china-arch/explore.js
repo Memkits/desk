@@ -1,7 +1,7 @@
 (async () => {
   const $ = id => document.getElementById(id), { S, LK } = ARCH, { tPos, yearStr, ss } = GEO;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const M = GEO.create(THREE, $('cv'), { dpr: Math.min(2, devicePixelRatio || 1) });
+  const REMOTE = !!window.GEO_REMOTE, M = GEO.create(THREE, $('cv'), { dpr: Math.min(2, devicePixelRatio || 1), remote: REMOTE });
   // 时间轴：滑块 0..1000 ↔ 年份（对数刻度，左古右今）
   const Y0 = -2200000, Y1 = 220;
   const s2y = s => { const u = 1 - s / 1000, a0 = Math.log10(GEO.AGE(Y1)), a1 = Math.log10(GEO.AGE(Y0)); return 2030 - 10 ** (a0 + (a1 - a0) * u); };
@@ -35,9 +35,9 @@
   const clabs = M.cults.map(c => { const d = document.createElement('div'); d.className = 'cl'; d.textContent = c.n; $('labels').appendChild(d); return d; });
   function select(id, fly) {
     st.sel = id; const s = S.find(q => q.id === id); if (!s) return;
-    const img = s.cl ? `<img src="sites/${(ARCH.IMG[s.cl] || s.cl)}${SMALL}.jpg" alt="${s.n}一带的卫星图像（约 26 公里见方）" loading="lazy">` : '';
+    const img = s.cl && !REMOTE ? `<img src="sites/${(ARCH.IMG[s.cl] || s.cl)}${SMALL}.jpg" alt="${s.n}一带的卫星图像（约 26 公里见方）" loading="lazy">` : '';
     const span = s.t0 === s.t1 ? yearStr(s.t0) : `${yearStr(s.t0)} — ${yearStr(s.t1).replace(/^公元前 /, '前 ')}`;
-    $('card').innerHTML = `<h3>${s.n}</h3><div class="meta">${s.p} · ${span}</div><p>${s.f}</p>${img}${s.cl ? `<div class="src">卫星近景：${ARCH.IMG[s.cl] ? 'EOxCloudless 2023（CC BY-NC-SA 4.0）' : 'Sentinel-2 cloudless 2016（CC BY 4.0）'} · EOX</div>` : ''}`;
+    $('card').innerHTML = `<h3>${s.n}</h3><div class="meta">${s.p} · ${span}</div><p>${s.f}</p>${img}${s.cl ? `<div class="src">${REMOTE ? '放大地图可看卫星近景 · ' : ''}卫星近景：${ARCH.IMG[s.cl] ? 'EOxCloudless 2023（CC BY-NC-SA 4.0）' : 'Sentinel-2 cloudless 2016（CC BY 4.0）'} · EOX</div>` : ''}`;
     if (fly) { goal = { lon: s.lon, lat: s.lat, d: s.cl ? 1.1 : 4, tilt: 25, head: view.head }; if (st.year < s.t0 - 50 || st.year > s.t1 + 300) setYear(s.t0 === s.t1 ? s.t0 : (s.t0 + s.t1) / 2); }
     try { history.replaceState(null, '', `#y=${Math.round(st.year)}&s=${id}`); } catch (e) {}
   }

@@ -13,6 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     outputs:
+      empty: ${{ steps.changed.outputs.empty }}
       prefix: ${{ steps.asset-path.outputs.prefix }}
       base-url: ${{ steps.asset-path.outputs.base-url }}
       artifact-name: site-${{ github.run_id }}-${{ github.run_attempt }}
@@ -21,6 +22,7 @@ jobs:
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
+        fetch-depth: 0
 
     - name: Set up Node.js
       uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
@@ -55,16 +57,54 @@ jobs:
         # 每个 HTML 都必须带上 COS 资源前缀
         for f in $(find dist -name '*.html'); do grep -q "<base href=\"${ASSET_BASE}" "$f" || { echo "missing base in $f"; exit 1; }; done
 
+    # 只上传发生变化的目录：对比上一次推送（PR 对比目标分支），site/ 下哪个项目目录有改动就只放哪个
+    - name: Select changed directories
+      id: changed
+      env:
+        BEFORE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      run: |
+        set -euo pipefail
+        rm -rf upload; mkdir -p upload
+        full=false
+        if [[ -z "${BEFORE:-}" || "$BEFORE" =~ ^0+$ ]] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then full=true; fi
+        if [[ "$full" == false ]]; then
+          changed=$(git diff --name-only "$BEFORE" "$GITHUB_SHA")
+          echo "$changed"
+          # 构建脚本变了：全量
+          if grep -qE '^scripts/' <<< "$changed"; then full=true; fi
+        fi
+        if [[ "$full" == true ]]; then
+          echo "::notice::Full upload"
+          cp -r dist/. upload/
+        else
+          # site/<项目>/... → 上传整个 dist/<项目>/；site/ 根目录下的文件单独上传
+          for d in $(grep -E '^site/' <<< "$changed" | awk -F/ 'NF>2{print $2}' | sort -u); do
+            [[ -d "dist/$d" ]] && { mkdir -p "upload/$d"; cp -r "dist/$d/." "upload/$d/"; echo "upload: $d/"; }
+          done
+          for f in $(grep -E '^site/[^/]+$' <<< "$changed" | sed 's#^site/##'); do
+            [[ -f "dist/$f" ]] && { cp "dist/$f" "upload/$f"; echo "upload: $f"; }
+          done
+        fi
+        if [[ -z "$(ls -A upload)" ]]; then
+          echo "empty=true" >> "$GITHUB_OUTPUT"; echo "::notice::No site changes; nothing to upload."
+          echo placeholder > upload/.keep
+        else
+          echo "empty=false" >> "$GITHUB_OUTPUT"
+        fi
+        du -sh upload
+
     - name: Save built site
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: site-${{ github.run_id }}-${{ github.run_attempt }}
-        path: dist
+        path: upload
         if-no-files-found: error
+        include-hidden-files: true
         retention-days: 90
 
   upload:
     needs: build
+    if: needs.build.outputs.empty != 'true'
     runs-on: ubuntu-24.04
     concurrency:
       group: cos-upload-${{ github.repository }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}

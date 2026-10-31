@@ -5,7 +5,7 @@ let MAP = null;
 const { ss, clamp, yearStr } = GEO;
 const HOME = { lon: 108, lat: 34.5, d: 40, tilt: 30, head: 0 };
 async function MAPINIT() {
-  MAP = GEO.create(THREE, document.getElementById('mapc'), { preserve: true, base: '', aa: false, aniso: 4, dpr: Math.min(1, devicePixelRatio || 1) });
+  MAP = GEO.create(THREE, document.getElementById('mapc'), { preserve: true, base: '', aa: false, aniso: 4, remote: true, dpr: Math.min(1, devicePixelRatio || 1) });
   MAP.resize(1920, 1080); await MAP.load(); MAP.setView(HOME); MAP.update({ year: 2000 });
   // 预热：每张近景贴图先上传一次
   Object.values(MAP.close).forEach(c => { c.m.visible = true; c.mat.uniforms.uA.value = .001; }); MAP.r.render(MAP.sc, MAP.cam); Object.values(MAP.close).forEach(c => c.m.visible = false);
