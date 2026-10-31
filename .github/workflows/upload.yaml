@@ -65,6 +65,11 @@ jobs:
       run: |
         set -euo pipefail
         rm -rf upload; mkdir -p upload
+        # 推送到 main：以 COS 上记录的“上次实际上传的提交”为基准（被跳过的部署不会丢改动）；没有记录时用上一次推送
+        if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+          deployed=$(curl -fsS "${ASSET_BASE}deployed-sha.txt?run=${GITHUB_RUN_ID}" 2>/dev/null | tr -dc '0-9a-f' || true)
+          if [[ -n "$deployed" ]] && git cat-file -e "${deployed}^{commit}" 2>/dev/null; then BEFORE="$deployed"; echo "base: deployed $BEFORE"; fi
+        fi
         full=false
         if [[ -z "${BEFORE:-}" || "$BEFORE" =~ ^0+$ ]] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then full=true; fi
         if [[ "$full" == false ]]; then
@@ -90,6 +95,7 @@ jobs:
           echo placeholder > upload/.keep
         else
           echo "empty=false" >> "$GITHUB_OUTPUT"
+          echo "$GITHUB_SHA" > upload/deployed-sha.txt
         fi
         du -sh upload
 
