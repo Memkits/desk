@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#03050b;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+#c{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,5,11,.85) 0,rgba(3,5,11,.55) 38%,rgba(3,5,11,0) 70%)}
+.v .shade{background:linear-gradient(180deg,rgba(3,5,11,.85) 0,rgba(3,5,11,.45) 40%,rgba(3,5,11,0) 62%,rgba(3,5,11,.7) 100%)}
+.t{position:absolute;left:7%;top:12%;max-width:62%}
+.v .t{left:7%;right:7%;top:7%;max-width:none}
+.series{font:900 64px/1.15 "Noto Serif CJK SC",serif;letter-spacing:.04em;text-shadow:0 4px 24px #000}
+.ep{display:inline-block;margin-top:26px;font:700 30px "Noto Sans CJK SC";color:#0b0f18;background:#ffd27a;padding:6px 18px;border-radius:10px}
+.name{font:900 128px/1.1 "Noto Serif CJK SC",serif;margin-top:22px;text-shadow:0 6px 30px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";color:#e9eef7;margin-top:20px;text-shadow:0 2px 12px #000}
+.yr{position:absolute;left:7%;bottom:9%;font:700 40px "Noto Serif CJK SC",serif;color:#ffd27a;text-shadow:0 2px 14px #000}
+.v .yr{bottom:6%}
+.v .series{font-size:80px}.v .name{font-size:180px}.v .sub{font-size:44px}.v .ep{font-size:40px}.v .yr{font-size:48px}
+.long .name{font-size:104px}.v.long .name{font-size:132px}.r43 .t{max-width:88%}
+.pin{position:absolute;transform:translate(-50%,-50%);font:700 34px "Noto Sans CJK SC";text-shadow:0 0 10px #000,0 0 4px #000;white-space:nowrap}
+.pin::before{content:"";display:block;width:22px;height:22px;border-radius:50%;background:#ffd27a;box-shadow:0 0 0 7px rgba(255,210,122,.35);margin:0 auto 8px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div><div class="t"><div class="series">卫星上的中国考古</div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div><div class="yr" id="yr"></div><div id="pins"></div>
+<script type="module">
+import * as THREE from '../three.module.js'; window.THREE = THREE;
+for (const f of ['../../data.js', '../../geomap.js']) await new Promise(r => { const s = document.createElement('script'); s.src = f; s.onload = r; document.body.appendChild(s); });
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 1, W = innerWidth, H = innerHeight, V = H > W; if (V) document.body.classList.add('v'); if (!V && W / H < 1.5) document.body.classList.add('r43');
+const E = {
+  1: { ep: '第一集', nm: '远古的人', sub: '212 万年前的石器 · 丹尼索瓦人的脸 · 冰期的黄海平原', yr: '212 万年前 — 1 万年前', year: -40000, lgm: 1, view: V ? { lon: 118, lat: 33, d: 30, tilt: 30, head: 0 } : { lon: 114, lat: 34, d: 30, tilt: 34, head: -8 }, pins: ['zhoukoudian', 'harbin', 'baishiya', 'shangchen'] },
+  2: { ep: '第二集', nm: '稻与粟', sub: '一万年前的稻作 · 九千年前的骨笛 · 满天星斗', yr: '1 万年前 — 5000 年前', year: -3300, cults: true, links: true, view: V ? { lon: 115, lat: 33, d: 26, tilt: 32, head: 0 } : { lon: 112, lat: 34, d: 28, tilt: 34, head: -6 }, pins: ['shangshan', 'cishan', 'jiahu', 'niuheliang'] },
+  3: { ep: '第三集', nm: '城', sub: '良渚的水坝 · 石峁的石城 · 陶寺的“观象台”', yr: '5300 年前 — 3800 年前', year: -2600, close: 'liangzhu', view: V ? { lon: 119.99, lat: 30.39, d: .22, tilt: 30, head: 0 } : { lon: 119.955, lat: 30.392, d: .2, tilt: 32, head: 6 }, pins: ['liangzhu'] },
+  4: { ep: '第四集', nm: '从西边来的东西', sub: '小麦、牛羊、青铜 · 二里头的宫城与道路', yr: '公元前 2600 — 前 1500 年', year: -1900, links: true, view: V ? { lon: 104, lat: 37.5, d: 30, tilt: 30, head: 0 } : { lon: 100, lat: 37, d: 26, tilt: 34, head: -6 }, pins: ['xichengyi', 'erlitou', 'zhaojiazhuang'] },
+  5: { ep: '第五集', nm: '青铜王朝到秦汉', sub: '殷墟 · 三星堆 · 秦始皇陵 · 丝绸之路', yr: '公元前 1600 — 公元 200 年', year: 100, links: true, view: V ? { lon: 100, lat: 36, d: 34, tilt: 30, head: 0 } : { lon: 96, lat: 37, d: 32, tilt: 34, head: -6 }, pins: ['yinxu', 'sanxingdui', 'qinling', 'xuanquanzhi'] },
+}[EP];
+document.getElementById('ep').textContent = E.ep; document.getElementById('nm').textContent = E.nm; if (E.nm.length > 4) document.body.classList.add('long'); document.getElementById('sub').textContent = E.sub; document.getElementById('yr').textContent = E.yr;
+const M = GEO.create(THREE, document.getElementById('c'), { preserve: true, base: '../../', aa: true, aniso: 4 });
+M.resize(W, H); await M.load(E.close ? [E.close] : []); M.setView(E.view);
+const force = EP === 5 ? new Set(['西来']) : null;
+M.update({ year: E.year, sites: new Set(E.pins), cults: E.cults || false, links: E.links || false, lgm: E.lgm || 0, close: E.close ? { [E.close]: 1 } : {}, dot: E.close ? .8 : 1.6, force });
+const pd = document.getElementById('pins');
+const tr = document.querySelector('.t').getBoundingClientRect(), yr = document.getElementById('yr').getBoundingClientRect(), inR = (r, x, y) => x > r.left - 60 && x < r.right + 60 && y > r.top - 50 && y < r.bottom + 50;
+E.pins.forEach(id => { const s = ARCH.S.find(q => q.id === id), [x, y, v] = M.project(s.lon, s.lat); if (!v || inR(tr, x, y) || inR(yr, x, y) || x < 40 || x > W - 120 || y > H - 60) return; const d = document.createElement('div'); d.className = 'pin'; d.style.left = x + 'px'; d.style.top = (y - 6) + 'px'; d.textContent = s.n; pd.appendChild(d); });
+M.update({ year: E.year, sites: new Set(), cults: E.cults || false, links: E.links || false, lgm: E.lgm || 0, close: E.close ? { [E.close]: 1 } : {}, force });
+await document.fonts.ready; window.ready = true;
+</script></body></html>

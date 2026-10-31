@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>卫星上的中国考古</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
+<style>
+:root{--bg:#05070d;--panel:#0d1220;--line:#1d2537;--fg:#e8ecf3;--fg2:#9ba6ba;--fg3:#5f6b82;--gold:#ffd27a;--pal:#ff9fb2;--neo:#8ff0b4;--city:#ffd27a;
+  --display:"Noto Serif SC","Songti SC",serif;--body:"Noto Sans SC","PingFang SC",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+/* 单一深色：卫星图本身是暗底 */
+body{background:var(--bg);color:var(--fg);margin:0;font:15px/1.6 var(--body);padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 24px}
+h1{margin:0;font:900 clamp(24px,3.2vw,38px)/1.2 var(--display);letter-spacing:.02em}
+.sub{color:var(--fg2);font-size:14px;max-width:70ch;margin:0}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px}
+@media (max-width:980px){.main{grid-template-columns:minmax(0,1fr)}}
+.view{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;aspect-ratio:16/10;min-height:340px;background:#03050b;touch-action:none}
+.view canvas{display:block;width:100%;height:100%;cursor:grab}.view canvas:active{cursor:grabbing}
+.labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-50%,-140%);pointer-events:auto;background:none;border:0;padding:2px 4px;font:600 13px var(--body);color:#fff;text-shadow:0 0 6px #000,0 0 2px #000,0 0 10px #000;white-space:nowrap;cursor:pointer}
+.lab.on{color:var(--gold);font-size:15px}
+.lab:focus-visible{outline:2px solid var(--gold);border-radius:4px}
+.cl{position:absolute;transform:translate(-50%,-50%);pointer-events:none;font:700 15px var(--display);color:rgba(255,255,255,.75);text-shadow:0 0 8px #000;white-space:nowrap}
+.yr{position:absolute;left:16px;top:12px;pointer-events:none}
+.yr .big{font:900 clamp(26px,3.6vw,44px)/1.1 var(--display);text-shadow:0 2px 16px #000}
+.yr .era{font:500 14px var(--body);color:var(--gold);text-shadow:0 0 8px #000}
+.vb{position:absolute;right:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+button{font:500 13px var(--body);color:var(--fg);background:rgba(18,24,38,.9);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--fg3)}button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.credit{position:absolute;right:10px;bottom:6px;font:11px var(--body);color:rgba(255,255,255,.55);text-shadow:0 0 4px #000;pointer-events:none;text-align:right}
+.tl{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 16px 10px}
+.tlbar{position:relative;height:58px}
+.tlbar input{position:absolute;inset:auto 0 0 0;width:100%;margin:0;accent-color:var(--gold)}
+.tick{position:absolute;top:0;transform:translateX(-50%);font:500 11px var(--mono);color:var(--fg3);white-space:nowrap}
+.tick::after{content:"";display:block;width:1px;height:8px;background:var(--fg3);margin:2px auto 0}
+.eras{position:absolute;left:0;right:0;top:22px;height:10px}
+.eras span{position:absolute;height:6px;border-radius:3px;opacity:.8}
+.tlrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:8px}
+.tlrow .lbl{font:600 12px var(--body);color:var(--fg3);letter-spacing:.08em}
+.chapters{display:flex;flex-wrap:wrap;gap:6px}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;max-height:860px;overflow:auto}
+.side h2{margin:0;font:600 12px var(--body);letter-spacing:.12em;color:var(--fg3)}
+.card h3{margin:0;font:900 26px/1.25 var(--display)}
+.card .meta{font:500 13px var(--mono);color:var(--gold);margin:4px 0 8px}
+.card p{margin:0;color:var(--fg2)}
+.card img{width:100%;border-radius:10px;margin-top:10px;display:block;aspect-ratio:1;object-fit:cover;background:#111}
+.card .src{font-size:11.5px;color:var(--fg3);margin-top:6px}
+.list{display:flex;flex-direction:column;gap:4px}
+.list button{border-radius:10px;text-align:left;display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center;padding:7px 10px}
+.list button i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.list button small{font:500 11px var(--mono);color:var(--fg3)}
+.list button[aria-current="true"]{border-color:var(--gold);background:#1a2032}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;color:var(--fg2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend b{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.legend b.ln{width:16px;height:3px;border-radius:2px}
+.note{font-size:12px;color:var(--fg3);line-height:1.6}
+</style>
+<div class="wrap">
+  <header><h1>卫星上的中国考古</h1><p class="sub">拖动时间轴，看遗址在卫星地图上一个个亮起：哪里先有人、哪里先种稻种粟、哪里先筑城，东西南北之间又交换了什么。点地名看详情和卫星近景。</p></header>
+  <div class="main">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="view" id="view"><canvas id="cv" aria-label="中国考古遗址卫星地图"></canvas><div class="labels" id="labels"></div>
+        <div class="yr"><div class="big" id="ybig"></div><div class="era" id="yera"></div></div>
+        <div class="vb"><button id="b-cult" aria-pressed="true">文化范围</button><button id="b-link" aria-pressed="true">交流路线</button><button id="b-lgm" aria-pressed="false">冰期海岸</button><button id="b-home">全图</button></div>
+        <div class="credit">底图：NASA Blue Marble · 近景：Sentinel-2 cloudless by EOX（含修改后的 Copernicus Sentinel 数据）</div>
+      </div>
+      <div class="tl">
+        <div class="tlbar"><div id="ticks"></div><div class="eras" id="eras"></div><input type="range" id="tl" min="0" max="1000" step="1" aria-label="时间"></div>
+        <div class="tlrow"><button id="play" aria-pressed="false">播放</button><span class="lbl">跳到</span><div class="chapters" id="chap"></div></div>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="card" id="card"></div>
+      <div><h2>此刻地图上的遗址</h2><div class="list" id="list"></div></div>
+      <div><h2>图例</h2><div class="legend" id="legend"></div></div>
+      <p class="note">年代取发掘报告与近年测年研究的常用数值（多为校正后的碳十四年代），文化范围用椭圆示意，不代表精确边界；交流路线表示考古材料显示的联系方向，不是确切的行进路线。时间轴按距今年数取对数，越近越展开。</p>
+    </aside>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="data.js"></script>
+<script src="geomap.js"></script>
+<script src="explore.js"></script>
+</html>
