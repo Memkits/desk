@@ -1,0 +1,15 @@
+<!doctype html><html><meta charset="utf-8"><body style="margin:0;background:#000">
+<canvas id="gl" width="2160" height="2160" style="width:2160px;height:2160px"></canvas><div id="labs"></div>
+<script type="module">
+import * as THREE from '../three.module.js'; window.THREE = THREE;
+for (const f of ['../data.js', '../w3d.js', '../scenes.js']) await new Promise((res, rej) => { const s = document.createElement('script'); s.src = f; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
+await W3.ready;
+const r = W3.r; r.setPixelRatio(1); r.setSize(2160, 2160, false); W3.cam.aspect = 1; W3.cam.updateProjectionMatrix();
+const g = W3.group(); const e = W3.earth(); e.rotation.y = 2.4; g.add(e);
+const mn = moon(1.737); mn.position.set(26, 5, -14); g.add(mn);
+[-1, 1].forEach(s => { const dir = mn.position.clone().negate().normalize().add(new THREE.Vector3(0, s * .3, s * .1)).normalize(), m = new THREE.Mesh(new THREE.ConeGeometry(.9, 50, 24, 1, true), bm(0x8fe8ff, .2, true)); m.position.copy(mn.position).addScaledVector(dir, 26); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir); g.add(m);
+  const gl = glow(0xbff4ff, 3); gl.position.copy(mn.position).addScaledVector(dir, 1.6); g.add(gl); });
+const sun = glow(0xfff2c0, 6); sun.position.set(-60, 25, -120); g.add(sun);
+W3.sun.position.set(30, 20, 40);
+W3.setCam([-4, 4, 26, 9, 1.5, -4, 42]); W3.render(); window.ready = true;
+</script></body></html>

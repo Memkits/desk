@@ -6,6 +6,10 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 
 | 目录 | 内容 |
 | --- | --- |
+| `site/fiber-bundles/` | 《纤维丛》图解文档 `report.html`（22 张图）；绘图脚本在 `sources/fiber-bundles/figures/` |
+| `site/standing-waves/` | 《驻波》两集的场景代码（`?ep=1/2`，图片 + canvas 动画）与图库 `gallery.html`；稿子、字幕、绘图脚本、Commons 署名与工具在 `sources/standing-waves/` |
+| `site/moon-tug/` | 《月球拖船：行星发动机可行性推演》的场景代码（three.js，复用太空电梯的模型）；稿子、字幕、轨道计算脚本 `calc/` 与工具在 `sources/moon-tug/` |
+| `site/space-elevator/` | 《如何建造一座太空电梯（设想篇）》的场景代码（three.js，`glb/` 是减面后按部件上色的 Tripo 模型）；稿子、字幕、减面与上色脚本在 `sources/space-elevator/` |
 | `site/algebraic-effects/` | 《代数作用》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/algebraic-effects/` |
 | `site/type-annotations/` | 《类型标注》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/type-annotations/` |
 | `site/web-color/` | 《Web 的颜色》两集的场景代码（`?ep=1/2`）与文档页 `report.html`；稿子、字幕、Markdown 原文与工具在 `sources/web-color/` |
@@ -62,6 +66,7 @@ python3 ../../sources/lingao/tools/assemble.py 1
 
 - 卫星底图：© 高德地图 GS(2025)5996号，仅叠加自绘位置与线路
 - 新闻照片：来源与原页面记录在 `site/lingao/A/news/credits.json`，画面中逐张标注
-- Wikimedia Commons 图片：作者与授权见 `sources/structural-editing/commons-credits.json`、`site/lingao/A/photos/credits.json`
+- Wikimedia Commons 图片：作者与授权见 `sources/structural-editing/commons-credits.json`、`site/lingao/A/photos/credits.json`、`sources/standing-waves/commons-credits.json`（《驻波》画面中逐张标注）
+- 地球贴图：NASA Blue Marble；太空电梯三维模型：Tripo 生成
 - 临高启明情节资料：临高启明灰机 wiki（CC BY-SA 3.0）
 - Cirru / Calcit 编辑器截图：来自 calcit-lang/editor、Cirru/hovenia-editor 的 README

@@ -1,0 +1,20 @@
+<!doctype html><html><meta charset="utf-8"><body style="margin:0;background:#000">
+<canvas id="gl" width="2160" height="2160" style="width:2160px;height:2160px"></canvas><div id="labs"></div>
+<script type="module">
+import * as THREE from '../three.module.js'; window.THREE = THREE;
+for (const f of ['../w3d.js']) await new Promise((res, rej) => { const s = document.createElement('script'); s.src = f; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
+await W3.ready;
+const r = W3.r; r.setPixelRatio(1); r.setSize(2160, 2160, false); W3.cam.aspect = 1; W3.cam.fov = 36; W3.cam.updateProjectionMatrix();
+const g = W3.group();
+const e = W3.earth(); e.scale.setScalar(9); e.position.set(-10, -72, -30); e.rotation.y = 2.2; e.rotation.z = .25; g.add(e);
+W3.sun.position.set(30, 25, 20);
+const tc = document.createElement('canvas'); tc.width = 64; tc.height = 512; const x = tc.getContext('2d'); x.fillStyle = '#4a3f2c'; x.fillRect(0, 0, 64, 512);
+let sd = 3; const rr = () => (sd = (sd * 16807) % 2147483647) / 2147483647; for (let i = 0; i < 60; i++) { x.fillStyle = `rgba(255,214,140,${.15 + rr() * .3})`; x.fillRect(rr() * 64, rr() * 512, 1 + rr() * 2, 20 + rr() * 80); }
+const rt = new THREE.CanvasTexture(tc); rt.wrapS = rt.wrapT = THREE.RepeatWrapping; rt.repeat.set(1, 14); rt.encoding = THREE.sRGBEncoding;
+const rib = new THREE.Mesh(new THREE.BoxGeometry(1.1, 160, .02), new THREE.MeshStandardMaterial({ map: rt, metalness: .4, roughness: .45 })); rib.position.y = 0; g.add(rib);
+g.add(W3.model('climber', { h: 4.6, y: -1.2 }));
+const beam = new THREE.Group(); [[.25, .7], [.6, .28], [1.1, .1]].forEach(([rad, o]) => beam.add(new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 1.4, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x66ff99).convertSRGBToLinear(), transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }))));
+beam.position.y = -31.4; g.add(beam);
+W3.setCam([13, 7, 17, -2.2, -4.5, 0, 38]); W3.render();
+window.ready = true;
+</script></body></html>

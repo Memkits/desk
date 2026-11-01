@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<link rel="stylesheet" href="video.css">
+<style>
+#gl{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#labs{position:absolute;inset:0;z-index:4;pointer-events:none}
+.lab3{left:0;top:0;transform-origin:0 0}
+.lab3 b{color:var(--gold)}
+.lab3.l{font-size:21px;font-weight:600}
+.lab3.dim{color:var(--fg2)}
+.chart{position:absolute;background:rgba(14,20,36,.9);border:1px solid var(--line);border-radius:18px;z-index:5}
+.steps{position:absolute;display:flex;flex-direction:column;gap:10px;z-index:5}
+.steps div{background:rgba(14,20,36,.85);border:1px solid var(--line);border-radius:14px;padding:12px 18px;font-size:23px;color:var(--fg3);width:420px}
+.steps div b{font-family:var(--mono);margin-right:10px;color:var(--fg3)}
+.steps div.on{border-color:var(--gold);color:var(--fg)}.steps div.on b{color:var(--gold)}
+.big{font:900 110px/1.1 var(--serif);text-shadow:0 6px 40px #000}
+.kv{display:grid;grid-template-columns:auto auto;gap:6px 22px;font-size:24px;color:var(--fg2)}.kv b{color:var(--fg);font-family:var(--mono);text-align:right}
+.bar{height:26px;border-radius:6px}
+</style>
+<body>
+<canvas id="gl" width="1920" height="1080"></canvas>
+<div id="labs"></div>
+<div id="stage"></div>
+<div class="top" id="top"></div>
+<div class="sub" id="sub"></div>
+<div id="veil"></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js'; window.THREE = THREE;
+for (const f of ['tl.js', 'w3d.js', 'scenes.js', 'engine.js', '../_shared/player.js']) await new Promise((res, rej) => { const s = document.createElement('script'); s.src = f; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
+</script>
+</body></html>

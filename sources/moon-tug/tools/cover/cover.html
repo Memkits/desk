@@ -1,0 +1,21 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><link rel="stylesheet" href="../video.css">
+<style>
+html,body{width:100vw;height:100vh;margin:0;overflow:hidden;background:#000}
+.bg{position:absolute;inset:0;background:url(bg.png) no-repeat;background-size:cover;background-position:var(--bp,60% 20%)}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,6,12,.9) 0,rgba(4,6,12,.7) 38%,rgba(4,6,12,0) 60%)}
+.t{position:absolute;left:var(--l,240px);top:var(--tp,250px);width:var(--w,820px)}
+.badge{display:inline-block;font:800 34px var(--sans);color:#070A12;background:var(--gold);padding:8px 20px;border-radius:10px;letter-spacing:.08em}
+h1{font:900 var(--fs,118px)/1.12 var(--serif);margin:28px 0 22px;text-shadow:0 6px 30px #000;color:#fff}
+.sub{position:static;font:600 var(--fs2,38px)/1.5 var(--sans);color:#E9EEF7;text-align:left;text-shadow:0 0 14px #000}
+.tags{margin-top:30px;display:flex;gap:14px;flex-wrap:wrap}.tags span{font:600 26px var(--sans);padding:8px 18px;border-radius:999px;border:1px solid #6B5523;color:var(--gold);background:rgba(40,32,12,.7)}
+.v .shade{background:linear-gradient(180deg,rgba(4,6,12,0) 40%,rgba(4,6,12,.85) 62%,rgba(4,6,12,.95) 100%)}
+</style><body>
+<div class="bg"></div><div class="shade"></div>
+<div class="t"><span class="badge">可行性推演</span><h1>月球拖船</h1><div class="sub">借月球的引力，把地球推出太阳系<br>5.7 万年后抵达半人马座 α</div><div class="tags"><span>受科幻小说启发</span><span>轨道计算</span><span>能量账本</span></div></div>
+<script>
+const W = innerWidth, H = innerHeight, r = document.documentElement.style;
+if (W / H > 1.5) { r.setProperty('--bp', '60% 40%'); r.setProperty('--l', '270px'); r.setProperty('--tp', '250px'); }          // 16:9：文字在 4:3 安全区内
+else if (W / H > 1) { r.setProperty('--bp', '62% 40%'); r.setProperty('--l', '80px'); r.setProperty('--tp', '220px'); r.setProperty('--fs', '104px'); r.setProperty('--w', '760px'); }
+else { document.body.classList.add('v'); r.setProperty('--bp', '45% 30%'); r.setProperty('--l', '80px'); r.setProperty('--tp', '1180px'); r.setProperty('--w', '920px'); r.setProperty('--fs', '120px'); r.setProperty('--fs2', '36px'); }
+document.fonts.ready.then(() => window.ready = true);
+</script></body></html>

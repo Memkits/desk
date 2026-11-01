@@ -1,0 +1,8 @@
+a=0.0002 Pmax 4 r_on 1.2 alpha 12: 13.0 yr dv 28.0 lat -10.7
+a=0.0002 Pmax 4 r_on 1.2 alpha 18: 13.0 yr dv 29.2 lat -16.9
+a=0.0002 Pmax 4 r_on 1.4 alpha 12: 8.0 yr dv 29.8 lat -11.6
+a=0.0002 Pmax 4 r_on 1.4 alpha 18: 8.1 yr dv 31.0 lat -18.3
+a=0.0002 Pmax 8 r_on 1.2 alpha 12: 18.3 yr dv 26.5 lat -9.4
+a=0.0002 Pmax 8 r_on 1.2 alpha 18: 17.9 yr dv 27.7 lat -14.8
+a=0.0002 Pmax 8 r_on 1.4 alpha 12: 12.0 yr dv 27.7 lat -9.7
+a=0.0002 Pmax 8 r_on 1.4 alpha 18: 11.9 yr dv 28.9 lat -15.3

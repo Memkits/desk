@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>纤维丛图解</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=STIX+Two+Text:ital@0;1&display=swap">
+<style>
+/* 布局：左侧常驻目录 + 一栏长文；每张图是一块深色“图版”，正文窄栏、图版加宽 */
+:root{
+  --bg:#0a0d16; --panel:#111726; --ink:#e7ebf4; --ink2:#a7b0c4; --ink3:#6c7690; --rule:#232c42;
+  --gold:#f2c46b; --blue:#6cb6ff; --rose:#ff8aa0; --plate:#070a12;
+  --display:"Noto Serif SC","Songti SC",serif; --body:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif; --math:"STIX Two Text","Times New Roman",serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f6f4ef;--panel:#ffffff;--ink:#1b2030;--ink2:#4a5268;--ink3:#7d8499;--rule:#dcd8cf;--gold:#9a6a12;--blue:#1f63b8;--rose:#b23a55;color-scheme:light}}
+:root[data-theme="light"]{--bg:#f6f4ef;--panel:#ffffff;--ink:#1b2030;--ink2:#4a5268;--ink3:#7d8499;--rule:#dcd8cf;--gold:#9a6a12;--blue:#1f63b8;--rose:#b23a55;color-scheme:light}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.85}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:200px minmax(0,1fr);gap:56px}
+nav.toc{position:sticky;top:calc(24px + env(safe-area-inset-top,0px));align-self:start;font-size:14px;line-height:1.5}
+nav.toc .h{font:600 12px var(--body);letter-spacing:.14em;color:var(--ink3);margin-bottom:12px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:7px;counter-reset:t}
+nav.toc li{counter-increment:t;display:flex;gap:10px}
+nav.toc li::before{content:counter(t);font:12px var(--math);color:var(--ink3);width:16px;flex:none;padding-top:2px}
+nav.toc a{color:var(--ink2);text-decoration:none}nav.toc a:hover,nav.toc a:focus-visible{color:var(--gold);outline:none}
+main{min-width:0}
+header.hero{margin-bottom:48px;border-bottom:1px solid var(--rule);padding-bottom:36px}
+.kicker{font:600 13px var(--body);letter-spacing:.2em;color:var(--gold)}
+h1{font:900 clamp(40px,7vw,72px)/1.1 var(--display);margin:12px 0 18px;text-wrap:balance}
+.lede{font-size:20px;line-height:1.75;color:var(--ink2);max-width:36em;margin:0}
+.formula{font-family:var(--math);font-size:1.08em;white-space:nowrap}
+.hero .eq{margin-top:26px;display:flex;flex-wrap:wrap;gap:12px 28px;font:22px var(--math);color:var(--ink)}
+.hero .eq span{display:inline-flex;gap:10px;align-items:baseline}.hero .eq small{font:13px var(--body);color:var(--ink3)}
+section{margin-top:64px;scroll-margin-top:24px}
+h2{font:900 34px/1.25 var(--display);margin:0 0 6px;text-wrap:balance}
+h2 .n{font:400 18px var(--math);color:var(--gold);margin-right:14px;vertical-align:6px}
+h3{font:700 21px/1.4 var(--display);margin:34px 0 4px}
+p{margin:12px 0;max-width:40em}
+p.sub{color:var(--ink3);margin-top:0;font-size:15px}
+b,strong{color:var(--ink);font-weight:700}
+em.t{font-style:normal;color:var(--gold);font-weight:500}
+figure{margin:26px 0 30px}
+figure .plate{background:var(--plate);border-radius:10px;overflow:hidden;border:1px solid var(--rule)}
+figure img{display:block;width:100%;height:auto;aspect-ratio:16/9}
+figcaption{font-size:14px;color:var(--ink3);margin-top:8px;line-height:1.6;max-width:52em}
+figcaption b{color:var(--ink2);font-weight:600}
+.def{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:20px 24px;margin:22px 0;max-width:44em}
+.def .h{font:600 12px var(--body);letter-spacing:.16em;color:var(--gold);margin-bottom:6px}
+.def ol{margin:6px 0 0;padding-left:1.3em}.def li{margin:4px 0}
+.m{font-family:var(--math);font-style:italic}
+.tw{overflow-x:auto;margin:20px 0}
+table{border-collapse:collapse;min-width:560px;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 13px var(--body);letter-spacing:.06em;color:var(--ink3)}
+td:first-child{color:var(--ink);white-space:nowrap}td{color:var(--ink2)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.refs li{margin:6px 0;color:var(--ink2)}.refs i{color:var(--ink)}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink3)}
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr);gap:0}nav.toc{display:none}.pair{grid-template-columns:1fr}body{font-size:16px}h2{font-size:28px}}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="目录">
+  <div class="h">目录</div>
+  <ol>
+    <li><a href="#why">为什么要研究</a></li>
+    <li><a href="#mobius">圆柱与莫比乌斯带</a></li>
+    <li><a href="#def">定义</a></li>
+    <li><a href="#trans">转移函数</a></li>
+    <li><a href="#section">截面</a></li>
+    <li><a href="#tangent">切丛与毛球定理</a></li>
+    <li><a href="#kinds">纤维的种类</a></li>
+    <li><a href="#hopf">霍普夫纤维化</a></li>
+    <li><a href="#conn">联络与和乐</a></li>
+    <li><a href="#chern">陈数</a></li>
+    <li><a href="#phys">物理里的纤维丛</a></li>
+    <li><a href="#use">有什么用</a></li>
+    <li><a href="#history">时间线</a></li>
+    <li><a href="#map">概念地图与术语</a></li>
+    <li><a href="#read">延伸阅读</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="kicker">拓扑 · 微分几何 · 规范场</div>
+  <h1>纤维丛图解</h1>
+  <p class="lede">纤维丛描述一种空间：每一小块都像两个简单空间的乘积，拼成整体时却可能扭转。它回答“局部能做的事，整体能不能做”，也是规范场论、广义相对论和拓扑物态共同的数学语言。莫比乌斯带、球面上的切向量、霍普夫的相扣圆环、磁单极和贝里相位，都可以用这一套语言来讲。</p>
+  <div class="eq">
+    <span>F → E <span style="font-size:.8em">—π→</span> B</span>
+    <span>π<sup>−1</sup>(U) ≅ U × F <small>局部平凡</small></span>
+    <span>g<sub>ij</sub> g<sub>jk</sub> = g<sub>ik</sub> <small>粘合规则</small></span>
+  </div>
+</header>
+
+<section id="why">
+  <h2><span class="n">0</span>为什么要研究纤维丛</h2>
+  <p>很多问题在小范围里没有障碍，在大范围里却做不到。球面上每一小块都能把“毛”梳顺，整个球面却一定留下一个旋；地图上每一小块都能画成平面，整个地球却不能不变形地摊平。这类“局部能做、整体做不到”的现象，单靠局部计算看不出来，需要一种语言把<b>局部的样子</b>和<b>局部之间怎样拼接</b>分开记录。纤维丛就是这种语言。</p>
+  <div class="def">
+    <div class="h">它回答的三类问题</div>
+    <ol>
+      <li><b>能不能拼成整体</b>：局部存在的东西（非零向量场、一组坐标、波函数的相位）能否连续地延伸到整个空间？不能的话，障碍是什么？</li>
+      <li><b>有多少种拼法</b>：同样的局部，能拼出多少种本质不同的整体？答案常常是一组整数，叫示性类，比如陈数、欧拉数。</li>
+      <li><b>怎样“平移”</b>：在弯曲或扭转的空间里比较不同地点的量，需要联络。绕一圈回来的偏差（和乐）往往就是能测量的物理效应。</li>
+    </ol>
+  </div>
+  <p>物理学几乎是被动地走进了这门数学。二十世纪的规范场论发现，电磁场、弱力和强力的“势”在数学上正是主丛上的联络，场强是曲率；而带电粒子的波函数是伴随丛的截面。一旦用这套语言，许多原本神秘的整数，比如磁荷的量子化、量子霍尔电导的台阶，都变成了丛的拓扑不变量。杨振宁在 1975 年和陈省身交谈后感慨，物理学家苦苦摸索出来的结构，数学家早已独立地研究清楚了。</p>
+  <p>所以研究纤维丛有两层意义：在数学里，它是把拓扑（整体的形状）和几何（局部的弯曲）连起来的桥梁；在物理和工程里，它是描述“场”和“相位”最准确的框架，并能预言那些不受细节干扰的精确整数。</p>
+</section>
+
+<section id="mobius">
+  <h2><span class="n">1</span>局部一样，整体不同</h2>
+  <p>拿一条纸带，两端直接粘起来，得到圆柱面；扭半圈再粘，得到莫比乌斯带。在两条带子上各剪一小段，你分不出它们：都是“一小段弧 × 一根线段”。区别只在整体，沿中线走一圈回到起点时，横向的那根线段有没有被翻过来。</p>
+  <figure><div class="plate"><img src="img/fb01.jpg" alt="左：蓝色圆柱面；右：红色莫比乌斯带。两者都画出横向的白色线段（纤维）和金色中线（底空间）" loading="lazy"></div>
+  <figcaption><b>图 1</b>　圆柱面是乘积 S¹ × [−1, 1]，叫平凡丛；莫比乌斯带局部是乘积，整体不是，叫非平凡丛。</figcaption></figure>
+  <p>纤维丛就是把这个观察一般化：<em class="t">底空间</em>（这里是圆 S¹）上每个点挂一根<em class="t">纤维</em>（这里是线段），挂法在局部总是“直的”，整体上可以扭。</p>
+</section>
+
+<section id="def">
+  <h2><span class="n">2</span>定义</h2>
+  <figure><div class="plate"><img src="img/fb02.jpg" alt="示意图：上方是全空间 E，由许多竖直纤维组成；下方金色曲线是底空间 B；红色纤维投影到点 b；绿色虚线框表示局部平凡化" loading="lazy"></div>
+  <figcaption><b>图 2</b>　全空间 E、底空间 B、投影 π、纤维 F，以及在开集 U 上的局部平凡化。</figcaption></figure>
+  <div class="def">
+    <div class="h">定义</div>
+    一个以 <span class="m">F</span> 为纤维的纤维丛由三样东西组成：
+    <ol>
+      <li>全空间 <span class="m">E</span>、底空间 <span class="m">B</span>，以及连续满射 <span class="m">π</span> : <span class="m">E</span> → <span class="m">B</span>；</li>
+      <li>对每个点 <span class="m">b</span>，纤维 <span class="m">π</span><sup>−1</sup>(<span class="m">b</span>) 同胚于固定的空间 <span class="m">F</span>；</li>
+      <li><b>局部平凡性</b>：每点都有邻域 <span class="m">U</span>，使 <span class="m">π</span><sup>−1</sup>(<span class="m">U</span>) ≅ <span class="m">U</span> × <span class="m">F</span>，并且这个同胚和投影相容。</li>
+    </ol>
+  </div>
+  <p>第 3 条是关键。它说丛在小范围内没有任何新东西，所有的信息都在“这些小块怎么拼起来”。如果整个 <span class="m">E</span> 能写成 <span class="m">B</span> × <span class="m">F</span>，就叫<b>平凡丛</b>。</p>
+</section>
+
+<section id="trans">
+  <h2><span class="n">3</span>转移函数：扭转记在粘合处</h2>
+  <p>把底空间盖上几块开集 <span class="m">U<sub>i</sub></span>，每块上丛都是乘积。两块重叠的地方，同一根纤维有两种坐标，它们之间差一个变换 <span class="m">g<sub>ij</sub></span>(<span class="m">b</span>)。这些变换取值的群叫<b>结构群</b> <span class="m">G</span>。</p>
+  <figure><div class="plate"><img src="img/fb03.jpg" alt="两个矩形条 U1×[−1,1] 与 U2×[−1,1]，一端用 g=+1 原样粘合，另一端用 g=−1 翻转粘合" loading="lazy"></div>
+  <figcaption><b>图 3</b>　圆用两段弧覆盖，重叠区有两段。一段原样粘（+1），另一段翻转粘（−1），就是莫比乌斯带，结构群是 {+1, −1}。</figcaption></figure>
+  <p>转移函数必须满足相容条件 <span class="formula">g<sub>ij</sub> g<sub>jk</sub> = g<sub>ik</sub></span>（三块重叠处绕一圈回到原样）。反过来，只要给出一组满足这个条件的函数，就能把乘积小块粘成一个丛。换局部坐标会把 <span class="m">g<sub>ij</sub></span> 变成 <span class="m">h<sub>i</sub></span><sup>−1</sup> <span class="m">g<sub>ij</sub> h<sub>j</sub></span>，丛的同构类就是转移函数在这种变换下的等价类。</p>
+</section>
+
+<section id="section">
+  <h2><span class="n">4</span>截面：在每根纤维上挑一个点</h2>
+  <p><b>截面</b>是一个连续映射 <span class="m">s</span> : <span class="m">B</span> → <span class="m">E</span>，满足 <span class="m">π</span> ∘ <span class="m">s</span> = id，也就是给每个底空间的点在它头顶的纤维上挑一个点。物理里的“场”，几何上就是某个丛的截面。</p>
+  <figure><div class="plate"><img src="img/fb04.jpg" alt="左：圆柱面上一条高度恒为 0.3 的金色截面；右：莫比乌斯带上的金色截面，在白点处穿过零" loading="lazy"></div>
+  <figcaption><b>图 4</b>　截面能不能处处不为零，可以用来区分丛。莫比乌斯带上任何连续截面都必定有零点。</figcaption></figure>
+  <p>原因很直观：在莫比乌斯带上从 +0.3 出发，绕一圈后纤维被翻转，同一个值变成了 −0.3；连续地从正走到负，中间必须经过零。对线丛（纤维是一维向量空间）来说，<b>平凡 ⇔ 存在处处非零的截面</b>。</p>
+</section>
+
+<section id="tangent">
+  <h2><span class="n">5</span>切丛与毛球定理</h2>
+  <p>流形 <span class="m">M</span> 上每点都有一个切空间 <span class="m">T<sub>p</sub>M</span>，把它们全部收集起来就是<b>切丛</b> <span class="m">TM</span>，它是最常见的纤维丛。向量场就是切丛的截面。</p>
+  <figure><div class="plate"><img src="img/fb05.jpg" alt="左：圆和它每点的切线；右：把切线竖起来排成圆柱面" loading="lazy"></div>
+  <figcaption><b>图 5</b>　圆的切线可以统一地“竖起来”，所以 TS¹ ≅ S¹ × ℝ，是平凡丛。</figcaption></figure>
+  <figure><div class="plate"><img src="img/fb06.jpg" alt="左：球面上的切向量场，北极有一个零点；右：用正方形表示的环面，上面的向量全部指向右" loading="lazy"></div>
+  <figcaption><b>图 6</b>　毛球定理：球面上没有处处非零的连续切向量场，所以 TS² 不平凡。环面上有，所以 TT² 平凡。</figcaption></figure>
+  <p>这背后是庞加莱–霍普夫定理：向量场零点的指数之和等于欧拉示性数 <span class="m">χ</span>(<span class="m">M</span>)。球面 <span class="m">χ</span> = 2，所以至少有一个零点；环面 <span class="m">χ</span> = 0，可以没有零点。地球上任何时刻至少有一处水平风速为零，用的就是这个结论。</p>
+</section>
+
+<section id="kinds">
+  <h2><span class="n">6</span>纤维的种类</h2>
+  <p>按纤维是什么，纤维丛分成几个大家族。</p>
+  <h3>离散的纤维：覆叠空间</h3>
+  <figure><div class="plate"><img src="img/fb07.jpg" alt="上方一条绕两圈的蓝色闭曲线，投影到下方金色圆；每个点上方有两个红点" loading="lazy"></div>
+  <figcaption><b>图 7</b>　二重覆叠 S¹ → S¹，<span class="m">z</span> ↦ <span class="m">z</span>²。纤维是两个点。莫比乌斯带的边界正是这条绕两圈的曲线。</figcaption></figure>
+  <h3>向量空间作纤维：向量丛</h3>
+  <figure><div class="plate"><img src="img/fb08.jpg" alt="沿圆排列的一圈蓝色方形平面，每个平面里有一根金色箭头，箭头沿圆逐渐旋转一整圈" loading="lazy"></div>
+  <figcaption><b>图 8</b>　每根纤维是 ℝ²，转移函数是线性的（结构群 GL(2, ℝ)）。切丛、法丛、线丛都属于这一类。</figcaption></figure>
+  <h3>群作纤维：主丛</h3>
+  <figure><div class="plate"><img src="img/fb17.jpg" alt="曲面网格上每点画一对垂直的红蓝箭头（标架）；中间一点画出所有可能的标架，组成一个圆" loading="lazy"></div>
+  <figcaption><b>图 9</b>　标架丛：一点上所有的正交标架互相差一个旋转，纤维就是旋转群 SO(2) ≅ S¹。</figcaption></figure>
+  <p><b>主 <span class="m">G</span> 丛</b>的纤维就是结构群 <span class="m">G</span> 本身，<span class="m">G</span> 在纤维上自由地作用。主丛和向量丛可以互相转换：向量丛的标架组成一个主丛；主丛配上群的一个表示 <span class="m">V</span>，就得到伴随向量丛 <span class="m">P</span> ×<sub><span class="m">G</span></sub> <span class="m">V</span>。规范场论正是在这对关系上搭起来的。</p>
+</section>
+
+<section id="hopf">
+  <h2><span class="n">7</span>霍普夫纤维化</h2>
+  <p>1931 年，霍普夫发现三维球面 <span class="m">S</span>³（四维空间里的单位球面）可以被切成无穷多个互不相交的圆，每个圆对应二维球面 <span class="m">S</span>² 上的一个点。写成复数：<span class="m">S</span>³ = {(<span class="m">z</span>₁, <span class="m">z</span>₂) : |<span class="m">z</span>₁|² + |<span class="m">z</span>₂|² = 1}，把 (<span class="m">z</span>₁, <span class="m">z</span>₂) 和 (e<sup>iθ</sup><span class="m">z</span>₁, e<sup>iθ</sup><span class="m">z</span>₂) 看成同一点，就得到 <span class="m">S</span>²。</p>
+  <figure><div class="plate"><img src="img/fb09.jpg" alt="立体投影下的大量彩色圆环，层层嵌套成环面；右侧小球面上的同色点对应左侧同色的圆" loading="lazy"></div>
+  <figcaption><b>图 10</b>　S¹ → S³ → S²。立体投影到 ℝ³ 后，同一纬度上的点对应的圆铺成一个环面，不同纬度给出嵌套的环面。</figcaption></figure>
+  <figure><div class="plate"><img src="img/fb10.jpg" alt="左：两个相扣的圆；右：七个彼此相扣的彩色圆" loading="lazy"></div>
+  <figcaption><b>图 11</b>　任意两根纤维都相扣一次。如果 S³ 是乘积 S² × S¹，纤维之间可以互相分开，所以霍普夫丛不平凡。</figcaption></figure>
+  <p>霍普夫丛是一个主 U(1) 丛，也是第一个被发现的“从高维球面到低维球面的本质映射”，开启了同伦群 <span class="m">π</span>₃(<span class="m">S</span>²) ≅ ℤ 的研究。它在物理里反复出现：量子比特的态空间（布洛赫球）、单位强度的磁单极、贝里相位，背后都是它。</p>
+</section>
+
+<section id="conn">
+  <h2><span class="n">8</span>联络、曲率与和乐</h2>
+  <p>丛本身只规定了“竖直方向”（沿纤维），没有规定在不同纤维之间怎样“平移”。<b>联络</b>补上这一点：它在每点选定一个<em class="t">水平方向</em>。有了水平方向，底空间里的一条路径就能唯一地提升成全空间里的一条水平路径，这叫<b>平行移动</b>。</p>
+  <figure><div class="plate"><img src="img/fb12.jpg" alt="圆柱面上画着倾斜的短线表示水平方向；金色提升曲线绕一圈后比起点高出一段，红色竖线标出差值" loading="lazy"></div>
+  <figcaption><b>图 12</b>　沿底空间的闭路径走一圈，提升后的路径不一定回到原点。起点和终点在同一根纤维上的差，叫这条路径的<b>和乐</b>。</figcaption></figure>
+  <figure><div class="plate"><img src="img/fb11.jpg" alt="球面上从北极到赤道、沿赤道走 90°、再回北极的三角形；红色切向量沿路径平行移动，回到北极时变成蓝色，转了 90°" loading="lazy"></div>
+  <figcaption><b>图 13</b>　球面上的平行移动（列维-奇维塔联络）。绕八分之一球面一圈，向量转了 π/2，等于这块区域的面积乘以曲率。</figcaption></figure>
+  <p><b>曲率</b>衡量水平方向的“不可积”程度：沿一个无穷小回路的和乐，就是那里的曲率。高斯–博内定理把两者连起来：转角 = ∬ <span class="m">K</span> d<span class="m">A</span>。傅科摆每天转过的角度也来自这个公式，摆面跟着地球自转，在球面上被平行移动。</p>
+  <figure><div class="plate"><img src="img/fb22.jpg" alt="曲线图：傅科摆每天转过的角度随纬度变化，赤道 0°、广州 141°、北京 231°、巴黎 271°、北极 360°" loading="lazy"></div>
+  <figcaption><b>图 14</b>　傅科摆每个恒星日转过 360° × sin(纬度)。在巴黎，转满一圈约 31.8 小时。</figcaption></figure>
+  <h3>形状空间里的和乐</h3>
+  <p>同样的结构出现在机械和动物身上。把“形状”当作底空间、“位置或朝向”当作纤维，形状变化就是底空间里的路径，联络由力学约束（车轮不能侧滑、角动量守恒）给出。形状走一个闭合回路，位置或朝向发生和乐。</p>
+  <figure><div class="plate"><img src="img/fb19.jpg" alt="左：汽车前后来回四次后整体侧移；右：猫的形状走一个回路，朝向转了 180°" loading="lazy"></div>
+  <figcaption><b>图 15</b>　汽车不能横着开，但一串小的前后回路能让它整体侧移；落猫角动量为零，靠改变形状翻转身体。航天器和宇航员调整姿态用的是同一原理。</figcaption></figure>
+  <p>曲率为零时仍然可以有和乐，只要底空间有“洞”（不单连通）。下面的阿哈罗诺夫–玻姆效应就是这种情况。</p>
+</section>
+
+<section id="chern">
+  <h2><span class="n">9</span>示性类：用数字给丛分类</h2>
+  <p>很多丛可以用一个整数来区分。最简单的例子是球面上的复线丛：北半球、南半球上各是乘积，沿赤道用一个函数 <span class="m">g</span>(<span class="m">φ</span>) = e<sup>i<span class="m">nφ</span></sup> 粘起来。<span class="m">g</span> 在单位圆上绕的圈数 <span class="m">n</span> 不能连续地改变，它就是<b>第一陈数</b> <span class="m">c</span>₁。</p>
+  <figure><div class="plate"><img src="img/fb13.jpg" alt="左：球面分成北半球与南半球；右：三个圆，圆周上的箭头分别转 0、1、2 圈" loading="lazy"></div>
+  <figcaption><b>图 16</b>　粘合构造。<span class="m">n</span> = 0 是平凡丛；|<span class="m">n</span>| = 1 对应霍普夫丛；|<span class="m">n</span>| = 2 是球面的切丛。</figcaption></figure>
+  <p>陈数也能从曲率算出来：<span class="formula">c₁ = (1/2π) ∬ F</span>。这里有一件了不起的事：曲率是局部的、依赖于联络的选择，而它在整个流形上的积分却是一个整数，只和丛的拓扑有关。欧拉示性数、庞特里亚金类、施蒂费尔–惠特尼类都属于这一类不变量，统称<b>示性类</b>。</p>
+</section>
+
+<section id="phys">
+  <h2><span class="n">10</span>物理里的纤维丛</h2>
+  <p>1975 年，吴大峻与杨振宁指出，规范场论里的概念和纤维丛的概念一一对应，并列了一张对照表。电磁学是 U(1) 主丛上的联络，弱力与强力分别对应 SU(2) 和 SU(3)。</p>
+  <div class="pair">
+  <figure><div class="plate"><img src="img/fb14.jpg" alt="磁单极的径向磁力线，左图有一条红色虚线的狄拉克弦，右图分成上下两片区域，各写一个矢势" loading="lazy"></div>
+  <figcaption><b>图 17</b>　磁单极。矢势只能分片写，转移函数必须单值，于是 2<span class="m">eg</span>/ħ 是整数，这就是狄拉克量子化条件。</figcaption></figure>
+  <figure><div class="plate"><img src="img/fb16.jpg" alt="电子从左侧发出，分两路绕过中央的螺线管，在右侧屏幕上形成干涉条纹" loading="lazy"></div>
+  <figcaption><b>图 18</b>　AB 效应。电子经过的地方磁场为零，但矢势的和乐 e<sup>i<span class="m">e</span>Φ/ħ</sup> 让干涉条纹移动。</figcaption></figure>
+  </div>
+  <figure><div class="plate"><img src="img/fb15.jpg" alt="球面上一个金色圆形回路围出一块立体角 Ω，旁边列出底空间、纤维、联络、曲率和公式 γ = −Ω/2" loading="lazy"></div>
+  <figcaption><b>图 19</b>　贝里相位：自旋 ½ 跟着磁场方向绕一圈，相位多出 −Ω/2。底空间是磁场方向的球面，相位丛就是霍普夫丛。</figcaption></figure>
+  <figure><div class="plate"><img src="img/fb21.jpg" alt="量子霍尔效应曲线：霍尔电阻随磁场呈台阶状，平台值为 h/(νe²)，纵向电阻在平台处为零" loading="lazy"></div>
+  <figcaption><b>图 20</b>　整数量子霍尔效应（示意曲线）。平台上的霍尔电导是 e²/h 的整数倍，这个整数是一个陈数（TKNN 1982），所以对样品的杂质和形状不敏感。</figcaption></figure>
+  <p>富田章与乔瑞宇在 1986 年把单模光纤绕成螺旋，测到光的偏振面转过的角度正好等于光纤切向在球面上围出的立体角，这是光子的贝里相位。外村彰在同一年用电子全息和超导屏蔽的环形磁体，干净地证实了 AB 效应。</p>
+  <figure><div class="plate"><img src="img/fb20.jpg" alt="吴大峻–杨振宁对照表：规范群对应结构群，规范势对应联络，场强对应曲率，规范变换对应换局部平凡化，相因子对应和乐" loading="lazy"></div>
+  <figcaption><b>图 21</b>　吴大峻–杨振宁对照表（1975）的主要条目。</figcaption></figure>
+  <div class="tw"><table>
+    <thead><tr><th>规范场论</th><th>纤维丛</th></tr></thead>
+    <tbody>
+      <tr><td>规范群（U(1)、SU(2)、SU(3)）</td><td>主丛的结构群</td></tr>
+      <tr><td>规范势 <span class="m">A<sub>μ</sub></span></td><td>主丛上的联络</td></tr>
+      <tr><td>场强 <span class="m">F<sub>μν</sub></span></td><td>曲率</td></tr>
+      <tr><td>规范变换</td><td>换局部平凡化（坐标）</td></tr>
+      <tr><td>相因子 e<sup>i∮<span class="m">A</span></sup></td><td>平行移动 / 和乐</td></tr>
+      <tr><td>带电的物质场</td><td>伴随向量丛的截面</td></tr>
+      <tr><td>狄拉克磁单极的量子化</td><td>U(1) 丛按第一陈数分类</td></tr>
+      <tr><td>瞬子数、拓扑荷</td><td>第二陈数等示性类</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="use">
+  <h2><span class="n">11</span>有什么用</h2>
+  <p>纤维丛很少作为“工具”直接出现在计算里，它更像一副眼镜：戴上以后，许多看似无关的现象显出同一个结构，而且能直接告诉你哪些量是精确的整数、哪些障碍无法绕开。</p>
+  <div class="tw"><table>
+    <thead><tr><th>领域</th><th>用到的概念</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td>粒子物理</td><td>主丛上的联络与曲率</td><td>标准模型 = SU(3) × SU(2) × U(1) 规范场；瞬子、磁单极按陈数分类</td></tr>
+      <tr><td>广义相对论</td><td>标架丛上的联络</td><td>引力是时空的列维-奇维塔联络，弯曲是它的曲率；陀螺仪在轨道上的进动是和乐（引力探测器 B 测到的测地线进动）</td></tr>
+      <tr><td>凝聚态与计量</td><td>贝里联络、陈数</td><td>量子霍尔电阻标准 h/e²；拓扑绝缘体；能带的贝里曲率决定反常霍尔效应</td></tr>
+      <tr><td>量子信息与光学</td><td>霍普夫丛、几何相位</td><td>量子比特的布洛赫球；用几何相位做对噪声不敏感的量子门；螺旋光纤里的偏振旋转</td></tr>
+      <tr><td>机器人与航天</td><td>形状空间上的联络、和乐</td><td>非完整约束的运动规划（汽车泊车、蛇形机器人）；卫星和宇航员用肢体动作调整姿态</td></tr>
+      <tr><td>计算机图形学</td><td>切丛的截面、离散联络</td><td>在曲面上设计方向场、交叉场来铺四边形网格和纹理；奇点个数受欧拉示性数约束</td></tr>
+      <tr><td>气象与地球科学</td><td>球面切丛的不平凡性</td><td>任何时刻地表至少有一处水平风速为零；傅科摆演示地球自转</td></tr>
+      <tr><td>纯数学</td><td>示性类、指标定理</td><td>阿蒂亚–辛格指标定理把微分方程解的个数和示性类联系起来；高斯–博内–陈定理</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="history">
+  <h2><span class="n">12</span>时间线</h2>
+  <div class="tw"><table>
+    <thead><tr><th>年份</th><th>事件</th></tr></thead>
+    <tbody>
+      <tr><td>1851</td><td>傅科在巴黎先贤祠悬挂 67 米长的摆，演示地球自转</td></tr>
+      <tr><td>1912</td><td>布劳威尔证明偶数维球面上的切向量场必有零点（毛球定理）</td></tr>
+      <tr><td>1931</td><td>霍普夫发现 S³ → S² 的纤维化；狄拉克提出磁单极与电荷量子化</td></tr>
+      <tr><td>1933–1935</td><td>塞弗特研究“纤维空间”，惠特尼提出球丛的概念</td></tr>
+      <tr><td>1946</td><td>陈省身定义陈类</td></tr>
+      <tr><td>1950–1951</td><td>埃雷斯曼定义丛上的联络；斯廷罗德出版《纤维丛的拓扑》</td></tr>
+      <tr><td>1954</td><td>杨振宁与米尔斯提出非阿贝尔规范场论</td></tr>
+      <tr><td>1959</td><td>阿哈罗诺夫与玻姆提出 AB 效应</td></tr>
+      <tr><td>1963</td><td>阿蒂亚与辛格宣布指标定理</td></tr>
+      <tr><td>1975</td><td>吴大峻与杨振宁给出规范场与纤维丛的对照</td></tr>
+      <tr><td>1980–1982</td><td>冯·克利青发现量子霍尔效应；索利斯等人（TKNN）证明霍尔电导是陈数</td></tr>
+      <tr><td>1984</td><td>贝里提出几何相位</td></tr>
+      <tr><td>1986</td><td>富田与乔在螺旋光纤中测到光子的贝里相位；外村彰证实 AB 效应</td></tr>
+      <tr><td>2016</td><td>索利斯、霍尔丹、科斯特利茨因拓扑相变与拓扑物态获诺贝尔物理学奖</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="map">
+  <h2><span class="n">13</span>概念地图与术语</h2>
+  <figure><div class="plate"><img src="img/fb18.jpg" alt="概念地图：纤维丛分为覆叠空间、向量丛、主丛，以及转移函数；向下延伸到切丛、截面、标架丛，再到联络、曲率、示性类" loading="lazy"></div>
+  <figcaption><b>图 22</b>　各个概念之间的关系。</figcaption></figure>
+  <div class="tw"><table>
+    <thead><tr><th>术语</th><th>英文</th><th>一句话</th></tr></thead>
+    <tbody>
+      <tr><td>全空间 / 底空间 / 纤维</td><td>total space / base / fiber</td><td><span class="m">E</span>、<span class="m">B</span>、<span class="m">F</span>，投影 <span class="m">π</span> : <span class="m">E</span> → <span class="m">B</span></td></tr>
+      <tr><td>局部平凡化</td><td>local trivialization</td><td>小块上 <span class="m">π</span><sup>−1</sup>(<span class="m">U</span>) ≅ <span class="m">U</span> × <span class="m">F</span></td></tr>
+      <tr><td>转移函数 / 结构群</td><td>transition function / structure group</td><td>重叠区的坐标变换，取值在群 <span class="m">G</span></td></tr>
+      <tr><td>截面</td><td>section</td><td>每点在纤维上挑一个点；即“场”</td></tr>
+      <tr><td>向量丛 / 线丛</td><td>vector / line bundle</td><td>纤维是向量空间 / 一维向量空间</td></tr>
+      <tr><td>主丛</td><td>principal bundle</td><td>纤维是结构群本身</td></tr>
+      <tr><td>拉回</td><td>pullback</td><td>沿映射 <span class="m">f</span> : <span class="m">B′</span> → <span class="m">B</span> 把丛搬到 <span class="m">B′</span> 上</td></tr>
+      <tr><td>联络 / 平行移动</td><td>connection / parallel transport</td><td>规定水平方向，把路径提升上去</td></tr>
+      <tr><td>曲率 / 和乐</td><td>curvature / holonomy</td><td>小回路 / 闭路径提升后的偏差</td></tr>
+      <tr><td>示性类 / 陈数</td><td>characteristic class / Chern number</td><td>由曲率积分得到的整数不变量</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="read">
+  <h2><span class="n">14</span>延伸阅读</h2>
+  <ul class="refs">
+    <li>M. Nakahara, <i>Geometry, Topology and Physics</i>：面向物理学生，第 9–11 章讲纤维丛、联络与示性类。</li>
+    <li>T. Frankel, <i>The Geometry of Physics</i>：图多，从电磁学和广义相对论讲到规范场。</li>
+    <li>L. W. Tu, <i>Differential Geometry: Connections, Curvature, and Characteristic Classes</i>：数学系的入门教材。</li>
+    <li>N. Steenrod, <i>The Topology of Fibre Bundles</i>（1951）与 D. Husemoller, <i>Fibre Bundles</i>：拓扑方向的经典。</li>
+    <li>J. Milnor, J. Stasheff, <i>Characteristic Classes</i>：示性类的标准参考。</li>
+    <li>T. T. Wu, C. N. Yang, “Concept of nonintegrable phase factors and global formulation of gauge fields”, <i>Phys. Rev. D</i> 12, 3845 (1975)：规范场与纤维丛对照表的出处。</li>
+  </ul>
+</section>
+
+<footer>图形均由程序绘制，为示意图：数学对象按公式计算（霍普夫纤维用立体投影、模式按解析式），视角和比例为了可读性做了选择。</footer>
+</main>
+</div>
