@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#03050b;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+#bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,5,11,.9) 0,rgba(3,5,11,.55) 40%,rgba(3,5,11,0) 70%)}
+.v .shade{background:linear-gradient(180deg,rgba(3,5,11,.95) 0,rgba(3,5,11,.75) 42%,rgba(3,5,11,.25) 70%,rgba(3,5,11,.75) 100%)}
+canvas{position:absolute;inset:0}
+.t{position:absolute;left:7%;top:13%;max-width:70%}
+.v .t{left:8%;right:8%;top:7%;max-width:none}
+.series{font:900 170px/1 "Noto Serif CJK SC",serif;letter-spacing:.08em;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;background:#ffd27a;padding:8px 22px;border-radius:12px}
+.name{font:900 110px/1.15 "Noto Serif CJK SC",serif;margin-top:26px;text-shadow:0 6px 30px #000}
+.sub{font:600 36px/1.5 "Noto Sans CJK SC";color:#ffd27a;margin-top:24px;text-shadow:0 2px 12px #000}
+.v .series{font-size:200px}.v .name{font-size:104px}.v .sub{font-size:46px}.v .ep{font-size:50px}
+.r43 .t{max-width:90%}
+</style>
+<body><div id="bg"></div><div class="shade"></div><canvas id="c"></canvas>
+<div class="t"><div class="series">纤维丛</div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 1, W = innerWidth, H = innerHeight, V = H > W;
+if (V) document.body.classList.add('v'); if (!V && W / H < 1.5) document.body.classList.add('r43');
+const E = { 1: ['上集', '局部与整体', '莫比乌斯带 · 截面 · 毛球定理 · 霍普夫纤维化', 'bg1.png', '50% 50%'],
+            2: ['下集', '联络、曲率与物理', '傅科摆 · 陈数 · 磁单极 · 量子霍尔效应', 'bg2.png', '50% 50%'] }[EP];
+ep.textContent = E[0]; nm.textContent = E[1]; sub.textContent = E[2]; bg.style.backgroundImage = `url(${E[3]})`; bg.style.backgroundPosition = E[4];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const im = new Image(); im.onload = () => window.ready = true; im.src = E[3];
+</script>
+</body></html>

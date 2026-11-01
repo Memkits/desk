@@ -6,7 +6,7 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 
 | 目录 | 内容 |
 | --- | --- |
-| `site/fiber-bundles/` | 《纤维丛》图解文档 `report.html`（22 张图）；绘图脚本在 `sources/fiber-bundles/figures/` |
+| `site/fiber-bundles/` | 《纤维丛》两集的场景代码（`?ep=1/2`，图片 + canvas 动画）与图解文档 `report.html`（22 张图）；稿子、字幕、绘图脚本与工具在 `sources/fiber-bundles/` |
 | `site/standing-waves/` | 《驻波》两集的场景代码（`?ep=1/2`，图片 + canvas 动画）与图库 `gallery.html`；稿子、字幕、绘图脚本、Commons 署名与工具在 `sources/standing-waves/` |
 | `site/moon-tug/` | 《月球拖船：行星发动机可行性推演》的场景代码（three.js，复用太空电梯的模型）；稿子、字幕、轨道计算脚本 `calc/` 与工具在 `sources/moon-tug/` |
 | `site/space-elevator/` | 《如何建造一座太空电梯（设想篇）》的场景代码（three.js，`glb/` 是减面后按部件上色的 Tripo 模型）；稿子、字幕、减面与上色脚本在 `sources/space-elevator/` |
