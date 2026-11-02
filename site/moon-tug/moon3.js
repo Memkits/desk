@@ -23,7 +23,7 @@ window.MOON3 = (() => {
       vec3 col = mix(vec3(.9, .95, 1.), vec3(.45, 1., .62), smoothstep(.25, 1.2, d)); col = mix(col, vec3(1., .42, .4), smoothstep(2.5, 7., d));
       float I = clamp(dens * e * k, 0., 1.);
       gl_FragColor = vec4(col * I, I); }`;
-  const SPOT_FS = `uniform float k; varying vec2 vUv; varying vec3 vN; varying vec3 vP; void main(){ float r = length(vUv - .5) * 2.; float a = pow(max(0., 1. - r), 1.6) * k; gl_FragColor = vec4(vec3(1., .98, .95) * a * 1.6, a); }`;
+  const SPOT_FS = `uniform float k; varying vec2 vUv; varying vec3 vN; varying vec3 vP; void main(){ float r = length(vUv - .5) * 2.; float a = (pow(max(0., 1. - r), 3.5) + .35 * pow(max(0., 1. - r), 1.2)) * k; gl_FragColor = vec4(mix(vec3(.75, 1., .85), vec3(1., .98, .95), pow(max(0., 1. - r), 2.)) * a * 1.4, a); }`;
   function engines() { const out = []; for (let i = 0; i < NJ; i++) { const ph = i / NJ * Math.PI * 2 + .13; out.push(new THREE.Vector3(Math.sin(CANT) * Math.cos(ph), Math.sin(CANT) * Math.sin(ph), Math.cos(CANT))); } return out; }
   // 在 group 里搭月球：+z 朝向地球
   function build(THREE, R, tex) {
@@ -34,19 +34,23 @@ window.MOON3 = (() => {
     dirs.forEach((d, i) => {
       const L = LEN_R * R, r0 = R * .05, geo = new THREE.CylinderGeometry(r0 + L * Math.tan(PLUME), r0, L, 36, 24, true); geo.translate(0, L / 2, 0);
       const pos = geo.attributes.position, sArr = new Float32Array(pos.count); for (let v = 0; v < pos.count; v++) sArr[v] = pos.getY(v) / L; geo.setAttribute('s', new THREE.BufferAttribute(sArr, 1));
-      const pm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquation: THREE.AddEquation, side: THREE.DoubleSide, uniforms: { k: { value: 0 }, t: { value: 0 }, seed: { value: i * 1.7 } }, vertexShader: PLUME_VS, fragmentShader: PLUME_FS });
-      const m = new THREE.Mesh(geo, pm); m.position.copy(d).multiplyScalar(R * 1.06); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); g.add(m); plumes.push(pm);
+      // 喷流是一团体积：用三层嵌套的圆锥壳近似（外、中、内），这样顺着轴线看过去中心也是亮的，而不是一个空心的环
+      let m = null;
+      [[1, .55], [.55, .5], [.22, .45]].forEach(([rs, ks]) => {
+        const gg = rs === 1 ? geo : (() => { const g2 = new THREE.CylinderGeometry((r0 + L * Math.tan(PLUME)) * rs, r0 * rs, L, 36, 24, true); g2.translate(0, L / 2, 0); const pp = g2.attributes.position, sa = new Float32Array(pp.count); for (let v = 0; v < pp.count; v++) sa[v] = pp.getY(v) / L; g2.setAttribute('s', new THREE.BufferAttribute(sa, 1)); return g2; })();
+        const pm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquation: THREE.AddEquation, side: THREE.DoubleSide, uniforms: { k: { value: 0 }, t: { value: 0 }, seed: { value: i * 1.7 } }, vertexShader: PLUME_VS, fragmentShader: PLUME_FS });
+        pm.userData.ks = ks; const mm = new THREE.Mesh(gg, pm); mm.position.copy(d).multiplyScalar(R * 1.06); mm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); g.add(mm); plumes.push(pm); if (!m) m = mm; });
       // 喷口：一个小碗 + 发光片
-      const bell = new THREE.Mesh(new THREE.CylinderGeometry(R * .05, R * .028, R * .06, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x9a9aa0, roughness: .6, metalness: .5, side: THREE.DoubleSide, emissive: 0x331108 })); bell.position.copy(d).multiplyScalar(R * 1.03); bell.quaternion.copy(m.quaternion); g.add(bell);
-      const sm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquation: THREE.AddEquation, uniforms: { k: { value: 0 } }, vertexShader: VS, fragmentShader: SPOT_FS });
-      const sp = new THREE.Mesh(new THREE.PlaneGeometry(R * .12, R * .12), sm); sp.position.copy(d).multiplyScalar(R * 1.06); sp.quaternion.copy(m.quaternion); sp.rotateX(-Math.PI / 2); g.add(sp); spots.push(sm); });
+      const bell = new THREE.Mesh(new THREE.CylinderGeometry(R * .05, R * .028, R * .06, 24, 1, true), new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: .9, metalness: .1, side: THREE.DoubleSide })); bell.position.copy(d).multiplyScalar(R * 1.03); bell.quaternion.copy(m.quaternion); g.add(bell);
+      const sm = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide, blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendEquation: THREE.AddEquation, uniforms: { k: { value: 0 } }, vertexShader: VS, fragmentShader: SPOT_FS });   // 喷口上方最密的一段等离子体：顺着轴线看是整幅画面里最亮的点
+      const sp = new THREE.Mesh(new THREE.PlaneGeometry(R * .36, R * .36), sm); sp.renderOrder = 5; sp.position.copy(d).multiplyScalar(R * 1.06); sp.quaternion.copy(m.quaternion); sp.rotateX(-Math.PI / 2); g.add(sp); spots.push(sm); });
     const inv = new THREE.Quaternion(), tmp = new THREE.Vector3();
     const set = o => {
       if (o.sunWorld) { inv.copy(g.quaternion).invert(); mat.uniforms.sun.value.copy(o.sunWorld).normalize(); }
       if (o.sunI !== undefined) mat.uniforms.sunI.value = o.sunI;
       if (o.earthA !== undefined) mat.uniforms.earthA.value = o.earthA;
       if (o.hot !== undefined) mat.uniforms.hot.value = o.hot;
-      if (o.eng !== undefined) { mat.uniforms.eng.value = typeof o.eng === 'function' ? 1 : o.eng; plumes.forEach((p, i) => { const k = typeof o.eng === 'function' ? o.eng(i) : o.eng; p.uniforms.k.value = k; spots[i].uniforms.k.value = Math.min(1, k); }); }
+      if (o.eng !== undefined) { mat.uniforms.eng.value = typeof o.eng === 'function' ? 1 : o.eng; plumes.forEach((p, j) => { const i = Math.floor(j / 3), k = typeof o.eng === 'function' ? o.eng(i) : o.eng; p.uniforms.k.value = k * p.userData.ks; }); spots.forEach((sm, i) => sm.uniforms.k.value = Math.min(1, typeof o.eng === 'function' ? o.eng(i) : o.eng)); }
       if (o.t !== undefined) plumes.forEach(p => p.uniforms.t.value = o.t);
       // 世界坐标下的喷口位置与地球方向
       g.updateMatrixWorld(true); mat.uniforms.earthDir.value.set(0, 0, 1).applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion())); mat.uniforms.center.value.copy(g.getWorldPosition(tmp));

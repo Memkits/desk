@@ -231,6 +231,6 @@ const ST = (() => {
   }
   // 只画某个场景的前景层（竖直位移 dy，透明度 a）：给长镜头起飞时用
   function fg(name, g, dy = 0, a = 1) { const s = S[name]; if (!s.c) draw(name, mk().getContext('2d'), 0, 0); g.save(); g.globalAlpha = a; g.drawImage(s.c[1], 0, dy); g.restore(); }
-  return { draw, fg, moon, aurora, names: Object.keys(S) };
+  return { draw, fg, moon, aurora, person, tower, crowdRows, names: Object.keys(S) };
 })();
 window.ST = ST;
