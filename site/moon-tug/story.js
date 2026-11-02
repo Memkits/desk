@@ -41,8 +41,12 @@ const ST = (() => {
     if (o.lamp) { glow(g, 0, -84, 40, 'rgba(255,230,180,A)', .8); g.fillStyle = '#fff0cc'; g.fillRect(-4, -86, 8, 4); }
     g.restore();
   }
-  function crowd(g, y, n, h, col, phoneP = .25, seed = 5, x0 = 0, x1 = W) { rs(seed); for (let i = 0; i < n; i++) { const x = x0 + rn() * (x1 - x0), hh = h * (.8 + .35 * rn()), ch = rn() < .15; const ph = rn() < phoneP;
-      person(g, x, y + rn() * h * .12, ch ? hh * .65 : hh, { col, child: ch, arm: ph ? 'phone' : rn() < .12 ? 'point' : 'down', dir: rn() < .5 ? 1 : -1, coat: rn() < .4 }); } }
+  // 人群：rows = [[y, n, h, col, phoneP, seed, x0, x1], ...]，所有人按脚的位置排序后从远到近画，近处的人总在前面
+  function crowdRows(g, rows) { const P = [];
+    rows.forEach(([y, n, h, col, phoneP = .25, seed = 5, x0 = 0, x1 = W]) => { rs(seed); for (let i = 0; i < n; i++) { const x = x0 + rn() * (x1 - x0), hh = h * (.8 + .35 * rn()), ch = rn() < .15, ph = rn() < phoneP;
+      P.push([y + rn() * h * .12, x, ch ? hh * .65 : hh, { col, child: ch, arm: ph ? 'phone' : rn() < .12 ? 'point' : 'down', dir: rn() < .5 ? 1 : -1, coat: rn() < .4 }]); } });
+    P.sort((a, b) => a[0] - b[0]); P.forEach(([y, x, h, o]) => person(g, x, y, h, o)); }
+  function crowd(g, y, n, h, col, phoneP = .25, seed = 5, x0 = 0, x1 = W) { crowdRows(g, [[y, n, h, col, phoneP, seed, x0, x1]]); }
   function tower(g, x, base, w, h, col, lit = .3, seed = 1, broken = 0, litCol = 'rgba(255,205,140,') {
     rs(seed); g.fillStyle = col; g.beginPath(); g.moveTo(x, base);
     if (broken) { g.lineTo(x, base - h * (1 - broken * rn() * .3)); for (let k = 1; k <= 6; k++) g.lineTo(x + w * k / 6, base - h * (1 - broken * (.1 + .5 * rn()))); } else { g.lineTo(x, base - h); g.lineTo(x + w, base - h); }
@@ -62,7 +66,7 @@ const ST = (() => {
   const scene = (name, bg, mid, fg, bg2, mid2) => S[name] = { bg, mid, fg, bg2, mid2, c: null };
   // ---------- 出发前一夜：屋顶上的父女 ----------
   scene('eve', g => { sky(g, [[0, '#0b1230'], [.6, '#2a2650'], [1, '#5b3b5e']], 760); stars(g, 500, .8, 700, 4);
-    moon(g, 1480, 260, 30, { i: 118, sa: .55, es: .12 });
+    moon(g, 1480, 260, 30, { i: 117, sa: .55, es: .12 });
     for (let i = 0; i < 40; i++) tower(g, i * 52 - 20, 800, 46, 80 + ((i * 37) % 11) * 22, '#2c2a52', .45, 50 + i);
     for (let i = 0; i < 26; i++) tower(g, i * 80 - 40, 840, 70, 100 + ((i * 53) % 9) * 24, '#211f40', .35, 90 + i); },
    null,
@@ -74,7 +78,7 @@ const ST = (() => {
   // ---------- 广场人群看月球点火 ----------
   scene('crowd', g => { sky(g, [[0, '#050a1c'], [.7, '#14254a'], [1, '#2c4470']], 820); stars(g, 300, .6, 700, 5); glow(g, -100, 900, 900, 'rgba(120,140,200,A)', .25); },
    (g, t, u) => { const BR = 240 / 70, k = Math.min(1, Math.max(0, (t - BR) / 1.0)); moon(g, 1450, 250, 96, { i: 92, sa: Math.PI - .5, eng: k, t }); },
-   g => { g.fillStyle = '#04060c'; g.fillRect(0, 900, W, 180); crowd(g, 840, 70, 120, '#0a0f1c', .2, 6); crowd(g, 900, 55, 170, '#06080f', .25, 7); crowd(g, 990, 28, 260, '#030408', .3, 8); },
+   g => { g.fillStyle = '#04060c'; g.fillRect(0, 900, W, 180); crowdRows(g, [[840, 70, 120, '#0a0f1c', .2, 6], [900, 55, 170, '#06080f', .25, 7], [990, 28, 260, '#030408', .3, 8]]); },
    g => {
     for (let i = 0; i < 14; i++) tower(g, i * 150 - 30, 760, 120, 200 + ((i * 41) % 7) * 34, '#0b1226', .3, 120 + i, 0, 'rgba(180,215,255,');
     g.fillStyle = '#0b1226'; g.fillRect(760, 330, 400, 430); g.fillStyle = '#0a1a33'; g.fillRect(790, 360, 340, 170); },
@@ -98,12 +102,15 @@ const ST = (() => {
      g.fillStyle = '#0b1424'; g.fillRect(0, 930, W, 150); rs(12); for (let i = 0; i < 120; i++) { g.fillStyle = `rgba(160,190,240,${.08 + .15 * rn()})`; g.fillRect(rn() * W, 940 + rn() * 130, 20 + rn() * 90, 2); }
      });
   // ---------- 近日点的白天 ----------
-  scene('heat', g => { sky(g, [[0, '#ffd9a0'], [.5, '#ffb066'], [1, '#d9733a']], 900); glow(g, 1200, 300, 700, 'rgba(255,250,230,A)', .9); g.fillStyle = '#fffbe9'; g.beginPath(); g.arc(1200, 300, 210, 0, 7); g.fill(); },
-   (g, t) => { g.globalAlpha = .12; for (let i = 0; i < 30; i++) { const y = 560 + i * 16; g.fillStyle = '#fff3d6'; g.fillRect(0, y + 4 * Math.sin(t * 3 + i), W, 3); } g.globalAlpha = 1; },
-   g => { [[0, 420, 560], [400, 300, 420], [1480, 440, 600], [1300, 200, 380]].forEach(([x, w, h], i) => { g.fillStyle = i % 2 ? '#7a3d22' : '#5c2d19'; g.fillRect(x, 940 - h, w, h); g.fillStyle = 'rgba(40,20,12,.85)'; for (let k = 0; k < Math.floor(h / 70); k++) for (let j = 0; j < Math.floor(w / 70); j++) { g.fillRect(x + 18 + j * 70, 940 - h + 30 + k * 70, 44, 40); g.fillStyle = 'rgba(120,70,40,.9)'; for (let s = 0; s < 4; s++) g.fillRect(x + 18 + j * 70, 940 - h + 34 + k * 70 + s * 9, 44, 3); g.fillStyle = 'rgba(40,20,12,.85)'; } });
-     g.fillStyle = '#4a2414'; g.fillRect(0, 930, W, 150); g.fillStyle = '#2a120a'; g.beginPath(); g.moveTo(820, 930); g.lineTo(1100, 930); g.lineTo(1080, 1000); g.lineTo(840, 1000); g.fill();
-     g.fillStyle = '#e8dcc0'; g.fillRect(860, 740, 200, 60); g.fillStyle = '#2a120a'; g.font = '700 30px "Noto Sans CJK SC",sans-serif'; g.fillText('地下入口 ↓', 878, 782);
-     person(g, 1180, 930, 230, { suit: 1, col: '#3a1a0e', visor: 'rgba(255,220,160,.7)', dir: -1 }); person(g, 1300, 935, 160, { suit: 1, col: '#3a1a0e', visor: 'rgba(255,220,160,.7)', dir: -1 }); });
+  scene('heat', g => { sky(g, [[0, '#24568f'], [.6, '#5d8fc2'], [1, '#9fbad6']], 900); glow(g, 1500, 220, 260, 'rgba(255,245,215,A)', .3); g.fillStyle = '#fff1cf'; g.beginPath(); g.arc(1500, 220, 46, 0, 7); g.fill();
+     rs(61); for (let i = 0; i < 9; i++) { const x = rn() * W, y = 120 + rn() * 260, w = 160 + rn() * 260; g.fillStyle = 'rgba(235,242,250,.55)'; g.beginPath(); g.ellipse(x, y, w, 34 + rn() * 20, 0, 0, 7); g.ellipse(x + w * .3, y - 20, w * .5, 40, 0, 0, 7); g.fill(); } },
+   (g, t) => { rs(62); for (let i = 0; i < 40; i++) { const x = rn() * W, y = 700 + rn() * 300; g.fillStyle = `rgba(90,140,200,${.35 + .3 * Math.sin(t * 2 + i)})`; g.beginPath(); g.ellipse(x, y, 30 + rn() * 90, 6 + rn() * 8, 0, 0, 7); g.fill(); } },
+   g => { [[0, 420, 560], [400, 300, 420], [1480, 440, 600], [1300, 200, 380]].forEach(([x, w, h], i) => { g.fillStyle = i % 2 ? '#5e6a80' : '#4a5468'; g.fillRect(x, 940 - h, w, h); g.fillStyle = 'rgba(40,50,70,.8)'; for (let k = 0; k < Math.floor(h / 70); k++) for (let j = 0; j < Math.floor(w / 70); j++) g.fillRect(x + 18 + j * 70, 940 - h + 30 + k * 70, 44, 40);
+       g.fillStyle = '#d6dee8'; g.fillRect(x - 8, 940 - h - 14, w + 16, 22); for (let k = 0; k < w / 24; k++) { g.beginPath(); g.moveTo(x - 6 + k * 24, 940 - h + 8); g.lineTo(x + 2 + k * 24, 940 - h + 30 + (k % 3) * 14); g.lineTo(x + 10 + k * 24, 940 - h + 8); g.fill(); } });
+     const ig = g.createLinearGradient(0, 920, 0, H); ig.addColorStop(0, '#b4c0cf'); ig.addColorStop(1, '#6e7c90'); g.fillStyle = ig; g.fillRect(0, 920, W, 160);
+     g.fillStyle = '#2a3140'; g.beginPath(); g.moveTo(820, 930); g.lineTo(1100, 930); g.lineTo(1080, 1000); g.lineTo(840, 1000); g.fill(); g.fillStyle = '#1a1f2a'; g.fillRect(850, 850, 220, 80); g.fillStyle = 'rgba(255,200,130,.9)'; g.fillRect(870, 870, 180, 46);
+     g.fillStyle = '#e8ecf2'; g.fillRect(860, 740, 200, 60); g.fillStyle = '#2a3140'; g.font = '700 30px "Noto Sans CJK SC",sans-serif'; g.fillText('地下入口 ↑', 878, 782);
+     [[700, 955, 240, { coat: 1, arm: 'up' }], [800, 962, 160, { child: 1, arm: 'up' }], [1200, 950, 230, { coat: 1, dir: -1, arm: 'hold' }], [1330, 958, 200, { coat: 1, dir: -1 }], [1420, 965, 150, { child: 1, dir: -1, arm: 'point' }]].forEach(([x, y, h, o]) => person(g, x, y, h, { col: '#1a1f2a', ...o })); });
   // ---------- 地下城 ----------
   scene('under', g => { sky(g, [[0, '#120c08'], [1, '#2a1a10']]); g.fillStyle = '#1b120c'; for (let i = 0; i < 7; i++) { g.beginPath(); g.ellipse(i * 330, 80, 260, 260, 0, 0, Math.PI); g.fill(); }
      g.fillStyle = '#0d0a14'; g.fillRect(860, 0, 200, 230); moon(g, 960, 112, 34, { i: 95, sa: Math.PI - .4, eng: .9, ray: 2.2 });
@@ -115,7 +122,7 @@ const ST = (() => {
      [[300, 160, {}], [360, 100, { child: 1, arm: 'up' }], [700, 165, { arm: 'hold' }], [760, 105, { child: 1 }], [1100, 95, { child: 1, walk: 1 }], [1180, 92, { child: 1, walk: 1, dir: -1, arm: 'up' }], [1500, 170, { coat: 1 }], [1620, 150, { bag: 1, dir: -1 }]].forEach(([x, h, o]) => person(g, x, 915, h * 1.45, { col: '#0a0604', ...o })); });
   // ---------- 冰封的海与船 ----------
   scene('ship', g => { sky(g, [[0, '#02040a'], [1, '#0f1a2c']], 700); stars(g, 700, 1, 680, 8); glow(g, 1600, 230, 60, 'rgba(255,245,225,A)', .9); g.fillStyle = '#fffaf0'; g.beginPath(); g.arc(1600, 230, 5, 0, 7); g.fill(); },
-   (g, t) => moon(g, 420, 230, 70, { i: 112, sa: 0, dim: .5, es: 0 }),
+   (g, t) => moon(g, 420, 230, 98, { i: 112, sa: 0, dim: .5, es: 0 }),
    g => { const ig = g.createLinearGradient(0, 640, 0, H); ig.addColorStop(0, '#b9bec6'); ig.addColorStop(1, '#4a4f58'); g.fillStyle = ig; g.fillRect(0, 640, W, H - 640);
      rs(14); for (let i = 0; i < 26; i++) { const x = rn() * W, y = 660 + rn() * 260, w = 60 + rn() * 200, h = 20 + rn() * 60; const v = 200 + 50 * rn() | 0; g.fillStyle = `rgba(${v},${v + 3},${v + 8},${.5 + .4 * rn()})`; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w * .3, y - h); g.lineTo(x + w * .6, y - h * .4); g.lineTo(x + w, y); g.fill(); }
      g.save(); g.translate(1060, 690); g.rotate(-.08); g.fillStyle = '#1a1f2a'; g.beginPath(); g.moveTo(-420, 0); g.lineTo(380, 0); g.lineTo(440, -90); g.lineTo(-460, -90); g.fill(); g.fillStyle = '#2a3140'; g.fillRect(-380, -150, 600, 60); g.fillStyle = '#7a2a22'; for (let i = 0; i < 6; i++) g.fillRect(-370 + i * 100, -140, 80, 40);
@@ -124,7 +131,7 @@ const ST = (() => {
   // ---------- 冰中的城市 ----------
   scene('icecity', g => { sky(g, [[0, '#020409'], [1, '#0b1626']], 760); stars(g, 600, 1, 700, 9);
      for (let i = 0; i < 5; i++) { const gr = g.createLinearGradient(0, 120, 0, 560); gr.addColorStop(0, 'rgba(90,255,190,0)'); gr.addColorStop(.6, `rgba(90,255,190,${.05 + .02 * i})`); gr.addColorStop(1, 'rgba(90,255,190,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(100 + i * 160, 560); g.bezierCurveTo(400 + i * 170, 300, 700 + i * 160, 220, 1100 + i * 150, 120); g.lineTo(1150 + i * 150, 150); g.bezierCurveTo(740 + i * 160, 260, 450 + i * 170, 340, 160 + i * 160, 590); g.fill(); } },
-   (g, t) => moon(g, 1500, 240, 64, { i: 80, sa: Math.PI - .2, dim: .45, es: 0 }),
+   (g, t) => moon(g, 1500, 240, 90, { i: 80, sa: Math.PI - .2, dim: .45, es: 0 }),
    g => { [[80, 200, 560], [330, 160, 700], [540, 220, 480], [1180, 180, 620], [1400, 240, 520], [1700, 180, 660]].forEach(([x, w, h], i) => { tower(g, x, 900, w, h, '#0e1828', .04, 400 + i, 0, 'rgba(255,200,130,'); g.fillStyle = 'rgba(215,220,228,.28)'; g.fillRect(x - 14, 900 - h * .75, w + 28, h * .75); g.fillStyle = 'rgba(232,235,240,.9)'; g.fillRect(x - 14, 900 - h, w + 28, 10); g.strokeStyle = 'rgba(230,235,242,.55)'; g.lineWidth = 2; g.strokeRect(x - 14, 900 - h * .75, w + 28, h * .75);
        g.fillStyle = 'rgba(230,234,240,.7)'; for (let k = 0; k < w / 16; k++) { g.beginPath(); g.moveTo(x - 10 + k * 16, 900 - h * .75); g.lineTo(x - 4 + k * 16, 900 - h * .75 + 18 + (k % 3) * 10); g.lineTo(x + 2 + k * 16, 900 - h * .75); g.fill(); } });
      g.strokeStyle = '#0e1828'; g.lineWidth = 8; g.beginPath(); g.arc(900, 640, 200, 0, 7); g.stroke(); for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283; g.beginPath(); g.moveTo(900, 640); g.lineTo(900 + 200 * Math.cos(a), 640 + 200 * Math.sin(a)); g.stroke(); g.fillStyle = '#0e1828'; g.fillRect(900 + 200 * Math.cos(a) - 14, 640 + 200 * Math.sin(a), 28, 24); }
@@ -146,7 +153,7 @@ const ST = (() => {
      g.fillStyle = '#0a0604'; g.fillRect(780, 880, 50, 40); g.fillRect(870, 886, 44, 34); g.fillStyle = '#4c9be8'; g.fillRect(782, 876, 46, 7); g.fillStyle = '#ffd34d'; g.fillRect(872, 882, 40, 7); });
   // ---------- 冰原上的天文台 ----------
   scene('obs', g => { sky(g, [[0, '#01030a'], [1, '#0c1626']], 760); stars(g, 900, 1, 740, 10); [[1240, 250, 1], [1262, 242, .7]].forEach(([x, y, s]) => { glow(g, x, y, 70 * s, 'rgba(255,235,205,A)', .9); g.fillStyle = '#fffaf0'; g.beginPath(); g.arc(x, y, 4 * s + 1, 0, 7); g.fill(); }); },
-   (g, t) => moon(g, 380, 260, 58, { i: 155, sa: 0, dim: .25, es: 0, rim: .18 }),
+   (g, t) => moon(g, 380, 260, 82, { i: 155, sa: 0, dim: .25, es: 0, rim: .18 }),
    g => { const ig = g.createLinearGradient(0, 760, 0, H); ig.addColorStop(0, '#8e939c'); ig.addColorStop(1, '#2e3138'); g.fillStyle = ig; g.beginPath(); g.moveTo(0, 790); g.quadraticCurveTo(700, 730, 1300, 770); g.quadraticCurveTo(1600, 790, W, 760); g.lineTo(W, H); g.lineTo(0, H); g.fill();
      g.fillStyle = '#121a26'; g.fillRect(540, 640, 300, 140); g.beginPath(); g.arc(690, 640, 150, Math.PI, 0); g.fill(); g.fillStyle = 'rgba(255,200,130,.85)'; g.fillRect(676, 500, 28, 120); g.strokeStyle = '#121a26'; g.lineWidth = 16; g.beginPath(); g.moveTo(690, 600); g.lineTo(760, 520); g.stroke(); glow(g, 690, 560, 120, 'rgba(255,190,110,A)', .25);
      g.fillStyle = 'rgba(255,200,130,.85)'; g.fillRect(620, 720, 40, 50);
@@ -154,11 +161,18 @@ const ST = (() => {
   // ---------- 第 57,000 年：两代人与两颗星 ----------
   scene('elders', g => { sky(g, [[0, '#04040c'], [.7, '#1a1530'], [1, '#3a2a3c']], 780); stars(g, 900, 1, 760, 11);
      [[1180, 300, 1], [1235, 285, .75]].forEach(([x, y, s]) => { glow(g, x, y, 200 * s, 'rgba(255,225,185,A)', .55); g.fillStyle = '#fff6e6'; g.beginPath(); g.arc(x, y, 16 * s, 0, 7); g.fill(); }); },
-   (g, t) => moon(g, 560, 220, 52, { i: 100, sa: .13, dim: .85, es: 0 }),
+   (g, t) => moon(g, 560, 220, 74, { i: 100, sa: .13, dim: .85, es: 0 }),
    g => { const ig = g.createLinearGradient(0, 760, 0, H); ig.addColorStop(0, '#d8cdbf'); ig.addColorStop(1, '#4a4440'); g.fillStyle = ig; g.beginPath(); g.moveTo(0, 820); g.quadraticCurveTo(500, 770, 960, 800); g.quadraticCurveTo(1400, 830, W, 790); g.lineTo(W, H); g.lineTo(0, H); g.fill();
      g.fillStyle = '#0d0c16'; g.beginPath(); g.moveTo(740, 820); g.quadraticCurveTo(900, 770, 1080, 812); g.lineTo(1080, 880); g.lineTo(740, 880); g.fill();
      person(g, 860, 812, 260, { suit: 1, col: '#0d0c16', visor: 'rgba(255,225,190,.7)' }); person(g, 975, 808, 175, { suit: 1, col: '#0d0c16', visor: 'rgba(255,225,190,.7)' }); g.strokeStyle = '#0d0c16'; g.lineWidth = 12; g.beginPath(); g.moveTo(992, 660); g.lineTo(1050, 570); g.stroke(); });
 
+  // ---------- 月亮靠近：月球自己的发动机把它从 38 万公里拉到 11 万公里 ----------
+  scene('approach', g => { sky(g, [[0, '#050a1c'], [.7, '#14254a'], [1, '#2c4470']], 820); stars(g, 300, .6, 700, 5);
+     for (let i = 0; i < 40; i++) tower(g, i * 52 - 20, 800, 46, 80 + ((i * 37) % 11) * 22, '#141a30', .3, 150 + i); for (let i = 0; i < 26; i++) tower(g, i * 80 - 40, 840, 70, 100 + ((i * 53) % 9) * 24, '#0d1224', .25, 190 + i); g.fillStyle = '#07070f'; g.fillRect(0, 860, W, 220); },
+   (g, t, u) => { const k = Math.min(1, Math.max(0, (u - .08) / .84)), d = 384 * Math.exp(Math.log(110 / 384) * k), r = 30 * 384 / d, hours = Math.round(54 * k);
+     moon(g, 1250 - 140 * k, 300 + 20 * k, r, { i: 95 - 10 * k, sa: Math.PI - .45, eng: 1, t });
+     g.textAlign = 'right'; g.fillStyle = 'rgba(242,230,204,.9)'; g.font = '600 40px "Noto Serif CJK SC",serif'; g.fillText(`${Math.round(d)},000 km`, 1820, 300); g.fillStyle = 'rgba(242,196,107,.85)'; g.font = '500 24px "Noto Sans CJK SC",sans-serif'; g.fillText(hours < 1 ? '点火' : hours < 24 ? `${hours} 小时后` : `第 ${Math.floor(hours / 24) + 1} 天`, 1820, 345); g.textAlign = 'left'; },
+   g => { crowdRows(g, [[880, 30, 130, '#06080f', .3, 16, 200, 1700]]); });
   // ---------- 月球上的建设者：朝向地球那一面的发动机工地 ----------
   const regolith = (g, y0, seed, tone = 1) => { const gr = g.createLinearGradient(0, y0, 0, H); gr.addColorStop(0, `rgb(${120 * tone | 0},${118 * tone | 0},${114 * tone | 0})`); gr.addColorStop(1, `rgb(${40 * tone | 0},${39 * tone | 0},${38 * tone | 0})`); g.fillStyle = gr; g.fillRect(0, y0, W, H - y0);
     rs(seed); for (let i = 0; i < 70; i++) { const x = rn() * W, y = y0 + 10 + Math.pow(rn(), 1.4) * (H - y0), rr = (4 + rn() * 40) * (.3 + (y - y0) / 300); g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(x, y, rr, rr * .32, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,250,.12)'; g.beginPath(); g.ellipse(x + rr * .25, y + rr * .06, rr * .8, rr * .22, 0, 0, Math.PI); g.fill(); } };
@@ -167,7 +181,7 @@ const ST = (() => {
     rs(77); for (let i = 0; i < 14; i++) { const a = rn() * 6.28, d = rn() * r * .8; g.fillStyle = `rgba(${rn() < .5 ? '120,150,80' : '250,250,255'},${.35 * (Math.cos(a) * d > 0 ? 1 : .08)})`; g.beginPath(); g.ellipse(d * Math.cos(a), d * Math.sin(a), r * (.1 + .2 * rn()), r * (.05 + .1 * rn()), rn() * 3, 0, 7); g.fill(); }
     rs(78); for (let i = 0; i < 40; i++) { const a = rn() * 6.28, d = rn() * r * .9; if (Math.cos(a) * d < -r * .05) { g.fillStyle = 'rgba(255,200,120,.7)'; g.fillRect(d * Math.cos(a), d * Math.sin(a), 1.5, 1.5); } }
     g.restore(); g.strokeStyle = 'rgba(140,190,255,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, r + 1, sa - 1.6, sa + 1.6); g.stroke(); };
-  scene('build', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars(g, 900, .9, H, 21); earthDisc(g, 1560, 300, 130, 0);
+  scene('build', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars(g, 900, .9, H, 21); earthDisc(g, 1560, 300, 44, 0);
      g.fillStyle = '#6d6b67'; g.beginPath(); g.moveTo(0, 700); g.quadraticCurveTo(500, 660, 900, 690); g.quadraticCurveTo(1400, 720, W, 680); g.lineTo(W, H); g.lineTo(0, H); g.fill(); },
    null,
    g => { regolith(g, 700, 23);
@@ -215,6 +229,8 @@ const ST = (() => {
     g.save(); g.translate(cx, cy); g.scale(k1, k1); g.translate(-cx, -cy); g.drawImage(s.c[0], 0, 0); if (s.mid) s.mid(g, t, u); if (s.bg2) g.drawImage(s.c[2], 0, 0); if (s.mid2) s.mid2(g, t, u); g.restore();
     g.save(); g.translate(cx, cy); g.scale(k2, k2); g.translate(-cx, -cy - 6 * u); g.drawImage(s.c[1], 0, 0); g.restore();
   }
-  return { draw, moon, aurora, names: Object.keys(S) };
+  // 只画某个场景的前景层（竖直位移 dy，透明度 a）：给长镜头起飞时用
+  function fg(name, g, dy = 0, a = 1) { const s = S[name]; if (!s.c) draw(name, mk().getContext('2d'), 0, 0); g.save(); g.globalAlpha = a; g.drawImage(s.c[1], 0, dy); g.restore(); }
+  return { draw, fg, moon, aurora, names: Object.keys(S) };
 })();
 window.ST = ST;

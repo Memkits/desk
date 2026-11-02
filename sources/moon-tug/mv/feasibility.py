@@ -86,7 +86,7 @@ for Lk in [5e6, 2e7]:
     add('喷流', f'离喷口 {Lk/1e6:.0f} 千公里处在地面上的视角', f'{th:.1f}° ≈ {th/math.degrees(math.atan(R_M/d)):.1f} 个月亮半径', '发光 ∝ 密度² ∝ 距离⁻⁴，可见部分只在这一段')
 
 # 5 月相（来自轨道积分）
-tr = json.load(open(__import__('os').path.join(__import__('os').path.dirname(__file__), '..', 'calc', 'traj.json')))
+tr = json.load(open('/home/claude/we/traj.json'))
 t = np.array(tr['t']); P3 = np.array([tr['x'], tr['y'], tr['z']]).T; dvv = np.array(tr['dv'])
 V = np.gradient(P3, t, axis=0); on = np.gradient(dvv, t) > 1e-3
 r = np.linalg.norm(P3, axis=1); vh = V / np.linalg.norm(V, axis=1)[:, None]; sun = -P3 / r[:, None]
@@ -98,6 +98,46 @@ for i in range(len(t)):
 for k, (s_, e_) in enumerate(w):
     lit = lambda e: (1 + math.cos(math.radians(180 - e))) / 2
     add('月相', f'点火窗口 {k+1}（第 {t[s_]:.1f}–{t[e_]:.1f} 年，{(t[e_]-t[s_])*365:.0f} 天）', f'距角 {el[s_]:.0f}°→{el[e_]:.0f}°，亮 {lit(el[s_])*100:.0f}%→{lit(el[e_])*100:.0f}%', '')
+
+# 5b 把月球从今天的轨道拉到悬停距离要多久（一维模拟：先抵消公转速度，再径向下降、反推刹车）
+amax = (gE_at_moon + a) * 1.5          # 科幻设定：发动机推力比悬停所需多 50%
+t_cancel = math.sqrt(G * M_E / d_M0) / amax
+def descend(r_switch):
+    r_, v_, t_ = d_M0, 0.0, 0.0
+    while r_ > d:
+        g_ = G * M_E / r_**2; acc = -(g_ + amax) if r_ > r_switch else (amax - g_)
+        v_ += acc * 10; r_ += v_ * 10; t_ += 10
+        if v_ > 0: return None
+    return t_, v_
+lo, hi = d, d_M0
+for _ in range(50):
+    mid = (lo + hi) / 2; res = descend(mid)
+    if res is None: hi = mid
+    else: lo = mid
+t_desc, v_arr = descend(lo)
+add('靠近', '发动机最大推力加速度', f'{amax:.3f} m/s²', '科幻设定：比悬停所需多 50%，用于机动')
+add('靠近', '抵消月球今天的公转速度', f'{math.sqrt(G*M_E/d_M0):.0f} m/s，用时 {t_cancel/3600:.1f} 小时', '')
+add('靠近', '从 38.4 万公里降到悬停距离', f'{t_desc/3600:.0f} 小时，到达时余速 {abs(v_arr):.0f} m/s', '前半程全推力向内、后半程全推力向外刹车')
+add('靠近', '靠近全程', f'{(t_cancel+t_desc)/86400:.1f} 天', '画面里压缩成一夜：月亮从 0.5° 长到 1.8°')
+d_half = math.sqrt(G * M_M * .51 / a)
+add('靠近', '烧掉 49% 质量后的悬停距离', f'{d_half/1e3:,.0f} km = {d_half/R_E:.1f} R_E', f'月亮看上去 {2*math.degrees(math.atan(R_M/d_half)):.1f}°，比点火初期大 {d/d_half:.2f} 倍')
+
+# 5c 近日点与远日点的温度
+T_now = 255.0   # 地球有效温度 K（反照率 0.3）
+periods = [(1.6, '近日点 I 之后'), (2.8, '近日点 II 之后'), (5.7, '近日点 III 之后'), (16.7, '近日点 IV 之后')]
+for P_yr, lab in periods:
+    a_au = P_yr ** (2/3); Q = 2 * a_au - 1
+    T_Q = T_now / math.sqrt(Q); T_moon_Q = 394 / math.sqrt(Q)
+    add('温度', f'{lab}：周期 {P_yr} 年', f'半长轴 {a_au:.2f} AU，远日点 {Q:.1f} AU', '近日点始终在 1 AU 附近，所以近日点前后几个月的气候接近从前')
+    add('温度', f'远日点 {Q:.1f} AU 的地球有效温度', f'{T_Q:.0f} K = {T_Q-273.15:.0f} °C', f'月球向阳面日下点约 {T_moon_Q:.0f} K（今天 394 K）；发动机一侧另算')
+def orbit_warm(P_yr, r_lim=1.3):
+    a_au = P_yr ** (2/3); e = 1 - 1/a_au
+    if r_lim >= a_au * (1 + e): return P_yr * 365.25
+    E = math.acos((1 - r_lim / a_au) / e); M = E - e * math.sin(E)
+    return P_yr * 365.25 * M / math.pi
+for P_yr, lab in periods: add('温度', f'{lab}：每圈在 1.3 AU 以内的天数', f'{orbit_warm(P_yr):.0f} 天', '1.3 AU 处有效温度约 224 K，相当于今天的极地')
+ws = [orbit_warm(P, 1.15) for P, _ in periods]
+add('温度', '每圈在 1.15 AU 以内（有效温度高于 238 K，接近今天的温带冬天）的天数', f'{min(ws):.0f}–{max(ws):.0f} 天', '开普勒第二定律；这就是“近日点的夏天”，其余时间是漫长的严寒')
 
 # 6 旅途
 T_surf = (q_geo / sigma) ** .25
