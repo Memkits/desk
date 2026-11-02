@@ -40,18 +40,34 @@ const ST = (() => {
     for (let i = 0; i < cols; i++) for (let j = 1; j < rows; j++) { const r = rn(); const yy = base - h + j * 22; if (broken && yy < base - h * (1 - broken * .55)) continue;
       if (r < lit) { g.fillStyle = litCol + (.35 + .5 * rn()) + ')'; g.fillRect(x + 5 + i * (w - 8) / cols, yy, 5, 8); } else if (broken && r > .82) { g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x + 4 + i * (w - 8) / cols, yy, 7, 10); } }
   }
-  function moonJ(g, x, y, r, halo = 1, t = 0, lit = 1) { // 带喷流的月亮（卡通版）
-    for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283 + .1, L = r * (2 + .6 * Math.abs(Math.sin(i * 2.3))) * (1 + .05 * Math.sin(t * 9 + i)); const gr = g.createLinearGradient(x + Math.cos(a) * r, y + Math.sin(a) * r, x + Math.cos(a) * (r + L), y + Math.sin(a) * (r + L));
-      gr.addColorStop(0, `rgba(170,215,255,${.32 * halo})`); gr.addColorStop(1, 'rgba(120,170,255,0)'); g.strokeStyle = gr; g.lineWidth = r * .12; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + Math.cos(a) * r * .9, y + Math.sin(a) * r * .9); g.lineTo(x + Math.cos(a) * (r + L), y + Math.sin(a) * (r + L)); g.stroke(); }
-    glow(g, x, y, r * 3.2, 'rgba(150,195,255,A)', .2 * halo);
-    const mg = g.createRadialGradient(x - r * .3, y - r * .3, r * .1, x, y, r); mg.addColorStop(0, `rgb(${235 * lit | 0},${232 * lit | 0},${220 * lit | 0})`); mg.addColorStop(1, `rgb(${150 * lit | 0},${150 * lit | 0},${150 * lit | 0})`); g.fillStyle = mg; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
-    rs(21); g.fillStyle = `rgba(90,90,100,${.35 * lit})`; for (let i = 0; i < 9; i++) { const a = rn() * 6.28, d = rn() * r * .7, rr = r * (.08 + .14 * rn()); g.beginPath(); g.arc(x + d * Math.cos(a), y + d * Math.sin(a), rr, 0, 7); g.fill(); }
+  // 月亮：o.i 相位角（0 满月，180 新月）；o.sa 屏幕上指向太阳的方向；o.eng 发动机亮度；o.dim 被照亮的亮度
+  // 发动机在朝向地球的一面，离正中心 12.4°，从地球看是一圈半径约 0.215 倍月面的亮点，喷流向外斜着擦过地球
+  function moon(g, x, y, r, o = {}) {
+    const i = (o.i ?? 90) * Math.PI / 180, sa = o.sa ?? 0, eng = o.eng ?? 0, t = o.t ?? 0, dim = o.dim ?? 1, es = o.es ?? .06;
+    if (eng > 0) { glow(g, x, y, r * 4.2, 'rgba(120,230,170,A)', .12 * eng); glow(g, x, y, r * 2.2, 'rgba(170,215,255,A)', .2 * eng); }
+    if (dim > .3) glow(g, x, y, r * 1.7, 'rgba(255,250,235,A)', .18 * dim * (1 + Math.cos(i)) / 2);
+    g.save(); g.translate(x, y); g.rotate(sa);
+    g.fillStyle = `rgb(${18 + 60 * es | 0},${20 + 62 * es | 0},${26 + 66 * es | 0})`; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill();
+    if (o.rim) { g.strokeStyle = `rgba(200,210,230,${o.rim})`; g.lineWidth = 1.5; g.stroke(); }
+    g.save(); g.beginPath(); const N = 48;
+    for (let k = 0; k <= N; k++) { const yy = -r + 2 * r * k / N; g.lineTo(Math.sqrt(Math.max(0, r * r - yy * yy)), yy); }
+    for (let k = N; k >= 0; k--) { const yy = -r + 2 * r * k / N; g.lineTo(-Math.cos(i) * Math.sqrt(Math.max(0, r * r - yy * yy)), yy); }
+    g.closePath(); g.clip();
+    const L = v => v * dim | 0, mg = g.createRadialGradient(r * .35, -r * .2, r * .1, 0, 0, r * 1.05); mg.addColorStop(0, `rgb(${L(240)},${L(236)},${L(224)})`); mg.addColorStop(1, `rgb(${L(150)},${L(150)},${L(150)})`); g.fillStyle = mg; g.fillRect(-r, -r, 2 * r, 2 * r);
+    g.restore();
+    g.rotate(-sa); rs(21); for (let k = 0; k < 9; k++) { const a = rn() * 6.28, d = rn() * r * .7, rr = r * (.08 + .14 * rn()); g.fillStyle = 'rgba(40,40,50,.22)'; g.beginPath(); g.arc(d * Math.cos(a), d * Math.sin(a), rr, 0, 7); g.fill(); }
+    if (eng > 0) { const NE = 12, rr = r * .215;
+      for (let k = 0; k < NE; k++) { const a = k / NE * 6.283 + .13, ex = rr * Math.cos(a), ey = rr * Math.sin(a), fl = 1 + .02 * Math.sin(t * 7 + k * 2.1);
+        const Lr = r * (o.ray ?? 3.4) * fl, gr = g.createLinearGradient(ex, ey, ex + Math.cos(a) * Lr, ey + Math.sin(a) * Lr); gr.addColorStop(0, `rgba(215,235,255,${.55 * eng})`); gr.addColorStop(.18, `rgba(150,235,200,${.22 * eng})`); gr.addColorStop(.5, `rgba(110,240,160,${.1 * eng})`); gr.addColorStop(.8, `rgba(255,120,120,${.035 * eng})`); gr.addColorStop(1, 'rgba(255,110,110,0)');
+        g.fillStyle = gr; g.beginPath(); const w0 = r * .05, w1 = r * 1.15; g.moveTo(ex - Math.sin(a) * w0, ey + Math.cos(a) * w0); g.lineTo(ex + Math.cos(a) * Lr - Math.sin(a) * w1, ey + Math.sin(a) * Lr + Math.cos(a) * w1); g.lineTo(ex + Math.cos(a) * Lr + Math.sin(a) * w1, ey + Math.sin(a) * Lr - Math.cos(a) * w1); g.lineTo(ex + Math.sin(a) * w0, ey - Math.cos(a) * w0); g.fill();
+        glow(g, ex, ey, r * .16, 'rgba(210,235,255,A)', .95 * eng); g.fillStyle = `rgba(255,255,255,${eng})`; g.beginPath(); g.arc(ex, ey, r * .028 + 1, 0, 7); g.fill(); } }
+    g.restore();
   }
   const S = {};
-  const scene = (name, bg, mid, fg) => S[name] = { bg, mid, fg, c: null };
+  const scene = (name, bg, mid, fg, bg2, mid2) => S[name] = { bg, mid, fg, bg2, mid2, c: null };
   // ---------- 出发前一夜：屋顶上的父女 ----------
   scene('eve', g => { sky(g, [[0, '#0b1230'], [.6, '#2a2650'], [1, '#5b3b5e']], 760); stars(g, 500, .8, 700, 4);
-    glow(g, 1480, 260, 120, 'rgba(255,245,220,A)', .25); g.fillStyle = '#f2eedf'; g.beginPath(); g.arc(1480, 260, 34, 0, 7); g.fill();
+    moon(g, 1480, 260, 30, { i: 118, sa: .55, es: .12 });
     for (let i = 0; i < 40; i++) tower(g, i * 52 - 20, 800, 46, 80 + ((i * 37) % 11) * 22, '#2c2a52', .45, 50 + i);
     for (let i = 0; i < 26; i++) tower(g, i * 80 - 40, 840, 70, 100 + ((i * 53) % 9) * 24, '#211f40', .35, 90 + i); },
    null,
@@ -61,16 +77,20 @@ const ST = (() => {
      person(g, 900, 832, 260, { col: '#07070f', sit: 1 }); person(g, 1060, 832, 175, { col: '#07070f', sit: 1, child: 1, arm: 'point' });
      g.strokeStyle = 'rgba(255,200,160,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 828); g.lineTo(W, 828); g.stroke(); });
   // ---------- 广场人群看月球点火 ----------
-  scene('crowd', g => { sky(g, [[0, '#050a1c'], [.7, '#14254a'], [1, '#27406e']], 820); stars(g, 300, .6, 700, 5);
-    for (let i = 0; i < 14; i++) tower(g, i * 150 - 30, 760, 120, 260 + ((i * 41) % 7) * 50, '#0b1226', .3, 120 + i, 0, 'rgba(180,215,255,');
-    g.fillStyle = '#0b1226'; g.fillRect(760, 300, 400, 460); g.fillStyle = '#0a1a33'; g.fillRect(790, 330, 340, 190); },
-   (g, t, u) => { const BR = 240 / 70, k = Math.min(1, Math.max(0, (t - BR) / 1.0)); moonJ(g, 1430, 270, 96, k, t); if (k > 0) { g.fillStyle = `rgba(150,200,255,${.08 * k})`; g.fillRect(0, 0, W, H); }
-     g.fillStyle = k > .5 ? '#bfe0ff' : '#ffd27a'; g.font = '700 64px "Noto Sans CJK SC",sans-serif'; g.textAlign = 'center'; g.fillText(k > .5 ? '点火' : '00:00:0' + Math.max(0, Math.ceil((BR - t) / BR * 5)), 960, 450); g.font = '400 22px "Noto Sans CJK SC",sans-serif'; g.fillStyle = 'rgba(200,220,255,.7)'; g.fillText('月 球 推 进 计 划', 960, 380); g.textAlign = 'left'; },
-   g => { g.fillStyle = '#04060c'; g.fillRect(0, 900, W, 180); crowd(g, 840, 70, 120, '#0a0f1c', .2, 6); crowd(g, 900, 55, 170, '#06080f', .25, 7); crowd(g, 990, 28, 260, '#030408', .3, 8); });
+  scene('crowd', g => { sky(g, [[0, '#050a1c'], [.7, '#14254a'], [1, '#2c4470']], 820); stars(g, 300, .6, 700, 5); glow(g, -100, 900, 900, 'rgba(120,140,200,A)', .25); },
+   (g, t, u) => { const BR = 240 / 70, k = Math.min(1, Math.max(0, (t - BR) / 1.0)); moon(g, 1450, 250, 96, { i: 92, sa: Math.PI - .5, eng: k, t }); },
+   g => { g.fillStyle = '#04060c'; g.fillRect(0, 900, W, 180); crowd(g, 840, 70, 120, '#0a0f1c', .2, 6); crowd(g, 900, 55, 170, '#06080f', .25, 7); crowd(g, 990, 28, 260, '#030408', .3, 8); },
+   g => {
+    for (let i = 0; i < 14; i++) tower(g, i * 150 - 30, 760, 120, 200 + ((i * 41) % 7) * 34, '#0b1226', .3, 120 + i, 0, 'rgba(180,215,255,');
+    g.fillStyle = '#0b1226'; g.fillRect(760, 330, 400, 430); g.fillStyle = '#0a1a33'; g.fillRect(790, 360, 340, 170); },
+   (g, t, u) => { const BR = 240 / 70, k = Math.min(1, Math.max(0, (t - BR) / 1.0)); if (k > 0) { g.fillStyle = `rgba(150,200,255,${.07 * k})`; g.fillRect(0, 0, W, H); }
+     g.fillStyle = k > .5 ? '#bfe0ff' : '#ffd27a'; g.font = '700 64px "Noto Sans CJK SC",sans-serif'; g.textAlign = 'center'; g.fillText(k > .5 ? '点火' : '00:00:0' + Math.max(0, Math.ceil((BR - t) / BR * 5)), 960, 475); g.font = '400 22px "Noto Sans CJK SC",sans-serif'; g.fillStyle = 'rgba(200,220,255,.7)'; g.fillText('月 球 推 进 计 划', 960, 405); g.textAlign = 'left'; });
+
   // ---------- 撤离：海堤上的一家人 ----------
-  scene('evac', g => { sky(g, [[0, '#060b18'], [.7, '#1d2c4c'], [1, '#2f4366']], 700); stars(g, 300, .7, 650, 6);
+  const aurora = (g, x0, y0, a) => { for (let i = 0; i < 6; i++) { const gr = g.createLinearGradient(0, y0 - 380, 0, y0); gr.addColorStop(0, 'rgba(255,90,110,0)'); gr.addColorStop(.35, `rgba(255,90,110,${a * .25})`); gr.addColorStop(.75, `rgba(90,255,160,${a * (.5 + .1 * i)})`); gr.addColorStop(1, 'rgba(90,255,160,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(x0 + i * 130, y0); g.bezierCurveTo(x0 + 120 + i * 140, y0 - 160, x0 + 260 + i * 130, y0 - 300, x0 + 420 + i * 120, y0 - 380); g.lineTo(x0 + 470 + i * 120, y0 - 370); g.bezierCurveTo(x0 + 300 + i * 130, y0 - 280, x0 + 170 + i * 140, y0 - 140, x0 + 50 + i * 130, y0 + 10); g.fill(); } };
+  scene('evac', g => { sky(g, [[0, '#060b18'], [.7, '#1d2c4c'], [1, '#2f4366']], 700); stars(g, 300, .7, 650, 6); aurora(g, 0, 640, .09);
     g.fillStyle = '#16233c'; g.fillRect(0, 640, W, 120); rs(4); for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(220,235,255,${.1 + .25 * rn()})`; g.fillRect(rn() * W, 645 + rn() * 50, 20 + rn() * 120, 2); } },
-   (g, t) => { moonJ(g, 1420, 250, 110, 1, t); },
+   (g, t) => { moon(g, 1420, 250, 110, { i: 86, sa: Math.PI - .4, eng: 1, t }); },
    g => { g.fillStyle = '#0a101d'; g.beginPath(); g.moveTo(0, 700); g.lineTo(W, 680); g.lineTo(W, H); g.lineTo(0, H); g.fill(); g.fillStyle = '#121c30'; g.fillRect(0, 690, W, 16);
      g.fillStyle = '#05080f'; g.beginPath(); g.moveTo(0, 860); g.lineTo(W, 820); g.lineTo(W, H); g.lineTo(0, H); g.fill();
      const fam = [[420, 180, { bag: 1, walk: 1, dir: -1 }], [520, 165, { walk: 1, dir: -1, arm2: 'hold', pack: 1 }], [575, 110, { child: 1, walk: 1, dir: 1, arm: 'hold' }], [760, 175, { bag: 1, walk: 1, dir: -1, coat: 1 }], [900, 160, { walk: 1, dir: -1, pack: 1 }], [1040, 172, { walk: 1, dir: -1, bag: 1 }], [1180, 120, { child: 1, walk: 1, dir: -1 }], [1330, 168, { walk: 1, dir: -1, coat: 1, bag: 1 }]];
@@ -78,7 +98,7 @@ const ST = (() => {
      crowd(g, 760, 40, 70, '#0b1222', 0, 9, 0, 1900); });
   // ---------- 破败的高楼，月亮从后面飘过 ----------
   scene('ruins', g => { sky(g, [[0, '#04060f'], [.6, '#152340'], [1, '#2b3a5a']], 900); stars(g, 400, .8, 800, 7); },
-   (g, t, u) => { moonJ(g, 400 + 1100 * u, 330 - 60 * Math.sin(u * 3.14), 120, 1, t); },
+   (g, t, u) => { moon(g, 400 + 1100 * u, 330 - 60 * Math.sin(u * 3.14), 120, { i: 128, sa: .35, es: .1 }); },
    g => { const cols = ['#0b0f1a', '#070a12']; [[60, 210, 620, .5], [300, 160, 760, .7], [520, 240, 540, .4], [820, 180, 700, .8], [1050, 260, 480, .3], [1340, 190, 820, .6], [1560, 230, 600, .5], [1780, 200, 680, .7]].forEach(([x, w, h, b], i) => tower(g, x, 940, w, h, cols[i % 2], .02, 300 + i, b, 'rgba(255,190,120,'));
      g.fillStyle = '#0b1424'; g.fillRect(0, 930, W, 150); rs(12); for (let i = 0; i < 120; i++) { g.fillStyle = `rgba(160,190,240,${.08 + .15 * rn()})`; g.fillRect(rn() * W, 940 + rn() * 130, 20 + rn() * 90, 2); }
      });
@@ -91,7 +111,7 @@ const ST = (() => {
      person(g, 1180, 930, 230, { suit: 1, col: '#3a1a0e', visor: 'rgba(255,220,160,.7)', dir: -1 }); person(g, 1300, 935, 160, { suit: 1, col: '#3a1a0e', visor: 'rgba(255,220,160,.7)', dir: -1 }); });
   // ---------- 地下城 ----------
   scene('under', g => { sky(g, [[0, '#120c08'], [1, '#2a1a10']]); g.fillStyle = '#1b120c'; for (let i = 0; i < 7; i++) { g.beginPath(); g.ellipse(i * 330, 80, 260, 260, 0, 0, Math.PI); g.fill(); }
-     g.fillStyle = '#0d0a14'; g.fillRect(860, 0, 200, 230); glow(g, 960, 120, 140, 'rgba(160,200,255,A)', .5); g.fillStyle = '#cfe4ff'; g.beginPath(); g.arc(960, 110, 34, 0, 7); g.fill();
+     g.fillStyle = '#0d0a14'; g.fillRect(860, 0, 200, 230); moon(g, 960, 112, 34, { i: 95, sa: Math.PI - .4, eng: .9, ray: 2.2 });
      g.strokeStyle = 'rgba(160,200,255,.12)'; g.lineWidth = 120; g.beginPath(); g.moveTo(960, 200); g.lineTo(960, 900); g.stroke();
      for (let L = 0; L < 3; L++) for (let i = 0; i < 12; i++) { const x = i * 170 + (L % 2) * 80, y = 360 + L * 170, w = 140, h = 130; g.fillStyle = ['#3a2616', '#33200f', '#2c1b0e'][L]; g.fillRect(x, y, w, h); for (let k = 0; k < 2; k++) { g.fillStyle = 'rgba(255,190,110,.85)'; g.fillRect(x + 20 + k * 60, y + 30, 34, 40); glow(g, x + 37 + k * 60, y + 50, 60, 'rgba(255,180,90,A)', .18); } }
      for (let s = 0; s < 3; s++) { g.strokeStyle = 'rgba(80,50,30,.8)'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, 300 + s * 170); g.quadraticCurveTo(960, 360 + s * 170, W, 300 + s * 170); g.stroke(); rs(30 + s); for (let i = 0; i < 40; i++) { const x = i * 48, y = 300 + s * 170 + 60 * (1 - ((x - 960) / 960) ** 2); glow(g, x, y + 4, 18, 'rgba(255,210,140,A)', .7); g.fillStyle = '#ffe0a8'; g.beginPath(); g.arc(x, y + 4, 3, 0, 7); g.fill(); } } },
@@ -100,21 +120,21 @@ const ST = (() => {
      [[300, 160, {}], [360, 100, { child: 1, arm: 'up' }], [700, 165, { arm: 'hold' }], [760, 105, { child: 1 }], [1100, 95, { child: 1, walk: 1 }], [1180, 92, { child: 1, walk: 1, dir: -1, arm: 'up' }], [1500, 170, { coat: 1 }], [1620, 150, { bag: 1, dir: -1 }]].forEach(([x, h, o]) => person(g, x, 915, h * 1.45, { col: '#0a0604', ...o })); });
   // ---------- 冰封的海与船 ----------
   scene('ship', g => { sky(g, [[0, '#02040a'], [1, '#0f1a2c']], 700); stars(g, 700, 1, 680, 8); glow(g, 1600, 230, 60, 'rgba(255,245,225,A)', .9); g.fillStyle = '#fffaf0'; g.beginPath(); g.arc(1600, 230, 5, 0, 7); g.fill(); },
-   (g, t) => moonJ(g, 420, 230, 70, 1, t, .75),
-   g => { const ig = g.createLinearGradient(0, 640, 0, H); ig.addColorStop(0, '#3a4e6c'); ig.addColorStop(1, '#0c1422'); g.fillStyle = ig; g.fillRect(0, 640, W, H - 640);
-     rs(14); for (let i = 0; i < 26; i++) { const x = rn() * W, y = 660 + rn() * 260, w = 60 + rn() * 200, h = 20 + rn() * 60; g.fillStyle = `rgba(${170 + 60 * rn() | 0},${200 + 40 * rn() | 0},255,${.2 + .3 * rn()})`; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w * .3, y - h); g.lineTo(x + w * .6, y - h * .4); g.lineTo(x + w, y); g.fill(); }
+   (g, t) => moon(g, 420, 230, 70, { i: 112, sa: 0, dim: .5, es: 0 }),
+   g => { const ig = g.createLinearGradient(0, 640, 0, H); ig.addColorStop(0, '#b9bec6'); ig.addColorStop(1, '#4a4f58'); g.fillStyle = ig; g.fillRect(0, 640, W, H - 640);
+     rs(14); for (let i = 0; i < 26; i++) { const x = rn() * W, y = 660 + rn() * 260, w = 60 + rn() * 200, h = 20 + rn() * 60; const v = 200 + 50 * rn() | 0; g.fillStyle = `rgba(${v},${v + 3},${v + 8},${.5 + .4 * rn()})`; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w * .3, y - h); g.lineTo(x + w * .6, y - h * .4); g.lineTo(x + w, y); g.fill(); }
      g.save(); g.translate(1060, 690); g.rotate(-.08); g.fillStyle = '#1a1f2a'; g.beginPath(); g.moveTo(-420, 0); g.lineTo(380, 0); g.lineTo(440, -90); g.lineTo(-460, -90); g.fill(); g.fillStyle = '#2a3140'; g.fillRect(-380, -150, 600, 60); g.fillStyle = '#7a2a22'; for (let i = 0; i < 6; i++) g.fillRect(-370 + i * 100, -140, 80, 40);
-     g.fillStyle = '#1a1f2a'; g.fillRect(230, -260, 140, 170); g.fillStyle = 'rgba(200,225,255,.35)'; g.fillRect(-470, -96, 920, 8); g.restore();
+     g.fillStyle = '#1a1f2a'; g.fillRect(230, -260, 140, 170); g.fillStyle = 'rgba(225,228,235,.85)'; g.fillRect(-470, -96, 920, 10); g.fillRect(-380, -156, 600, 8); g.fillRect(230, -266, 140, 8); g.restore();
      person(g, 560, 900, 240, { suit: 1, lamp: 1, col: '#0a0f18' }); g.strokeStyle = '#0a0f18'; g.lineWidth = 5; g.beginPath(); g.moveTo(530, 840); g.lineTo(380, 892); g.stroke(); g.fillStyle = '#0a0f18'; g.fillRect(270, 875, 120, 28); });
   // ---------- 冰中的城市 ----------
   scene('icecity', g => { sky(g, [[0, '#020409'], [1, '#0b1626']], 760); stars(g, 600, 1, 700, 9);
      for (let i = 0; i < 5; i++) { const gr = g.createLinearGradient(0, 120, 0, 560); gr.addColorStop(0, 'rgba(90,255,190,0)'); gr.addColorStop(.6, `rgba(90,255,190,${.05 + .02 * i})`); gr.addColorStop(1, 'rgba(90,255,190,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(100 + i * 160, 560); g.bezierCurveTo(400 + i * 170, 300, 700 + i * 160, 220, 1100 + i * 150, 120); g.lineTo(1150 + i * 150, 150); g.bezierCurveTo(740 + i * 160, 260, 450 + i * 170, 340, 160 + i * 160, 590); g.fill(); } },
-   (g, t) => moonJ(g, 1500, 240, 64, 1, t, .7),
-   g => { [[80, 200, 560], [330, 160, 700], [540, 220, 480], [1180, 180, 620], [1400, 240, 520], [1700, 180, 660]].forEach(([x, w, h], i) => { tower(g, x, 900, w, h, '#0e1828', .04, 400 + i, 0, 'rgba(255,200,130,'); g.fillStyle = 'rgba(170,215,255,.22)'; g.fillRect(x - 14, 900 - h * .75, w + 28, h * .75); g.strokeStyle = 'rgba(210,235,255,.5)'; g.lineWidth = 2; g.strokeRect(x - 14, 900 - h * .75, w + 28, h * .75);
-       g.fillStyle = 'rgba(210,235,255,.6)'; for (let k = 0; k < w / 16; k++) { g.beginPath(); g.moveTo(x - 10 + k * 16, 900 - h * .75); g.lineTo(x - 4 + k * 16, 900 - h * .75 + 18 + (k % 3) * 10); g.lineTo(x + 2 + k * 16, 900 - h * .75); g.fill(); } });
+   (g, t) => moon(g, 1500, 240, 64, { i: 80, sa: Math.PI - .2, dim: .45, es: 0 }),
+   g => { [[80, 200, 560], [330, 160, 700], [540, 220, 480], [1180, 180, 620], [1400, 240, 520], [1700, 180, 660]].forEach(([x, w, h], i) => { tower(g, x, 900, w, h, '#0e1828', .04, 400 + i, 0, 'rgba(255,200,130,'); g.fillStyle = 'rgba(215,220,228,.28)'; g.fillRect(x - 14, 900 - h * .75, w + 28, h * .75); g.fillStyle = 'rgba(232,235,240,.9)'; g.fillRect(x - 14, 900 - h, w + 28, 10); g.strokeStyle = 'rgba(230,235,242,.55)'; g.lineWidth = 2; g.strokeRect(x - 14, 900 - h * .75, w + 28, h * .75);
+       g.fillStyle = 'rgba(230,234,240,.7)'; for (let k = 0; k < w / 16; k++) { g.beginPath(); g.moveTo(x - 10 + k * 16, 900 - h * .75); g.lineTo(x - 4 + k * 16, 900 - h * .75 + 18 + (k % 3) * 10); g.lineTo(x + 2 + k * 16, 900 - h * .75); g.fill(); } });
      g.strokeStyle = '#0e1828'; g.lineWidth = 8; g.beginPath(); g.arc(900, 640, 200, 0, 7); g.stroke(); for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283; g.beginPath(); g.moveTo(900, 640); g.lineTo(900 + 200 * Math.cos(a), 640 + 200 * Math.sin(a)); g.stroke(); g.fillStyle = '#0e1828'; g.fillRect(900 + 200 * Math.cos(a) - 14, 640 + 200 * Math.sin(a), 28, 24); }
      g.fillStyle = '#0e1828'; g.beginPath(); g.moveTo(860, 900); g.lineTo(900, 640); g.lineTo(940, 900); g.fill();
-     const ig = g.createLinearGradient(0, 880, 0, H); ig.addColorStop(0, '#2c405e'); ig.addColorStop(1, '#0a1220'); g.fillStyle = ig; g.fillRect(0, 880, W, 200);
+     const ig = g.createLinearGradient(0, 880, 0, H); ig.addColorStop(0, '#b3b8c0'); ig.addColorStop(1, '#4b5059'); g.fillStyle = ig; g.fillRect(0, 880, W, 200);
      person(g, 1020, 915, 170, { suit: 1, lamp: 1, col: '#0a1220' }); person(g, 1110, 918, 120, { suit: 1, col: '#0a1220' }); });
   // ---------- 地下的壁画 ----------
   scene('mural', g => { g.fillStyle = '#2a1d14'; g.fillRect(0, 0, W, H); g.fillStyle = '#3b2a1d'; g.fillRect(140, 140, 1640, 640);
@@ -131,24 +151,63 @@ const ST = (() => {
      g.fillStyle = '#0a0604'; g.fillRect(780, 880, 50, 40); g.fillRect(870, 886, 44, 34); g.fillStyle = '#4c9be8'; g.fillRect(782, 876, 46, 7); g.fillStyle = '#ffd34d'; g.fillRect(872, 882, 40, 7); });
   // ---------- 冰原上的天文台 ----------
   scene('obs', g => { sky(g, [[0, '#01030a'], [1, '#0c1626']], 760); stars(g, 900, 1, 740, 10); [[1240, 250, 1], [1262, 242, .7]].forEach(([x, y, s]) => { glow(g, x, y, 70 * s, 'rgba(255,235,205,A)', .9); g.fillStyle = '#fffaf0'; g.beginPath(); g.arc(x, y, 4 * s + 1, 0, 7); g.fill(); }); },
-   (g, t) => moonJ(g, 380, 260, 58, 1, t, .7),
-   g => { const ig = g.createLinearGradient(0, 760, 0, H); ig.addColorStop(0, '#30445f'); ig.addColorStop(1, '#0a121e'); g.fillStyle = ig; g.beginPath(); g.moveTo(0, 790); g.quadraticCurveTo(700, 730, 1300, 770); g.quadraticCurveTo(1600, 790, W, 760); g.lineTo(W, H); g.lineTo(0, H); g.fill();
+   (g, t) => moon(g, 380, 260, 58, { i: 155, sa: 0, dim: .25, es: 0, rim: .18 }),
+   g => { const ig = g.createLinearGradient(0, 760, 0, H); ig.addColorStop(0, '#8e939c'); ig.addColorStop(1, '#2e3138'); g.fillStyle = ig; g.beginPath(); g.moveTo(0, 790); g.quadraticCurveTo(700, 730, 1300, 770); g.quadraticCurveTo(1600, 790, W, 760); g.lineTo(W, H); g.lineTo(0, H); g.fill();
      g.fillStyle = '#121a26'; g.fillRect(540, 640, 300, 140); g.beginPath(); g.arc(690, 640, 150, Math.PI, 0); g.fill(); g.fillStyle = 'rgba(255,200,130,.85)'; g.fillRect(676, 500, 28, 120); g.strokeStyle = '#121a26'; g.lineWidth = 16; g.beginPath(); g.moveTo(690, 600); g.lineTo(760, 520); g.stroke(); glow(g, 690, 560, 120, 'rgba(255,190,110,A)', .25);
      g.fillStyle = 'rgba(255,200,130,.85)'; g.fillRect(620, 720, 40, 50);
      person(g, 1060, 840, 240, { suit: 1, col: '#0a121e' }); person(g, 1170, 846, 160, { suit: 1, col: '#0a121e' }); g.strokeStyle = '#0a121e'; g.lineWidth = 11; g.beginPath(); g.moveTo(1078, 680); g.lineTo(1140, 590); g.stroke(); });
   // ---------- 第 57,000 年：两代人与两颗星 ----------
   scene('elders', g => { sky(g, [[0, '#04040c'], [.7, '#1a1530'], [1, '#3a2a3c']], 780); stars(g, 900, 1, 760, 11);
      [[1180, 300, 1], [1235, 285, .75]].forEach(([x, y, s]) => { glow(g, x, y, 200 * s, 'rgba(255,225,185,A)', .55); g.fillStyle = '#fff6e6'; g.beginPath(); g.arc(x, y, 16 * s, 0, 7); g.fill(); }); },
-   (g, t) => moonJ(g, 560, 220, 52, 1, t, .65),
-   g => { const ig = g.createLinearGradient(0, 760, 0, H); ig.addColorStop(0, '#3f3a52'); ig.addColorStop(1, '#0d0c16'); g.fillStyle = ig; g.beginPath(); g.moveTo(0, 820); g.quadraticCurveTo(500, 770, 960, 800); g.quadraticCurveTo(1400, 830, W, 790); g.lineTo(W, H); g.lineTo(0, H); g.fill();
+   (g, t) => moon(g, 560, 220, 52, { i: 100, sa: .13, dim: .85, es: 0 }),
+   g => { const ig = g.createLinearGradient(0, 760, 0, H); ig.addColorStop(0, '#d8cdbf'); ig.addColorStop(1, '#4a4440'); g.fillStyle = ig; g.beginPath(); g.moveTo(0, 820); g.quadraticCurveTo(500, 770, 960, 800); g.quadraticCurveTo(1400, 830, W, 790); g.lineTo(W, H); g.lineTo(0, H); g.fill();
      g.fillStyle = '#0d0c16'; g.beginPath(); g.moveTo(740, 820); g.quadraticCurveTo(900, 770, 1080, 812); g.lineTo(1080, 880); g.lineTo(740, 880); g.fill();
      person(g, 860, 812, 260, { suit: 1, col: '#0d0c16', visor: 'rgba(255,225,190,.7)' }); person(g, 975, 808, 175, { suit: 1, col: '#0d0c16', visor: 'rgba(255,225,190,.7)' }); g.strokeStyle = '#0d0c16'; g.lineWidth = 12; g.beginPath(); g.moveTo(992, 660); g.lineTo(1050, 570); g.stroke(); });
+
+  // ---------- 月球上的建设者：朝向地球那一面的发动机工地 ----------
+  const regolith = (g, y0, seed, tone = 1) => { const gr = g.createLinearGradient(0, y0, 0, H); gr.addColorStop(0, `rgb(${120 * tone | 0},${118 * tone | 0},${114 * tone | 0})`); gr.addColorStop(1, `rgb(${40 * tone | 0},${39 * tone | 0},${38 * tone | 0})`); g.fillStyle = gr; g.fillRect(0, y0, W, H - y0);
+    rs(seed); for (let i = 0; i < 70; i++) { const x = rn() * W, y = y0 + 10 + Math.pow(rn(), 1.4) * (H - y0), rr = (4 + rn() * 40) * (.3 + (y - y0) / 300); g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(x, y, rr, rr * .32, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,250,.12)'; g.beginPath(); g.ellipse(x + rr * .25, y + rr * .06, rr * .8, rr * .22, 0, 0, Math.PI); g.fill(); } };
+  const earthDisc = (g, x, y, r, sa = Math.PI) => { glow(g, x, y, r * 1.5, 'rgba(120,170,255,A)', .25); g.save(); g.translate(x, y); g.fillStyle = '#0d1a33'; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); g.clip(); g.rotate(sa);
+    const eg = g.createLinearGradient(-r, 0, r, 0); eg.addColorStop(0, '#000'); eg.addColorStop(.48, '#000'); eg.addColorStop(.52, '#2b5fa8'); eg.addColorStop(1, '#5d9be0'); g.fillStyle = eg; g.fillRect(-r, -r, 2 * r, 2 * r);
+    rs(77); for (let i = 0; i < 14; i++) { const a = rn() * 6.28, d = rn() * r * .8; g.fillStyle = `rgba(${rn() < .5 ? '120,150,80' : '250,250,255'},${.35 * (Math.cos(a) * d > 0 ? 1 : .08)})`; g.beginPath(); g.ellipse(d * Math.cos(a), d * Math.sin(a), r * (.1 + .2 * rn()), r * (.05 + .1 * rn()), rn() * 3, 0, 7); g.fill(); }
+    rs(78); for (let i = 0; i < 40; i++) { const a = rn() * 6.28, d = rn() * r * .9; if (Math.cos(a) * d < -r * .05) { g.fillStyle = 'rgba(255,200,120,.7)'; g.fillRect(d * Math.cos(a), d * Math.sin(a), 1.5, 1.5); } }
+    g.restore(); g.strokeStyle = 'rgba(140,190,255,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, r + 1, sa - 1.6, sa + 1.6); g.stroke(); };
+  scene('build', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars(g, 900, .9, H, 21); earthDisc(g, 1480, 330, 140, 0);
+     g.fillStyle = '#6d6b67'; g.beginPath(); g.moveTo(0, 690); g.quadraticCurveTo(500, 640, 900, 680); g.quadraticCurveTo(1400, 720, W, 670); g.lineTo(W, H); g.lineTo(0, H); g.fill(); },
+   null,
+   g => { regolith(g, 700, 23);
+     // 喷口：巨大的钟形，竖直朝上（喷流沿当地竖直方向射出）
+     g.fillStyle = '#2a2a2e'; g.beginPath(); g.moveTo(760, 830); g.bezierCurveTo(770, 640, 660, 460, 560, 300); g.lineTo(1120, 300); g.bezierCurveTo(1020, 460, 910, 640, 920, 830); g.closePath(); g.fill();
+     g.fillStyle = '#55565c'; g.beginPath(); g.ellipse(840, 300, 280, 26, 0, 0, 7); g.fill(); g.fillStyle = '#121214'; g.beginPath(); g.ellipse(840, 300, 262, 20, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,245,.25)'; g.beginPath(); g.moveTo(1120, 300); g.bezierCurveTo(1020, 460, 910, 640, 920, 830); g.lineTo(890, 830); g.bezierCurveTo(880, 640, 980, 460, 1080, 310); g.fill(); g.fillStyle = '#2a2a2e'; g.fillRect(700, 820, 280, 20);
+     g.strokeStyle = 'rgba(200,200,190,.55)'; g.lineWidth = 3; for (let k = 0; k < 9; k++) { const y = 340 + k * 55; g.beginPath(); g.moveTo(560 - k * 4, y); g.lineTo(1120 + k * 4, y); g.stroke(); } for (let k = 0; k < 8; k++) { g.beginPath(); g.moveTo(540 + k * 86, 330); g.lineTo(530 + k * 90, 840); g.stroke(); }
+     g.strokeStyle = '#3a3a3e'; g.lineWidth = 10; g.beginPath(); g.moveTo(1300, 830); g.lineTo(1300, 240); g.lineTo(820, 200); g.stroke(); g.lineWidth = 3; g.beginPath(); g.moveTo(1300, 260); g.lineTo(1500, 270); g.moveTo(900, 205); g.lineTo(900, 420); g.stroke(); g.fillStyle = '#3a3a3e'; g.fillRect(860, 420, 80, 40);
+     for (let k = 0; k < 6; k++) { glow(g, 560 + k * 112, 840, 50, 'rgba(255,220,160,A)', .5); g.fillStyle = '#fff2d0'; g.beginPath(); g.arc(560 + k * 112, 840, 4, 0, 7); g.fill(); }
+     g.fillStyle = '#26262a'; g.fillRect(200, 820, 180, 60); g.beginPath(); g.arc(230, 885, 22, 0, 7); g.arc(350, 885, 22, 0, 7); g.fill(); g.fillStyle = 'rgba(255,220,160,.8)'; g.fillRect(370, 832, 12, 10);
+     [[460, 905, 170], [1230, 910, 190], [1390, 900, 140, 1], [130, 915, 150]].forEach(([x, y, h, l]) => person(g, x, y, h, { suit: 1, col: '#1c1c20', visor: 'rgba(255,220,170,.8)', lamp: l }));
+     g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.moveTo(1120, 830); g.lineTo(1700, 900); g.lineTo(1120, 900); g.fill(); });
+  // ---------- 月面观测站：看着喷流从地平线外升起 ----------
+  // 观测站在离月面正中心约 35° 处：地球在仰角约 55° 的高空；发动机在 400–700 公里外的地平线以下，喷流柱向上、并朝地球旁边约 12° 的方向汇聚
+  scene('lunarobs', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars(g, 900, .9, H, 31); },
+   (g, t) => { const BR = 240 / 70, ex = 960, ey = 300, er = 115;
+     earthDisc(g, ex, ey, er, Math.PI * .1);
+     const cols = [[180, .0], [520, .35], [800, .7], [1120, .2], [1420, .55], [1760, .9]];
+     cols.forEach(([x0, d], k) => { const k0 = Math.min(1, Math.max(0, (t - .3 - d * 1.4) / .7)); if (k0 <= 0) return; const fl = 1 + .5 * Math.exp(-Math.max(0, t - .3 - d * 1.4) * 2.5);
+       const a = Math.atan2(ey - 735, (ex + (x0 - ex) * .42) - x0), L = Math.hypot((ex + (x0 - ex) * .42) - x0, ey - 735), dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+       const gr = g.createLinearGradient(x0, 735, x0 + dx * L, 735 + dy * L); gr.addColorStop(0, `rgba(225,240,255,${.75 * k0 * fl})`); gr.addColorStop(.25, `rgba(150,240,200,${.4 * k0})`); gr.addColorStop(.65, `rgba(110,240,160,${.14 * k0})`); gr.addColorStop(1, `rgba(255,120,130,0)`);
+       g.fillStyle = gr; g.beginPath(); const w0 = 40, w1 = 120; g.moveTo(x0 + nx * w0, 735 + ny * w0); g.lineTo(x0 + dx * L + nx * w1, 735 + dy * L + ny * w1); g.lineTo(x0 + dx * L - nx * w1, 735 + dy * L - ny * w1); g.lineTo(x0 - nx * w0, 735 - ny * w0); g.fill();
+       glow(g, x0, 740, 160, 'rgba(210,235,255,A)', .5 * k0 * fl); });
+     const kk = Math.min(1, Math.max(0, (t - .3) / 2)); if (kk > 0) { g.fillStyle = `rgba(150,220,200,${.06 * kk})`; g.fillRect(0, 0, W, H); } },
+   g => { g.fillStyle = '#4a4946'; g.beginPath(); g.moveTo(0, 760); g.quadraticCurveTo(700, 715, 1200, 740); g.quadraticCurveTo(1600, 755, W, 735); g.lineTo(W, H); g.lineTo(0, H); g.fill(); regolith(g, 800, 33, .85);
+     g.fillStyle = '#2a2a2e'; g.beginPath(); g.ellipse(560, 860, 230, 120, 0, Math.PI, 0); g.fill(); g.fillRect(330, 850, 460, 40); g.fillStyle = 'rgba(255,200,130,.85)'; for (let k = 0; k < 6; k++) g.fillRect(420 + k * 50, 800, 22, 18); glow(g, 560, 810, 260, 'rgba(255,190,110,A)', .18);
+     g.strokeStyle = '#2a2a2e'; g.lineWidth = 5; g.beginPath(); g.moveTo(760, 760); g.lineTo(760, 600); g.stroke(); g.beginPath(); g.ellipse(760, 600, 40, 14, -.4, 0, 7); g.stroke();
+     [[1040, 880, 210], [1150, 885, 180], [1260, 880, 200], [1380, 890, 150]].forEach(([x, y, h], k) => person(g, x, y, h, { suit: 1, col: '#18181c', visor: 'rgba(180,230,210,.75)' }));
+     g.strokeStyle = '#18181c'; g.lineWidth = 9; g.beginPath(); g.moveTo(1170, 735); g.lineTo(1120, 650); g.stroke(); });
   function draw(name, g, t, u, push = .05) {
-    const s = S[name]; if (!s.c) { s.c = [mk(), mk()]; s.bg(s.c[0].getContext('2d')); if (s.fg) s.fg(s.c[1].getContext('2d')); }
+    const s = S[name]; if (!s.c) { s.c = [mk(), mk(), mk()]; s.bg(s.c[0].getContext('2d')); if (s.fg) s.fg(s.c[1].getContext('2d')); if (s.bg2) s.bg2(s.c[2].getContext('2d')); }
     const k1 = 1 + push * .5 * u, k2 = 1 + push * u, cx = W / 2, cy = H * .55;
-    g.save(); g.translate(cx, cy); g.scale(k1, k1); g.translate(-cx, -cy); g.drawImage(s.c[0], 0, 0); if (s.mid) s.mid(g, t, u); g.restore();
+    g.save(); g.translate(cx, cy); g.scale(k1, k1); g.translate(-cx, -cy); g.drawImage(s.c[0], 0, 0); if (s.mid) s.mid(g, t, u); if (s.bg2) g.drawImage(s.c[2], 0, 0); if (s.mid2) s.mid2(g, t, u); g.restore();
     g.save(); g.translate(cx, cy); g.scale(k2, k2); g.translate(-cx, -cy - 6 * u); g.drawImage(s.c[1], 0, 0); g.restore();
   }
-  return { draw, names: Object.keys(S) };
+  return { draw, moon, aurora, names: Object.keys(S) };
 })();
 window.ST = ST;
