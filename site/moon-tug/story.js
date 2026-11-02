@@ -30,6 +30,17 @@ const ST = (() => {
     g.restore();
     if (o.rim) { g.save(); g.globalCompositeOperation = 'source-atop'; g.restore(); }
   }
+  // 机器人：方头、一道发光的视带、履带底盘；x 为底盘中点，h 为总高
+  function robot(g, x, y, h, o = {}) {
+    const c = o.col || '#15161c', s = h / 100, dir = o.dir || 1; g.save(); g.translate(x, y); g.scale(s * dir, s); g.fillStyle = c;
+    g.beginPath(); g.roundRect(-22, -22, 44, 22, 8); g.fill(); g.fillStyle = '#0a0a0e'; for (let k = -16; k <= 16; k += 8) { g.beginPath(); g.arc(k, -10, 4.5, 0, 7); g.fill(); }
+    g.fillStyle = c; g.fillRect(-7, -56, 14, 34); g.beginPath(); g.roundRect(-16, -78, 32, 26, 5); g.fill();
+    g.lineWidth = 6; g.lineCap = 'round'; g.strokeStyle = c; g.beginPath(); g.moveTo(-8, -50); g.lineTo(-30, -40); g.lineTo(o.arm === 'up' ? -36 : -34, o.arm === 'up' ? -70 : -22); g.moveTo(8, -50); g.lineTo(30, -42); g.lineTo(o.arm === 'up' ? 40 : 34, o.arm === 'up' ? -72 : -24); g.stroke();
+    if (o.tool) { g.fillStyle = c; g.fillRect(30, -34, 6, 40); }
+    const vc = o.visor || 'rgba(120,230,255,.95)'; g.fillStyle = vc; g.fillRect(-10, -70, 20, 5); glow(g, 0, -68, 18, vc.replace(/[\d.]+\)$/, 'A)'), .7);
+    if (o.lamp) { glow(g, 0, -84, 40, 'rgba(255,230,180,A)', .8); g.fillStyle = '#fff0cc'; g.fillRect(-4, -86, 8, 4); }
+    g.restore();
+  }
   function crowd(g, y, n, h, col, phoneP = .25, seed = 5, x0 = 0, x1 = W) { rs(seed); for (let i = 0; i < n; i++) { const x = x0 + rn() * (x1 - x0), hh = h * (.8 + .35 * rn()), ch = rn() < .15; const ph = rn() < phoneP;
       person(g, x, y + rn() * h * .12, ch ? hh * .65 : hh, { col, child: ch, arm: ph ? 'phone' : rn() < .12 ? 'point' : 'down', dir: rn() < .5 ? 1 : -1, coat: rn() < .4 }); } }
   function tower(g, x, base, w, h, col, lit = .3, seed = 1, broken = 0, litCol = 'rgba(255,205,140,') {
@@ -43,25 +54,9 @@ const ST = (() => {
   // 月亮：o.i 相位角（0 满月，180 新月）；o.sa 屏幕上指向太阳的方向；o.eng 发动机亮度；o.dim 被照亮的亮度
   // 发动机在朝向地球的一面，离正中心 12.4°，从地球看是一圈半径约 0.215 倍月面的亮点，喷流向外斜着擦过地球
   function moon(g, x, y, r, o = {}) {
-    const i = (o.i ?? 90) * Math.PI / 180, sa = o.sa ?? 0, eng = o.eng ?? 0, t = o.t ?? 0, dim = o.dim ?? 1, es = o.es ?? .06;
-    if (eng > 0) { glow(g, x, y, r * 4.2, 'rgba(120,230,170,A)', .12 * eng); glow(g, x, y, r * 2.2, 'rgba(170,215,255,A)', .2 * eng); }
-    if (dim > .3) glow(g, x, y, r * 1.7, 'rgba(255,250,235,A)', .18 * dim * (1 + Math.cos(i)) / 2);
-    g.save(); g.translate(x, y); g.rotate(sa);
-    g.fillStyle = `rgb(${18 + 60 * es | 0},${20 + 62 * es | 0},${26 + 66 * es | 0})`; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill();
-    if (o.rim) { g.strokeStyle = `rgba(200,210,230,${o.rim})`; g.lineWidth = 1.5; g.stroke(); }
-    g.save(); g.beginPath(); const N = 48;
-    for (let k = 0; k <= N; k++) { const yy = -r + 2 * r * k / N; g.lineTo(Math.sqrt(Math.max(0, r * r - yy * yy)), yy); }
-    for (let k = N; k >= 0; k--) { const yy = -r + 2 * r * k / N; g.lineTo(-Math.cos(i) * Math.sqrt(Math.max(0, r * r - yy * yy)), yy); }
-    g.closePath(); g.clip();
-    const L = v => v * dim | 0, mg = g.createRadialGradient(r * .35, -r * .2, r * .1, 0, 0, r * 1.05); mg.addColorStop(0, `rgb(${L(240)},${L(236)},${L(224)})`); mg.addColorStop(1, `rgb(${L(150)},${L(150)},${L(150)})`); g.fillStyle = mg; g.fillRect(-r, -r, 2 * r, 2 * r);
-    g.restore();
-    g.rotate(-sa); rs(21); for (let k = 0; k < 9; k++) { const a = rn() * 6.28, d = rn() * r * .7, rr = r * (.08 + .14 * rn()); g.fillStyle = 'rgba(40,40,50,.22)'; g.beginPath(); g.arc(d * Math.cos(a), d * Math.sin(a), rr, 0, 7); g.fill(); }
-    if (eng > 0) { const NE = 12, rr = r * .215;
-      for (let k = 0; k < NE; k++) { const a = k / NE * 6.283 + .13, ex = rr * Math.cos(a), ey = rr * Math.sin(a), fl = 1 + .02 * Math.sin(t * 7 + k * 2.1);
-        const Lr = r * (o.ray ?? 3.4) * fl, gr = g.createLinearGradient(ex, ey, ex + Math.cos(a) * Lr, ey + Math.sin(a) * Lr); gr.addColorStop(0, `rgba(215,235,255,${.55 * eng})`); gr.addColorStop(.18, `rgba(150,235,200,${.22 * eng})`); gr.addColorStop(.5, `rgba(110,240,160,${.1 * eng})`); gr.addColorStop(.8, `rgba(255,120,120,${.035 * eng})`); gr.addColorStop(1, 'rgba(255,110,110,0)');
-        g.fillStyle = gr; g.beginPath(); const w0 = r * .05, w1 = r * 1.15; g.moveTo(ex - Math.sin(a) * w0, ey + Math.cos(a) * w0); g.lineTo(ex + Math.cos(a) * Lr - Math.sin(a) * w1, ey + Math.sin(a) * Lr + Math.cos(a) * w1); g.lineTo(ex + Math.cos(a) * Lr + Math.sin(a) * w1, ey + Math.sin(a) * Lr - Math.cos(a) * w1); g.lineTo(ex + Math.sin(a) * w0, ey - Math.cos(a) * w0); g.fill();
-        glow(g, ex, ey, r * .16, 'rgba(210,235,255,A)', .95 * eng); g.fillStyle = `rgba(255,255,255,${eng})`; g.beginPath(); g.arc(ex, ey, r * .028 + 1, 0, 7); g.fill(); } }
-    g.restore();
+    if (!window.MOON3 || !window.MOON3_READY) return;
+    const eng = o.eng ?? 0, cv = MOON3.render({ i: o.i ?? 90, sa: o.sa ?? 0, eng, t: o.t ?? 0, sunI: o.dim ?? 1, earthA: o.es !== undefined ? .04 + o.es * .5 : .09, hot: o.hot ?? eng, rpx: 180 });
+    const k = r / 180; g.drawImage(cv, x - 960 * k, y - 540 * k, 1920 * k, 1080 * k);
   }
   const S = {};
   const scene = (name, bg, mid, fg, bg2, mid2) => S[name] = { bg, mid, fg, bg2, mid2, c: null };
@@ -172,36 +167,48 @@ const ST = (() => {
     rs(77); for (let i = 0; i < 14; i++) { const a = rn() * 6.28, d = rn() * r * .8; g.fillStyle = `rgba(${rn() < .5 ? '120,150,80' : '250,250,255'},${.35 * (Math.cos(a) * d > 0 ? 1 : .08)})`; g.beginPath(); g.ellipse(d * Math.cos(a), d * Math.sin(a), r * (.1 + .2 * rn()), r * (.05 + .1 * rn()), rn() * 3, 0, 7); g.fill(); }
     rs(78); for (let i = 0; i < 40; i++) { const a = rn() * 6.28, d = rn() * r * .9; if (Math.cos(a) * d < -r * .05) { g.fillStyle = 'rgba(255,200,120,.7)'; g.fillRect(d * Math.cos(a), d * Math.sin(a), 1.5, 1.5); } }
     g.restore(); g.strokeStyle = 'rgba(140,190,255,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, r + 1, sa - 1.6, sa + 1.6); g.stroke(); };
-  scene('build', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars(g, 900, .9, H, 21); earthDisc(g, 1480, 330, 140, 0);
-     g.fillStyle = '#6d6b67'; g.beginPath(); g.moveTo(0, 690); g.quadraticCurveTo(500, 640, 900, 680); g.quadraticCurveTo(1400, 720, W, 670); g.lineTo(W, H); g.lineTo(0, H); g.fill(); },
+  scene('build', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars(g, 900, .9, H, 21); earthDisc(g, 1560, 300, 130, 0);
+     g.fillStyle = '#6d6b67'; g.beginPath(); g.moveTo(0, 700); g.quadraticCurveTo(500, 660, 900, 690); g.quadraticCurveTo(1400, 720, W, 680); g.lineTo(W, H); g.lineTo(0, H); g.fill(); },
    null,
    g => { regolith(g, 700, 23);
-     // 喷口：巨大的钟形，竖直朝上（喷流沿当地竖直方向射出）
-     g.fillStyle = '#2a2a2e'; g.beginPath(); g.moveTo(760, 830); g.bezierCurveTo(770, 640, 660, 460, 560, 300); g.lineTo(1120, 300); g.bezierCurveTo(1020, 460, 910, 640, 920, 830); g.closePath(); g.fill();
-     g.fillStyle = '#55565c'; g.beginPath(); g.ellipse(840, 300, 280, 26, 0, 0, 7); g.fill(); g.fillStyle = '#121214'; g.beginPath(); g.ellipse(840, 300, 262, 20, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,245,.25)'; g.beginPath(); g.moveTo(1120, 300); g.bezierCurveTo(1020, 460, 910, 640, 920, 830); g.lineTo(890, 830); g.bezierCurveTo(880, 640, 980, 460, 1080, 310); g.fill(); g.fillStyle = '#2a2a2e'; g.fillRect(700, 820, 280, 20);
-     g.strokeStyle = 'rgba(200,200,190,.55)'; g.lineWidth = 3; for (let k = 0; k < 9; k++) { const y = 340 + k * 55; g.beginPath(); g.moveTo(560 - k * 4, y); g.lineTo(1120 + k * 4, y); g.stroke(); } for (let k = 0; k < 8; k++) { g.beginPath(); g.moveTo(540 + k * 86, 330); g.lineTo(530 + k * 90, 840); g.stroke(); }
-     g.strokeStyle = '#3a3a3e'; g.lineWidth = 10; g.beginPath(); g.moveTo(1300, 830); g.lineTo(1300, 240); g.lineTo(820, 200); g.stroke(); g.lineWidth = 3; g.beginPath(); g.moveTo(1300, 260); g.lineTo(1500, 270); g.moveTo(900, 205); g.lineTo(900, 420); g.stroke(); g.fillStyle = '#3a3a3e'; g.fillRect(860, 420, 80, 40);
-     for (let k = 0; k < 6; k++) { glow(g, 560 + k * 112, 840, 50, 'rgba(255,220,160,A)', .5); g.fillStyle = '#fff2d0'; g.beginPath(); g.arc(560 + k * 112, 840, 4, 0, 7); g.fill(); }
-     g.fillStyle = '#26262a'; g.fillRect(200, 820, 180, 60); g.beginPath(); g.arc(230, 885, 22, 0, 7); g.arc(350, 885, 22, 0, 7); g.fill(); g.fillStyle = 'rgba(255,220,160,.8)'; g.fillRect(370, 832, 12, 10);
-     [[460, 905, 170], [1230, 910, 190], [1390, 900, 140, 1], [130, 915, 150]].forEach(([x, y, h, l]) => person(g, x, y, h, { suit: 1, col: '#1c1c20', visor: 'rgba(255,220,170,.8)', lamp: l }));
-     g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.moveTo(1120, 830); g.lineTo(1700, 900); g.lineTo(1120, 900); g.fill(); });
+     // 喷口外壁：直径近百公里的钟形结构，只看到左侧的一段，顶部出画
+     g.fillStyle = '#26262b'; g.beginPath(); g.moveTo(-10, 900); g.lineTo(-10, -20); g.lineTo(620, -20); g.bezierCurveTo(600, 300, 760, 560, 900, 880); g.closePath(); g.fill();
+     g.fillStyle = '#34353b'; g.beginPath(); g.moveTo(560, -20); g.lineTo(620, -20); g.bezierCurveTo(600, 300, 760, 560, 900, 880); g.lineTo(840, 880); g.bezierCurveTo(700, 560, 540, 300, 560, -20); g.fill();
+     g.strokeStyle = 'rgba(200,200,190,.35)'; g.lineWidth = 2; for (let k = 0; k < 24; k++) { const y = -10 + k * 38; g.beginPath(); g.moveTo(-10, y); g.lineTo(560 + 120 * Math.pow(Math.max(0, (y + 20) / 900), 1.6) + (y > 300 ? (y - 300) * .9 : 0) * .35, y); g.stroke(); }
+     for (let k = 0; k < 9; k++) { g.beginPath(); g.moveTo(40 + k * 62, -10); g.lineTo(40 + k * 62 + (k > 5 ? 60 : 0), 880); g.stroke(); }
+     for (let k = 0; k < 14; k++) { g.fillStyle = `rgba(255,220,160,${.5 + .4 * ((k * 7) % 3) / 2})`; g.fillRect(30 + k * 60, 820 - (k % 4) * 60, 6, 3); glow(g, 33 + k * 60, 821 - (k % 4) * 60, 30, 'rgba(255,210,150,A)', .35); }
+     glow(g, 300, 400, 500, 'rgba(255,120,60,A)', .08);
+     // 远处同一圈上的另一座喷口：露出地平线的一段弧
+     g.fillStyle = '#1e1e22'; g.beginPath(); g.ellipse(1240, 700, 170, 40, 0, Math.PI, 0); g.fill(); g.fillStyle = '#2a2a2f'; g.fillRect(1070, 700, 340, 8);
+     g.strokeStyle = '#3a3a3e'; g.lineWidth = 10; g.beginPath(); g.moveTo(1400, 900); g.lineTo(1400, 420); g.lineTo(1000, 400); g.stroke(); g.lineWidth = 3; g.beginPath(); g.moveTo(1080, 404); g.lineTo(1080, 600); g.stroke(); g.fillStyle = '#3a3a3e'; g.fillRect(1040, 600, 80, 40);
+     g.fillStyle = '#26262a'; g.fillRect(960, 870, 180, 60); g.beginPath(); g.arc(990, 935, 22, 0, 7); g.arc(1110, 935, 22, 0, 7); g.fill(); g.fillStyle = 'rgba(255,220,160,.8)'; g.fillRect(1130, 882, 12, 10);
+     [[920, 950, 110, 'up'], [1250, 955, 120, 'up'], [1500, 945, 100], [1660, 950, 105]].forEach(([x, y, h, a]) => robot(g, x, y, h, { arm: a, tool: a !== 'up', lamp: 1 }));
+     g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.moveTo(900, 880); g.lineTo(1700, 940); g.lineTo(900, 940); g.fill(); });
   // ---------- 月面观测站：看着喷流从地平线外升起 ----------
   // 观测站在离月面正中心约 35° 处：地球在仰角约 55° 的高空；发动机在 400–700 公里外的地平线以下，喷流柱向上、并朝地球旁边约 12° 的方向汇聚
-  scene('lunarobs', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars(g, 900, .9, H, 31); },
-   (g, t) => { const BR = 240 / 70, ex = 960, ey = 300, er = 115;
-     earthDisc(g, ex, ey, er, Math.PI * .1);
-     const cols = [[180, .0], [520, .35], [800, .7], [1120, .2], [1420, .55], [1760, .9]];
-     cols.forEach(([x0, d], k) => { const k0 = Math.min(1, Math.max(0, (t - .3 - d * 1.4) / .7)); if (k0 <= 0) return; const fl = 1 + .5 * Math.exp(-Math.max(0, t - .3 - d * 1.4) * 2.5);
-       const a = Math.atan2(ey - 735, (ex + (x0 - ex) * .42) - x0), L = Math.hypot((ex + (x0 - ex) * .42) - x0, ey - 735), dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
-       const gr = g.createLinearGradient(x0, 735, x0 + dx * L, 735 + dy * L); gr.addColorStop(0, `rgba(225,240,255,${.75 * k0 * fl})`); gr.addColorStop(.25, `rgba(150,240,200,${.4 * k0})`); gr.addColorStop(.65, `rgba(110,240,160,${.14 * k0})`); gr.addColorStop(1, `rgba(255,120,130,0)`);
-       g.fillStyle = gr; g.beginPath(); const w0 = 40, w1 = 120; g.moveTo(x0 + nx * w0, 735 + ny * w0); g.lineTo(x0 + dx * L + nx * w1, 735 + dy * L + ny * w1); g.lineTo(x0 + dx * L - nx * w1, 735 + dy * L - ny * w1); g.lineTo(x0 - nx * w0, 735 - ny * w0); g.fill();
-       glow(g, x0, 740, 160, 'rgba(210,235,255,A)', .5 * k0 * fl); });
-     const kk = Math.min(1, Math.max(0, (t - .3) / 2)); if (kk > 0) { g.fillStyle = `rgba(150,220,200,${.06 * kk})`; g.fillRect(0, 0, W, H); } },
-   g => { g.fillStyle = '#4a4946'; g.beginPath(); g.moveTo(0, 760); g.quadraticCurveTo(700, 715, 1200, 740); g.quadraticCurveTo(1600, 755, W, 735); g.lineTo(W, H); g.lineTo(0, H); g.fill(); regolith(g, 800, 33, .85);
-     g.fillStyle = '#2a2a2e'; g.beginPath(); g.ellipse(560, 860, 230, 120, 0, Math.PI, 0); g.fill(); g.fillRect(330, 850, 460, 40); g.fillStyle = 'rgba(255,200,130,.85)'; for (let k = 0; k < 6; k++) g.fillRect(420 + k * 50, 800, 22, 18); glow(g, 560, 810, 260, 'rgba(255,190,110,A)', .18);
-     g.strokeStyle = '#2a2a2e'; g.lineWidth = 5; g.beginPath(); g.moveTo(760, 760); g.lineTo(760, 600); g.stroke(); g.beginPath(); g.ellipse(760, 600, 40, 14, -.4, 0, 7); g.stroke();
-     [[1040, 880, 210], [1150, 885, 180], [1260, 880, 200], [1380, 890, 150]].forEach(([x, y, h], k) => person(g, x, y, h, { suit: 1, col: '#18181c', visor: 'rgba(180,230,210,.75)' }));
-     g.strokeStyle = '#18181c'; g.lineWidth = 9; g.beginPath(); g.moveTo(1170, 735); g.lineTo(1120, 650); g.stroke(); });
+  scene('lunarobs', g => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); },
+   (g, t) => { if (!window.MOON3 || !window.MOON3_READY) return; const a = 35 * Math.PI / 180, up = [Math.sin(a), 0, Math.cos(a)], h = 1.0006;
+     const pos = up.map(v => v * h), td = [-Math.cos(a), 0, Math.sin(a)];            // 地面上朝地球方向、抬头约 38°
+     const look = pos.map((v, k) => v + up[k] * .78 + td[k]);
+     const k0 = i => Math.min(1, Math.max(0, (t - .3 - ((i * 5) % 12) * .12) / .6));
+     const cv = MOON3.render({ i: 92, sa: 2.6, eng: k0, t, earthA: .09, view: { pos, look, up, fov: 80 } });
+     stars(g, 700, .9, H, 31); g.drawImage(cv, 0, 0);
+     const e = MOON3.project([0, 0, 400]); if (e[2] < 1) earthDisc(g, e[0], e[1], 80, Math.PI * .1); },
+   g => { g.fillStyle = '#3a3936'; g.beginPath(); g.moveTo(0, 820); g.quadraticCurveTo(700, 790, 1200, 808); g.quadraticCurveTo(1600, 820, W, 800); g.lineTo(W, H); g.lineTo(0, H); g.fill(); regolith(g, 840, 33, .7);
+     g.fillStyle = '#2a2a2e'; g.beginPath(); g.ellipse(560, 900, 230, 110, 0, Math.PI, 0); g.fill(); g.fillRect(330, 890, 460, 40); g.fillStyle = 'rgba(255,200,130,.85)'; for (let k = 0; k < 6; k++) g.fillRect(420 + k * 50, 850, 22, 18); glow(g, 560, 860, 260, 'rgba(255,190,110,A)', .18);
+     [[1060, 930, 190, 'up'], [1200, 935, 160], [1330, 934, 170, 'up']].forEach(([x, y, h, a]) => robot(g, x, y, h, { arm: a }));
+     g.strokeStyle = '#18181c'; g.lineWidth = 9; g.beginPath(); g.moveTo(1500, 820); g.lineTo(1500, 620); g.stroke(); g.beginPath(); g.ellipse(1500, 620, 60, 22, -.3, 0, 7); g.stroke(); });
+  // ---------- 航天飞机：人类在离月球约 1.5 万公里的轨道上看点火 ----------
+  scene('shuttle', g => { g.fillStyle = '#070809'; g.fillRect(0, 0, W, H); },
+   (g, t) => { const k0 = Math.max(0, Math.min(1, (t - 1.0) / 1.3)); if (!window.MOON3 || !window.MOON3_READY) return;
+     const cv = MOON3.render({ i: 92, sa: -.4, eng: i => k0 * Math.min(1, Math.max(0, (t - .9 - i * .09) / .5)), t, view: { pos: [6.2, 2.4, 6.6], look: [-.2, .3, 1.6], fov: 34 } });
+     g.save(); g.beginPath(); g.roundRect(330, 150, 1260, 620, 60); g.clip(); g.fillStyle = '#000'; g.fillRect(330, 150, 1260, 620); stars(g, 500, .8, H, 41); g.drawImage(cv, 0, 0); g.restore(); },
+   g => { g.fillStyle = '#1a1c22'; g.beginPath(); g.rect(0, 0, W, H); g.roundRect(330, 150, 1260, 620, 60); g.fill('evenodd');
+     g.strokeStyle = '#3a3d47'; g.lineWidth = 26; g.beginPath(); g.roundRect(330, 150, 1260, 620, 60); g.stroke(); g.strokeStyle = '#0c0d10'; g.lineWidth = 4; g.stroke();
+     g.fillStyle = '#101216'; g.fillRect(0, 800, W, 280); for (let k = 0; k < 9; k++) { g.fillStyle = ['#2e8bd8', '#ffb347', '#4bd49a'][k % 3]; glow(g, 200 + k * 190, 860, 30, 'rgba(120,200,255,A)', .25); g.fillRect(190 + k * 190, 855, 22, 6); g.fillStyle = '#1e2128'; g.fillRect(170 + k * 190, 870, 120, 70); }
+     g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(360, 180, 500, 60);
+     [[560, 870, 250, { arm: 'hold' }], [760, 860, 180, { child: 1, arm: 'up' }], [1240, 880, 260, { arm: 'point' }], [1420, 880, 230, {}]].forEach(([x, y, h, o]) => person(g, x, y, h, { col: '#06070a', ...o }));
+     g.fillStyle = 'rgba(255,255,255,.04)'; g.fillRect(330, 150, 1260, 4); });
   function draw(name, g, t, u, push = .05) {
     const s = S[name]; if (!s.c) { s.c = [mk(), mk(), mk()]; s.bg(s.c[0].getContext('2d')); if (s.fg) s.fg(s.c[1].getContext('2d')); if (s.bg2) s.bg2(s.c[2].getContext('2d')); }
     const k1 = 1 + push * .5 * u, k2 = 1 + push * u, cx = W / 2, cy = H * .55;

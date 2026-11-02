@@ -69,9 +69,9 @@ add('热', '额外受热 ≤ 阳光 10% 时，允许打到地球的发动机功�
 geo = R_E**2 / (4 * d**2)
 add('热', '喷流各向同性辐射中落到地球的份额', f'{geo:.1e}', '')
 add('热', '喷流可以辐射掉的功率份额上限', f'{f_allow/geo:.1e}', '')
-T_moon = 400
-P_waste_max = sigma * T_moon**4 * 4 * math.pi * R_M**2
-add('热', '月面保持 400 K 时能散掉的废热', f'{P_waste_max:.1e} W = 发动机功率的 {P_waste_max/P:.0e}', '科幻设定：发动机几乎没有废热，能量都进喷流')
+for T_moon, lab in [(400, '月面保持 400 K（有人驻留）'), (1500, '月面烧到 1500 K（只有机器人，表面暗红发光）')]:
+    P_waste_max = sigma * T_moon**4 * 4 * math.pi * R_M**2
+    add('热', f'{lab}时能散掉的废热', f'{P_waste_max:.1e} W = 发动机功率的 {P_waste_max/P:.0e}', '方案选后者：月球上不留人，允许月面高温；发动机废热仍须低于功率的十亿分之几（科幻设定）')
 diss = tide_diss_now * ((d_M0 / d)**3)**2
 add('热', '潮汐耗散（∝ 潮汐振幅²）', f'{diss:.1e} W = 地表 {diss/(4*math.pi*R_E**2):.1f} W/m²', f'约为吸收阳光的 {diss/(4*math.pi*R_E**2)/240*100:.0f}%，并伴随频繁地震')
 

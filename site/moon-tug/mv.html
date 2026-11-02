@@ -4,9 +4,9 @@
 <body><canvas id="gl" width="1920" height="1080"></canvas><canvas id="out" width="1920" height="1080"></canvas>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
-await new Promise(r => { const s = document.createElement('script'); s.src = 'story.js'; s.onload = r; document.head.appendChild(s); });
+window.THREE = THREE; for (const f of ['story.js', 'moon3.js']) await new Promise(r => { const s = document.createElement('script'); s.src = f; s.onload = r; document.head.appendChild(s); });
 // ---------------- 基础 ----------------
-const BPM = 70, BAR = 240 / BPM, BEAT = 60 / BPM, NB = 90, TOTAL = NB * BAR + 4;
+const BPM = 70, BAR = 240 / BPM, BEAT = 60 / BPM, NB = 93, TOTAL = NB * BAR + 4;
 const ss = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }, cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), mix = (a, b, u) => a + (b - a) * u;
 const lmix = (a, b, u) => Math.exp(mix(Math.log(a), Math.log(b), u));
 const W = 1920, H = 1080, LB = 138;
@@ -20,7 +20,7 @@ function stars2d(g, a = 1, dx = 0, dy = 0, tw = 0, sc = 1) {
   for (const [x, y, b, p] of STARS) { const X = ((x * W * 1.2 + dx) % (W * 1.2) + W * 1.2) % (W * 1.2) - W * .1, Y = ((y * H * 1.2 + dy) % (H * 1.2) + H * 1.2) % (H * 1.2) - H * .1;
     const al = a * (.25 + .75 * b * b) * (1 + .35 * Math.sin(tw * (2 + 3 * p) + p * 40)); g.fillStyle = `rgba(${200 + 55 * p | 0},${210 + 30 * b | 0},255,${cl(al)})`; const s = (b > .93 ? 2.4 : b > .7 ? 1.6 : 1.1) * sc; g.fillRect(X, Y, s, s); } }
 // ---------------- three.js 世界 ----------------
-const cv = document.getElementById('gl'), r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true });
+const cv = document.getElementById('gl'), r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, preserveDrawingBuffer: true, alpha: true }); r.setClearColor(0x000000, 1);
 r.setSize(W, H, false); r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.1;
 const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(40, W / H, .001, 8000);
 const TL = new THREE.TextureLoader(), load = u => new Promise(res => TL.load(u, t => { t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; res(t); }));
@@ -48,25 +48,16 @@ const atmMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, 
 sc.add(new THREE.Mesh(new THREE.SphereGeometry(1.025, 128, 96), atmMat));
 const sunL = new THREE.DirectionalLight(0xfff1dc, 3.0); sc.add(sunL); sc.add(new THREE.AmbientLight(0x223355, .1));
 const MD = 17.2, MR = .273, MPOS = new THREE.Vector3(-.9, 2.35, MD);
-const moon = new THREE.Mesh(new THREE.SphereGeometry(MR, 128, 96), new THREE.MeshPhongMaterial({ map: moonT, shininess: 2 })); moon.position.copy(MPOS); moon.rotation.y = -1.2; sc.add(moon);
 const AX = MPOS.clone().negate().normalize(), AU = new THREE.Vector3().crossVectors(AX, new THREE.Vector3(0, 1, 0)).normalize(), AV = new THREE.Vector3().crossVectors(AU, AX).normalize();
-const CANT = 12.4 * Math.PI / 180, PLUME = 5 * Math.PI / 180;
-const JETS = []; { const N = 12;
-  for (let i = 0; i < N; i++) { const ph = i / N * Math.PI * 2 + .13, dir = AX.clone().multiplyScalar(Math.cos(CANT)).add(AU.clone().multiplyScalar(Math.sin(CANT) * Math.cos(ph))).add(AV.clone().multiplyScalar(Math.sin(CANT) * Math.sin(ph)));
-    // 发动机在 dir 指向的月面上，喷流沿当地竖直方向（dir）射出：推力线过月心，不产生力矩
-    const len = 26, g = new THREE.CylinderGeometry(.012, .012 + len * Math.tan(PLUME), len, 28, 1, true); g.translate(0, -len / 2, 0);
-    const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { k: { value: 1 }, t: { value: 0 }, s: { value: i * 1.7 } },
-      vertexShader: 'varying vec2 vU; varying vec3 vN; varying vec3 vV; void main(){ vU = uv; vec4 w = modelMatrix*vec4(position,1.); vN = normalize((modelMatrix*vec4(normal,0.)).xyz); vV = normalize(cameraPosition - w.xyz); gl_Position = projectionMatrix*viewMatrix*w; }',
-      fragmentShader: 'uniform float k, t, s; varying vec2 vU; varying vec3 vN; varying vec3 vV; void main(){ float e = .25 + .75 * pow(abs(dot(vN, vV)), 1.2); float fl = .97 + .03 * sin(t * 7. + s + vU.y * 20.); float y = vU.y; float b = pow(y, 30.) * .55 + pow(y, 16.) * .06; vec3 col = mix(vec3(1.,.35,.38), vec3(.35,1.,.6), smoothstep(.55,.85,y)); col = mix(col, vec3(.75,.88,1.), smoothstep(.93,.99,y)); gl_FragColor = vec4(col * b * e * fl * k + vec3(.9,.96,1.) * pow(y, 160.) * k, 1.); }' });
-    const j = new THREE.Mesh(g, mat); j.position.copy(MPOS).add(dir.clone().multiplyScalar(MR * .99)); j.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir); sc.add(j); JETS.push(mat);
-    const spot = new THREE.Mesh(new THREE.SphereGeometry(.018, 12, 8), new THREE.MeshBasicMaterial({ color: 0xe8f4ff, transparent: true, blending: THREE.AdditiveBlending })); spot.position.copy(MPOS).add(dir.clone().multiplyScalar(MR * 1.002)); sc.add(spot); mat.spot = spot; } }
-const setJets = (f, t) => JETS.forEach((m, i) => { m.uniforms.k.value = typeof f === 'function' ? f(i) : f; m.spot.visible = m.uniforms.k.value > .02; m.spot.material.opacity = Math.min(1, m.uniforms.k.value); m.uniforms.t.value = t; });
+const M3 = MOON3.build(THREE, MR, moonT); M3.group.position.copy(MPOS); M3.group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), AX); sc.add(M3.group); M3.set({ earthA: .05, eng: 0 });
+MOON3.initSprite(THREE, r, moonT); window.MOON3_READY = true;
+const setJets = (f, t) => M3.set({ eng: f, t, hot: typeof f === 'function' ? 1 : f });
 const starPts = (() => { srand(19); const n = 6000, P = new Float32Array(n * 3), C = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const u = rnd() * 2 - 1, t = rnd() * 6.283, R = 4000, b = .35 + .65 * Math.pow(rnd(), 3); P[i * 3] = R * Math.sqrt(1 - u * u) * Math.cos(t); P[i * 3 + 1] = R * Math.sqrt(1 - u * u) * Math.sin(t); P[i * 3 + 2] = R * u; C[i * 3] = b * .85; C[i * 3 + 1] = b * .9; C[i * 3 + 2] = b; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); const p = new THREE.Points(g, new THREE.PointsMaterial({ vertexColors: true, size: 1.7, sizeAttenuation: false })); sc.add(p); return p; })();
 const sunSprite = (() => { const c = mk(256, 256), g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,250,235,1)'); gr.addColorStop(.08, 'rgba(255,235,200,.9)'); gr.addColorStop(.3, 'rgba(255,190,120,.15)'); gr.addColorStop(1, 'rgba(255,160,80,0)'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); s.visible = false; sc.add(s); return s; })();
 const goldLine = (() => { const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), MPOS.clone()]); const l = new THREE.Line(g, new THREE.LineDashedMaterial({ color: 0xf2c46b, dashSize: .25, gapSize: .18, transparent: true, opacity: 0 })); l.computeLineDistances(); sc.add(l); return l; })();
-function setSun(dir, ice = 0, li = 1, amb = .02, sk = 1, ai = 1) { earthMat.uniforms.sk.value = sk; atmMat.uniforms.ai.value = ai; sunL.intensity = 3 * sk; const d = dir.clone().normalize(); earthMat.uniforms.sd.value.copy(d); sunL.position.copy(d.clone().multiplyScalar(50)); earthMat.uniforms.ice.value = ice; earthMat.uniforms.li.value = li; earthMat.uniforms.amb.value = amb; }
+function setSun(dir, ice = 0, li = 1, amb = .02, sk = 1, ai = 1) { earthMat.uniforms.sk.value = sk; atmMat.uniforms.ai.value = ai; sunL.intensity = 3 * sk; M3.set({ sunWorld: dir.clone().normalize(), sunI: sk, earthA: .05 * sk + .01 }); const d = dir.clone().normalize(); earthMat.uniforms.sd.value.copy(d); sunL.position.copy(d.clone().multiplyScalar(50)); earthMat.uniforms.ice.value = ice; earthMat.uniforms.li.value = li; earthMat.uniforms.amb.value = amb; }
 function render3(pos, look, fov = 40, up = [0, 1, 0]) { cam.fov = fov; cam.updateProjectionMatrix(); cam.position.set(...pos); cam.up.set(...up); cam.lookAt(...look); r.render(sc, cam); return cv; }
 // ---------------- 调色与字幕 ----------------
 const small = mk(480, 270), sg2 = small.getContext('2d');
@@ -87,15 +78,6 @@ function caption(a, main, sub, pos = 'bl') {
   o.shadowBlur = 0; o.globalAlpha = 1; o.textAlign = 'left';
 }
 // ---------------- 2D 小工具 ----------------
-const moonDisc = (() => { const c = mk(512, 512), g = c.getContext('2d'); g.beginPath(); g.arc(256, 256, 256, 0, 7); g.clip(); g.drawImage(moonT.image, 600, 200, 600, 600, 0, 0, 512, 512);
-  const sh = g.createRadialGradient(330, 200, 60, 256, 256, 300); sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.55)'); g.fillStyle = sh; g.fillRect(0, 0, 512, 512); return c; })();
-function drawMoon(g, x, y, rr, halo = 1, t = 0) {
-  if (halo > 0) { for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283 + .1, L = rr * (2.2 + .5 * Math.abs(Math.sin(i * 2.3))) * (1 + .04 * Math.sin(t * 9 + i)); const gr = g.createLinearGradient(x + Math.cos(a) * rr, y + Math.sin(a) * rr, x + Math.cos(a) * (rr + L), y + Math.sin(a) * (rr + L));
-      gr.addColorStop(0, `rgba(170,205,255,${.2 * halo})`); gr.addColorStop(1, 'rgba(120,170,255,0)'); g.strokeStyle = gr; g.lineWidth = rr * .09; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + Math.cos(a) * rr * .9, y + Math.sin(a) * rr * .9); g.lineTo(x + Math.cos(a) * (rr + L), y + Math.sin(a) * (rr + L)); g.stroke(); }
-    const hg = g.createRadialGradient(x, y, rr, x, y, rr * 3.4); hg.addColorStop(0, `rgba(150,190,255,${.16 * halo})`); hg.addColorStop(1, 'rgba(150,190,255,0)'); g.fillStyle = hg; g.beginPath(); g.arc(x, y, rr * 3.4, 0, 7); g.fill(); }
-  const gl = g.createRadialGradient(x, y, rr * .9, x, y, rr * 1.6); gl.addColorStop(0, 'rgba(255,250,235,.35)'); gl.addColorStop(1, 'rgba(255,250,235,0)'); g.fillStyle = gl; g.beginPath(); g.arc(x, y, rr * 1.6, 0, 7); g.fill();
-  g.drawImage(moonDisc, x - rr, y - rr, rr * 2, rr * 2);
-}
 function skyGrad(g, top, bot, y0 = 0, y1 = H) { const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, top); gr.addColorStop(1, bot); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
 const HILLS = R0(64, 31), CITY = R0(140, 41), ICE = R0(80, 51);
 // ---------------- 镜头 ----------------
@@ -117,20 +99,20 @@ shot(6.5, 9.1, (g, t, u) => { setSun(new THREE.Vector3(.9, .15, -.4), 0, 1, .015
   const look = new THREE.Vector3().lerpVectors(d0.clone().multiplyScalar(.98).add(new THREE.Vector3(.3, .2, .4)), new THREE.Vector3(-.3, .9, 3), ss((u - .1) * 1.3));
   g.drawImage(render3(p.toArray(), look.toArray(), mix(62, 34, ss(u))), 0, 0); });
 // 4 点火（动画）
-shot(17.5, 20.6, (g, t) => { setSun(new THREE.Vector3(1, .15, .02), 0, 1); const k0 = -10; setJets(i => ss((t - k0 - i * .22) / .5) * (1 + .6 * Math.exp(-Math.max(0, t - k0 - i * .22) * 2)), t);
-  const p = MPOS.clone().add(AU.clone().multiplyScalar(-5.2 - t * .04)).add(AV.clone().multiplyScalar(1.1)).add(AX.clone().multiplyScalar(-1.6)), l = MPOS.clone().add(AX.clone().multiplyScalar(2.2));
-  g.drawImage(render3(p.toArray(), l.toArray(), 38), 0, 0); });
+shot(20.5, 23.6, (g, t) => { setSun(AU.clone().multiplyScalar(-.9).add(AV.clone().multiplyScalar(.3)).add(AX.clone().multiplyScalar(-.2)), 0, 1); const k0 = -10; setJets(i => ss((t - k0 - i * .22) / .5) * (1 + .6 * Math.exp(-Math.max(0, t - k0 - i * .22) * 2)), t);
+  const p = MPOS.clone().add(AU.clone().multiplyScalar(-1.5 - t * .03)).add(AV.clone().multiplyScalar(.55)).add(AX.clone().multiplyScalar(-.7)), l = MPOS.clone().add(AX.clone().multiplyScalar(.9));
+  g.drawImage(render3(p.toArray(), l.toArray(), 44), 0, 0); });
 // 5 拖船（风格帧）
-shot(20.5, 24.1, (g, t, u) => { setSun(new THREE.Vector3(1, .12, .02), 0, 1); setJets(1, t); g.drawImage(render3([-.35 - u * .25, 1.02 + u * .06, -6.4 - u * .3], [-.45, 1.25, MD], 9), 0, 0); });
+shot(23.5, 27.1, (g, t, u) => { setSun(new THREE.Vector3(1, .12, .02), 0, 1); setJets(1, t); g.drawImage(render3([-.35 - u * .25, 1.02 + u * .06, -6.4 - u * .3], [-.45, 1.25, MD], 9), 0, 0); });
 // 6 海上的月亮
-shot(24, 27.1, (g, t, u) => { const pan = -60 * ss(u); skyGrad(g, '#03060e', '#13213a', 0, 680); stars2d(g, .7, t * 2, 0, t); ST.aurora(g, 80, 600, .07); const mx = 1180, my = 300 + pan, mr = 96;
+shot(27, 30.1, (g, t, u) => { const pan = -60 * ss(u); skyGrad(g, '#03060e', '#13213a', 0, 680); stars2d(g, .7, t * 2, 0, t); ST.aurora(g, 80, 600, .07); const mx = 1180, my = 300 + pan, mr = 96;
   ST.moon(g, mx, my, mr, { i: 90, sa: Math.PI - .45, eng: 1, t });
   const sea = g.createLinearGradient(0, 680, 0, H); sea.addColorStop(0, '#0b1424'); sea.addColorStop(1, '#03060c'); g.fillStyle = sea; g.fillRect(0, 680, W, H - 680);
   srand(77); for (let i = 0; i < 1600; i++) { const y = 682 + Math.pow(rnd(), 1.6) * 280, sp = 14 + (y - 680) * 1.6, x = mx + (rnd() - .5) * sp * 2 + Math.sin(t * 2 + i) * 6, w = 4 + (y - 680) * .16; const a = .5 * (1 - Math.abs(x - mx) / (sp + 1)) * (.4 + .6 * Math.sin(t * 3 + i * 1.7) ** 2);
     if (a > 0) { g.fillStyle = `rgba(215,228,255,${a})`; g.fillRect(x, y, w, 1.6); } }
   g.fillStyle = 'rgba(160,190,255,.25)'; g.fillRect(0, 679, W, 2); });
 // 7 潮水
-shot(30, 32.6, (g, t, u) => { skyGrad(g, '#040812', '#1a2540', 0, 700); stars2d(g, .6, t * 2, 0, t); ST.moon(g, 560, 270, 88, { i: 84, sa: Math.PI - .3, eng: 1, t });
+shot(33, 35.6, (g, t, u) => { skyGrad(g, '#040812', '#1a2540', 0, 700); stars2d(g, .6, t * 2, 0, t); ST.moon(g, 560, 270, 88, { i: 84, sa: Math.PI - .3, eng: 1, t });
   const lvl = 790 - 170 * ss(u * 1.2);
   g.fillStyle = '#05080f'; for (let i = 0; i < 70; i++) { const c = CITY[i], x = 960 + i * 13.5 + c[3] * 6, h2 = 40 + Math.pow(c[0], 2) * 300 * (1 - Math.abs(i - 30) / 70), w2 = 9 + c[1] * 10; g.fillRect(x, 785 - h2, w2, h2 + 300); for (let k = 0; k < 8; k++) if (c[(k % 3) + 1] > .55 && k * 20 < h2 - 10) { g.fillStyle = 'rgba(255,205,140,.55)'; g.fillRect(x + 3, 785 - h2 + 10 + k * 20, 2.5, 2.5); g.fillStyle = '#05080f'; } }
   g.fillStyle = 'rgba(10,22,40,.92)'; g.beginPath(); g.moveTo(0, lvl); for (let i = 0; i <= 80; i++) { const x = i / 80 * W; g.lineTo(x, lvl + 6 * Math.sin(i * .9 + t * 2) + (x > 980 ? 0 : 0)); } g.lineTo(W, H); g.lineTo(0, H); g.fill();
@@ -138,12 +120,12 @@ shot(30, 32.6, (g, t, u) => { skyGrad(g, '#040812', '#1a2540', 0, 700); stars2d(
   g.setLineDash([10, 10]); g.strokeStyle = 'rgba(242,196,107,.45)'; g.beginPath(); g.moveTo(940, 778); g.lineTo(W, 778); g.stroke(); g.setLineDash([]);
   g.font = `400 18px ${SANS}`; g.fillStyle = 'rgba(242,196,107,.7)'; g.fillText('今天的高潮线', 1690, 800); });
 // 8 两个天体之间的距离（长镜头 2：从地球边缘横移拉远）
-shot(35.5, 39.1, (g, t, u) => { setSun(new THREE.Vector3(.2, 1, .02), 0, .6, .03); setJets(1, t); goldLine.material.opacity = .7 * ss((u - .35) * 3);
+shot(38.5, 42.1, (g, t, u) => { setSun(new THREE.Vector3(.2, 1, .02), 0, .6, .03); setJets(1, t); goldLine.material.opacity = .7 * ss((u - .35) * 3);
   const e = ss(u) ** 1.6, p = [mix(-1.15, 26, e), mix(1.25, 7, e), mix(-1.5, 8.6, e)], e3 = ss(u * 1.5), l = [mix(-.85, -.45, e3), mix(2.3, 1.2, e3), mix(MD, 8.6, e3)];
   g.drawImage(render3(p, l, mix(40, 42, e)), 0, 0); goldLine.material.opacity = 0; });
 // 9 四次近日点（动画）：近日点落在第 24、26、28、30 小节
-const PERI = [42, 44, 46, 48].map(B);
-shot(41.5, 49.6, (g, t) => { const T = t + B(41.5); g.fillStyle = '#020306'; g.fillRect(0, 0, W, H); stars2d(g, .8, 0, 0, t);
+const PERI = [45, 47, 49, 51].map(B);
+shot(44.5, 52.6, (g, t) => { const T = t + B(44.5); g.fillStyle = '#020306'; g.fillRect(0, 0, W, H); stars2d(g, .8, 0, 0, t);
   const sx = 520, sy = 560, R = 250; for (const [r0, a] of [[R * 3.4, .05], [R * 2, .12], [R * 1.4, .3]]) { const cg = g.createRadialGradient(sx, sy, R * .9, sx, sy, r0); cg.addColorStop(0, `rgba(255,170,80,${a * 2})`); cg.addColorStop(1, 'rgba(255,120,40,0)'); g.fillStyle = cg; g.beginPath(); g.arc(sx, sy, r0, 0, 7); g.fill(); }
   const dg = g.createRadialGradient(sx - 50, sy - 50, 20, sx, sy, R); dg.addColorStop(0, '#ffe2a8'); dg.addColorStop(.7, '#ffae55'); dg.addColorStop(1, '#e8601e'); g.fillStyle = dg; g.beginPath(); g.arc(sx, sy, R, 0, 7); g.fill();
   srand(5); for (let i = 0; i < 5000; i++) { const a = rnd() * 6.283 + t * .02, rr = Math.sqrt(rnd()) * R * .97; g.fillStyle = `rgba(${rnd() < .5 ? '255,240,210' : '200,110,40'},${.06 + rnd() * .08})`; g.fillRect(sx + rr * Math.cos(a), sy + rr * Math.sin(a), 2 + rnd() * 3, 2 + rnd() * 3); }
@@ -156,7 +138,7 @@ shot(41.5, 49.6, (g, t) => { const T = t + B(41.5); g.fillStyle = '#020306'; g.f
   const fl = Math.max(...PERI.map(P => Math.exp(-Math.abs(T - P) * 2.2)));
   const er = 18 + 34 * fl, eg = g.createRadialGradient(cur[0], cur[1], 0, cur[0], cur[1], er); eg.addColorStop(0, `rgba(160,200,255,${.45 + .4 * fl})`); eg.addColorStop(1, 'rgba(160,200,255,0)'); g.fillStyle = eg; g.beginPath(); g.arc(cur[0], cur[1], er, 0, 7); g.fill();
   g.fillStyle = '#bfe0ff'; g.beginPath(); g.arc(cur[0], cur[1], 6, 0, 7); g.fill();
-  const YK = [[B(41.5), 0.3], [PERI[0], 1.7], [PERI[1], 4.6], [PERI[2], 10.2], [PERI[3], 26.9], [B(49.5), 27.4]], yr = (() => { for (let q = 1; q < YK.length; q++) if (T < YK[q][0]) return YK[q - 1][1] + (YK[q][1] - YK[q - 1][1]) * (T - YK[q - 1][0]) / (YK[q][0] - YK[q - 1][0]); return 27.4; })(), n = PERI.filter(P => T >= P - BEAT).length;
+  const YK = [[B(44.5), 0.3], [PERI[0], 1.7], [PERI[1], 4.6], [PERI[2], 10.2], [PERI[3], 26.9], [B(52.5), 27.4]], yr = (() => { for (let q = 1; q < YK.length; q++) if (T < YK[q][0]) return YK[q - 1][1] + (YK[q][1] - YK[q - 1][1]) * (T - YK[q - 1][0]) / (YK[q][0] - YK[q - 1][0]); return 27.4; })(), n = PERI.filter(P => T >= P - BEAT).length;
   g.textAlign = 'right'; g.fillStyle = 'rgba(242,230,204,.92)'; g.font = `600 44px ${SERIF}`; g.fillText(n ? `近日点 ${['I', 'II', 'III', 'IV'][n - 1]}` : '向太阳俯冲', W - 130, 300); g.fillStyle = 'rgba(242,196,107,.85)'; g.font = `500 30px ${SANS}`; g.fillText(`第 ${Math.ceil(yr) || 1} 年`, W - 130, 350); g.textAlign = 'left'; });
 // 10 脱离太阳系（长镜头 3：对数缩放，单位 AU）
 const PLAN = [[.39, '水星'], [.72, '金星'], [1, '地球轨道'], [1.52, '火星'], [5.2, '木星'], [9.54, '土星'], [19.2, '天王星'], [30.1, '海王星']];
@@ -179,12 +161,12 @@ function deepField(g, t, fieldAU, earthAU, opts = {}) { g.fillStyle = '#010205';
   let k = 0; while (k < nice.length - 1 && nice[k] * px < 60) k++; const bw = nice[k] * px; g.strokeStyle = 'rgba(220,225,235,.7)'; g.lineWidth = 2; g.beginPath(); g.moveTo(W - 130 - bw, H - LB - 40); g.lineTo(W - 130, H - LB - 40); g.moveTo(W - 130 - bw, H - LB - 48); g.lineTo(W - 130 - bw, H - LB - 32); g.moveTo(W - 130, H - LB - 48); g.lineTo(W - 130, H - LB - 32); g.stroke();
   g.textAlign = 'right'; g.fillStyle = 'rgba(220,225,235,.8)'; g.font = `400 20px ${SANS}`; g.fillText(lab[k], W - 130, H - LB - 58); g.textAlign = 'left';
 }
-shot(52.5, 56.1, (g, t, u) => deepField(g, t, lmix(2.2, 90, ss(u)), lmix(1.2, 60, ss(u))));
+shot(55.5, 59.1, (g, t, u) => deepField(g, t, lmix(2.2, 90, ss(u)), lmix(1.2, 60, ss(u))));
 // 11 冰封的地球
-shot(56, 59.1, (g, t, u) => { setSun(new THREE.Vector3(.35, .25, 1), 1, .25, .03, .5, .25); setJets(0, t);
+shot(59, 62.1, (g, t, u) => { setSun(new THREE.Vector3(.35, .25, 1), 1, .25, .03, .5, .25); setJets(0, t);
   const a = -.1 + u * .22; g.drawImage(render3([3.7 * Math.cos(a), .95, 3.7 * Math.sin(a)], [0, -.05, 0], 40), 0, 0); sunSprite.visible = false; });
 // 12 冰原上的天空
-shot(65, 67.6, (g, t, u) => { skyGrad(g, '#020409', '#0d1626', 0, 820); stars2d(g, 1, t * 2, 0, t * 1.3);
+shot(68, 70.6, (g, t, u) => { skyGrad(g, '#020409', '#0d1626', 0, 820); stars2d(g, 1, t * 2, 0, t * 1.3);
   const ax = 300 + u * 40; for (let i = 0; i < 5; i++) { const gr = g.createLinearGradient(0, 200, 0, 640); gr.addColorStop(0, 'rgba(90,255,190,0)'); gr.addColorStop(.6, `rgba(90,255,190,${.025 + .01 * i})`); gr.addColorStop(1, 'rgba(90,255,190,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(ax + i * 120, 640); g.bezierCurveTo(ax + 200 + i * 140, 360 + 30 * Math.sin(t + i), ax + 380 + i * 150, 260, ax + 600 + i * 140, 200); g.lineTo(ax + 640 + i * 140, 220); g.bezierCurveTo(ax + 420 + i * 150, 300, ax + 240 + i * 140, 420, ax + 60 + i * 120, 660); g.fill(); }
   ST.moon(g, 1260, 300, 78, { i: 140, sa: .52, dim: .5, es: 0 });
   const sxp = 1640, syp = 520, sgr = g.createRadialGradient(sxp, syp, 0, sxp, syp, 60); sgr.addColorStop(0, 'rgba(255,248,230,1)'); sgr.addColorStop(.12, 'rgba(255,230,190,.55)'); sgr.addColorStop(1, 'rgba(255,200,150,0)'); g.fillStyle = sgr; g.beginPath(); g.arc(sxp, syp, 60, 0, 7); g.fill();
@@ -193,53 +175,55 @@ shot(65, 67.6, (g, t, u) => { skyGrad(g, '#020409', '#0d1626', 0, 820); stars2d(
   srand(8); for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(245,246,250,${rnd() * .5})`; g.fillRect(rnd() * W, 830 + rnd() * 120, 3 + rnd() * 30, 1); }
   g.fillStyle = '#0a111d'; g.fillRect(1500, 760, 6, 64); g.fillRect(1500, 760, 34, 4); g.fillStyle = 'rgba(255,200,130,.8)'; g.fillRect(1528, 764, 3, 3); });
 // 13 领航
-shot(70.5, 74.1, (g, t, u) => { setSun(new THREE.Vector3(.8, .3, -1), 1, .25, .03, .22, .2); setJets(0, t); g.drawImage(render3([-.25 - u * .15, 1.05 + u * .05, -6.6 - u * .5], [-.5, 1.3, MD], 9.5), 0, 0); });
+shot(73.5, 77.1, (g, t, u) => { setSun(new THREE.Vector3(.8, .3, -1), 1, .25, .03, .22, .2); setJets(0, t); g.drawImage(render3([-.25 - u * .15, 1.05 + u * .05, -6.6 - u * .5], [-.5, 1.3, MD], 9.5), 0, 0); });
 // 14 深空（长镜头 4：一直拉到银河系）
-shot(77, 82.6, (g, t, u) => { const f = lmix(90, 2.2e10, ss(u)), acen = ss((u - .25) * 3) * (1 - ss((u - .7) * 4)); deepField(g, t, f, lmix(60, 3e5, ss(u)), { acen, gal: ss((u - .62) * 3), cx: mix(760, 1100, ss((u - .5) * 2)) });
+shot(80, 85.6, (g, t, u) => { const f = lmix(90, 2.2e10, ss(u)), acen = ss((u - .25) * 3) * (1 - ss((u - .7) * 4)); deepField(g, t, f, lmix(60, 3e5, ss(u)), { acen, gal: ss((u - .62) * 3), cx: mix(760, 1100, ss((u - .5) * 2)) });
   const yrs = Math.round(lmix(28, 57000, ss((u - .05) * 1.6))); g.textAlign = 'left'; g.fillStyle = 'rgba(242,230,204,.92)'; g.font = `600 44px ${SERIF}`; g.fillText(`第 ${yrs.toLocaleString('en')} 年`, 130, 300); g.textAlign = 'left'; });
 // 15 片尾
-shot(85.5, 90.2, (g, t, u) => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars2d(g, .9 * (1 - ss((u - .75) * 4)), t * 3, 0, t); ST.moon(g, 1020, 520, 7, { i: 90, sa: 0, dim: .5, es: 0 }); g.fillStyle = '#bfe0ff'; g.beginPath(); g.arc(990, 540, 3.2, 0, 7); g.fill(); });
+shot(88.5, 93.2, (g, t, u) => { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); stars2d(g, .9 * (1 - ss((u - .75) * 4)), t * 3, 0, t); ST.moon(g, 1020, 520, 7, { i: 90, sa: 0, dim: .5, es: 0 }); g.fillStyle = '#bfe0ff'; g.beginPath(); g.arc(990, 540, 3.2, 0, 7); g.fill(); });
 
 // 地球上的故事画面
 shot(2.5, 5.1, (g, t, u) => ST.draw('eve', g, t, u));
 shot(11.5, 14.6, (g, t, u) => ST.draw('crowd', g, t, u));
 shot(9, 11.6, (g, t, u) => ST.draw('build', g, t, u));
-shot(14.5, 17.6, (g, t, u) => ST.draw('lunarobs', g, t, u));
-shot(27, 30.1, (g, t, u) => ST.draw('evac', g, t, u));
-shot(32.5, 35.6, (g, t, u) => ST.draw('ruins', g, t, u));
-shot(39, 41.6, (g, t, u) => ST.draw('heat', g, t, u));
-shot(49.5, 52.6, (g, t, u) => ST.draw('under', g, t, u));
-shot(59, 62.1, (g, t, u) => ST.draw('ship', g, t, u));
-shot(62, 65.1, (g, t, u) => ST.draw('icecity', g, t, u));
-shot(67.5, 70.6, (g, t, u) => ST.draw('mural', g, t, u));
-shot(74, 77.1, (g, t, u) => ST.draw('obs', g, t, u));
-shot(82.5, 85.6, (g, t, u) => ST.draw('elders', g, t, u));
+shot(14.5, 17.6, (g, t, u) => ST.draw('shuttle', g, t, u));
+shot(17.5, 20.6, (g, t, u) => ST.draw('lunarobs', g, t, u));
+shot(30, 33.1, (g, t, u) => ST.draw('evac', g, t, u));
+shot(35.5, 38.6, (g, t, u) => ST.draw('ruins', g, t, u));
+shot(42, 44.6, (g, t, u) => ST.draw('heat', g, t, u));
+shot(52.5, 55.6, (g, t, u) => ST.draw('under', g, t, u));
+shot(62, 65.1, (g, t, u) => ST.draw('ship', g, t, u));
+shot(65, 68.1, (g, t, u) => ST.draw('icecity', g, t, u));
+shot(70.5, 73.6, (g, t, u) => ST.draw('mural', g, t, u));
+shot(77, 80.1, (g, t, u) => ST.draw('obs', g, t, u));
+shot(85.5, 88.6, (g, t, u) => ST.draw('elders', g, t, u));
 // 字幕表（小节）
 const CAP = [[0.7, 2.5, '如果有一天', '我们必须离开', 'c'],
   [2.9, 4.9, '出发前一夜', '', 'bl'],
   [7.2, 9, '地球', '', 'bl'],
-  [9.4, 11.4, '月球上的建设者', '发动机建在朝向地球的那一面，喷口朝天', 'bl'],
+  [9.4, 11.4, '月球上的建设者', '机器人在朝向地球的一面建造发动机，喷口朝天', 'bl'],
   [11.8, 14.3, '月球推进计划', '全城的人都来看', 'bl'],
-  [15, 17.3, '月面观测站', '喷流从地平线外升起，斜着指向地球旁边', 'bl'],
-  [18, 20.3, '点火', '喷流朝地球一侧喷出，斜着擦过地球', 'bl'],
-  [21, 23.8, '月球拖船', 'THE  MOON  TUG', 'bl'],
-  [24.6, 26.8, '月亮停在 11 万公里外', '看上去 1.8°  ·  它停在地球前进的方向上，所以总是半个', 'bl'],
-  [27.5, 29.8, '潮汐是今天的 43 倍', '沿海的人开始搬家', 'bl'],
-  [30.5, 32.3, '海水漫进城市', '', 'bl'],
-  [33, 35.3, '海边的城市被放弃了', '两次近日点之间发动机关闭，月亮绕地球转，四天一圈', 'bl'],
-  [36, 38.8, '它的引力拉着地球', '11 万公里', 'bl'],
-  [39.4, 41.3, '近日点的白天', '没人能留在地面上', 'bl'],
-  [50, 52.3, '人们搬进了地下', '', 'bl'],
-  [53, 55.8, '第 28 年', '脱离太阳  ·  23.7 km/s', 'bl'],
-  [56.6, 58.8, '大地冰封', '灯火还亮着', 'bl'],
-  [59.5, 61.8, '海洋冻住了', '', 'bl'],
-  [62.5, 64.8, '城市留在了冰下', '', 'bl'],
-  [65.5, 67.3, '太阳只是一颗亮星', '', 'bl'],
-  [68, 70.3, '孩子们只在画里见过蓝天', '', 'bl'],
-  [71, 73.8, '发动机熄火了', '月亮重新绕着地球转', 'bl'],
-  [74.5, 76.8, '那两颗星', '就是要去的地方', 'bl'],
-  [83, 85.3, '57,000 年', '与半人马座 α 相遇', 'bl'],
-  [86, 89.5, '月球拖船', '画面与音乐由程序生成  ·  文稿 Claude', 'c']];
+  [15, 17.3, '人类在轨道上', '离月球一万多公里的航天飞机', 'bl'],
+  [18, 20.3, '月面中继站', '机器人看着喷流从地平线外升起', 'bl'],
+  [21, 23.3, '点火', '喷流朝地球一侧喷出，斜着擦过地球', 'bl'],
+  [24, 26.8, '月球拖船', 'THE  MOON  TUG', 'bl'],
+  [27.6, 29.8, '月亮停在 11 万公里外', '看上去 1.8°  ·  它停在地球前进的方向上，所以总是半个', 'bl'],
+  [30.5, 32.8, '潮汐是今天的 43 倍', '沿海的人开始搬家', 'bl'],
+  [33.5, 35.3, '海水漫进城市', '', 'bl'],
+  [36, 38.3, '海边的城市被放弃了', '两次近日点之间发动机关闭，月亮绕地球转，四天一圈', 'bl'],
+  [39, 41.8, '它的引力拉着地球', '11 万公里', 'bl'],
+  [42.4, 44.3, '近日点的白天', '没人能留在地面上', 'bl'],
+  [53, 55.3, '人们搬进了地下', '', 'bl'],
+  [56, 58.8, '第 28 年', '脱离太阳  ·  23.7 km/s', 'bl'],
+  [59.6, 61.8, '大地冰封', '灯火还亮着', 'bl'],
+  [62.5, 64.8, '海洋冻住了', '', 'bl'],
+  [65.5, 67.8, '城市留在了冰下', '', 'bl'],
+  [68.5, 70.3, '太阳只是一颗亮星', '', 'bl'],
+  [71, 73.3, '孩子们只在画里见过蓝天', '', 'bl'],
+  [74, 76.8, '发动机熄火了', '月亮重新绕着地球转', 'bl'],
+  [77.5, 79.8, '那两颗星', '就是要去的地方', 'bl'],
+  [86, 88.3, '57,000 年', '与半人马座 α 相遇', 'bl'],
+  [89, 92.5, '月球拖船', '画面与音乐由程序生成  ·  文稿 Claude', 'c']];
 S.sort((x, y) => x.a - y.a);
 // ---------------- seek ----------------
 let FR = 0;
