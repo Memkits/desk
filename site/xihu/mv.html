@@ -1,0 +1,198 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>无限西湖 · MV</title>
+<style>html,body{margin:0;background:#000;width:1920px;height:1080px;overflow:hidden}canvas{position:absolute;left:0;top:0}#gl{visibility:hidden}</style>
+<body><canvas id="gl" width="1920" height="1080"></canvas><canvas id="out" width="1920" height="1080"></canvas>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
+// ---------------- 基础 ----------------
+const W = 1920, H = 1080, FPS = 24;
+const ss = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }, cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), mix = (a, b, u) => a + (b - a) * u, lmix = (a, b, u) => Math.exp(mix(Math.log(a), Math.log(b), u));
+const mk = (w = W, h = H) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const out = document.getElementById('out'), o = out.getContext('2d');
+const SERIF = '"Noto Serif CJK SC",serif', SANS = '"Noto Sans CJK SC",sans-serif';
+let SEED = 1; const srand = s => { SEED = s; }; const rnd = () => (SEED = (SEED * 16807) % 2147483647) / 2147483647;
+// ---------------- 图片 ----------------
+const IDS = ["a01", "a02", "a03", "a04", "a05", "a06", "a07", "a08", "a09", "a10", "a11", "a12", "a13", "a14", "a15", "a16", "a17", "a18", "a19", "a20", "b01", "b02", "b03", "b04", "b05", "b06", "b07", "b08", "b09", "b10", "b11", "b12", "b13", "b14", "b15", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "d01", "d02", "d03", "d04", "d05", "d06", "d07", "d08", "d09", "d10", "d11", "d12", "d13", "d14", "d15", "e01", "e02", "e03", "e04", "e05", "e06", "e07", "e08"];
+const IM = {};   // id → HTMLImageElement 或占位画布
+const TEX = {};  // id → THREE.Texture
+function placeholder(id) { const c = mk(1920, 1080), g = c.getContext('2d'); srand(id.charCodeAt(0) * 7 + +id.slice(1)); const h = rnd() * 360; const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, `hsl(${h},35%,25%)`); gr.addColorStop(1, `hsl(${h + 60},40%,55%)`); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 40; i++) { g.fillStyle = `hsla(${h + rnd() * 90},50%,${40 + rnd() * 40}%,.35)`; g.beginPath(); g.ellipse(rnd() * W, rnd() * H, 60 + rnd() * 300, 30 + rnd() * 160, rnd() * 3, 0, 7); g.fill(); }
+  g.fillStyle = 'rgba(255,255,255,.8)'; g.font = `700 160px ${SANS}`; g.textAlign = 'center'; g.fillText(id, W / 2, H / 2 + 56); return c; }
+async function loadAll() {
+  await Promise.all(IDS.map(id => new Promise(res => { const im = new Image(); im.onload = () => { IM[id] = im; res(); }; im.onerror = () => { IM[id] = placeholder(id); res(); }; im.src = `img/${id}.jpg`; })));
+  for (const id of IDS) { const t = new THREE.Texture(IM[id]); t.needsUpdate = true; t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.MirroredRepeatWrapping; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 8; TEX[id] = t; }
+}
+// ---------------- WebGL 全屏着色器 ----------------
+const cv = document.getElementById('gl'), r = new THREE.WebGLRenderer({ canvas: cv, antialias: false, preserveDrawingBuffer: true }); r.setSize(W, H, false); r.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); scene.add(quad);
+const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
+const COMMON = `precision highp float; varying vec2 vUv; uniform float t; const float PI = 3.14159265;
+  vec2 cmul(vec2 a, vec2 b){ return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x); } vec2 cdiv(vec2 a, vec2 b){ float d = dot(b,b); return vec2(a.x*b.x + a.y*b.y, a.y*b.x - a.x*b.y) / d; } vec2 conj(vec2 a){ return vec2(a.x, -a.y); }
+  float hash(float n){ return fract(sin(n) * 43758.5453); }
+  // 画面坐标 → 图片 uv（图片按 16:9 铺满），u 在 [0,1]²
+  vec4 pick(sampler2D s, vec2 uv){ return texture2D(s, uv); }`;
+// 1) Droste 递归：围绕中心 c，环带 [r1, r1*rho] 之外的点按 rho 的幂缩回环带，再采样原图；zoom 连续推进；twist 让层与层之间旋转
+const DROSTE_FS = COMMON + `uniform sampler2D img; uniform vec2 c; uniform float r1, rho, zoom, twist, aspect, vig;
+  void main(){ vec2 p = (vUv - c) * vec2(aspect, 1.);        // 以 c 为原点的等比坐标（高度 1）
+    float lr = log(length(p) + 1e-6), L = log(rho);
+    float k = floor((lr - log(r1) + zoom * L) / L);          // 第几层
+    float s = exp(-k * L + zoom * L); float ang = -k * twist;  // 缩放回环带，并按层旋转
+    vec2 q = cmul(p * s, vec2(cos(ang), sin(ang)));
+    vec2 uv = c + q / vec2(aspect, 1.);
+    vec3 col = pick(img, uv).rgb;
+    // 层与层之间用下一层淡淡叠一点，减弱接缝
+    float k2 = k + 1.; float s2 = exp(-k2 * L + zoom * L); vec2 q2 = cmul(p * s2, vec2(cos(-k2 * twist), sin(-k2 * twist))); vec3 col2 = pick(img, c + q2 / vec2(aspect, 1.)).rgb;
+    float f = smoothstep(0., .08, (lr - log(r1) + zoom * L) / L - k);  // 环带内靠近内缘处过渡
+    col = mix(col2, col, smoothstep(0., .12, (lr - log(r1) + zoom * L) / L - k));
+    col *= 1. - vig * pow(length((vUv - .5) * vec2(1.4, 1.)), 2.5);
+    gl_FragColor = vec4(col, 1.); }`;
+// 2) 庞加莱圆盘 {4,q} 镶嵌：先做莫比乌斯平移/旋转（在双曲平面里走），再把点反射回中央方块，按反射序列选不同图片
+const POINCARE_FS = COMMON + `uniform sampler2D A, B, C, D, bg; uniform vec2 mob; uniform float rot, Cc, Rc, half_, scale, edge, bgmix, aspect;
+  void main(){ vec2 p = (vUv - .5) * vec2(aspect, 1.) * 2. * scale;   // 圆盘坐标
+    float rr = length(p); vec3 bgc = pick(bg, vUv).rgb;
+    if (rr >= 1.) { float f = smoothstep(1., 1.03, rr); gl_FragColor = vec4(mix(vec3(0.), bgc * .35, f), 1.); return; }
+    // 莫比乌斯：z -> (z - a)/(1 - conj(a) z)，再旋转
+    vec2 z = cdiv(p - mob, vec2(1., 0.) - cmul(conj(mob), p)); z = cmul(z, vec2(cos(rot), sin(rot)));
+    // 中央方块的四条边：圆心在距离 Cc 的四个方向，半径 Rc（与单位圆正交）
+    float idx = 0.; float n = 0.;
+    for (int i = 0; i < 40; i++) { bool moved = false;
+      for (int k = 0; k < 4; k++) { float a = float(k) * PI / 2.; vec2 cc = Cc * vec2(cos(a), sin(a)); vec2 w = z - cc; float l2 = dot(w, w);
+        if (l2 < Rc * Rc) { z = cc + w * (Rc * Rc / l2); idx = idx * 1.7 + float(k) + 1.; n += 1.; moved = true; } }
+      if (!moved) break; }
+    // 中央方块内：用克莱因模型拉直，再映到方块的 uv
+    float zl = length(z); vec2 kz = z * 2. / (1. + zl * zl);      // 庞加莱 → 克莱因
+    vec2 uv = kz / (2. * half_) * .92 + .5; uv = clamp(uv, 0., 1.);
+    float sel = mod(floor(hash(idx * .37 + n) * 4.), 4.);
+    vec3 col = sel < .5 ? pick(A, uv).rgb : sel < 1.5 ? pick(B, uv).rgb : sel < 2.5 ? pick(C, uv).rgb : pick(D, uv).rgb;
+    // 边缘的格线与渐暗
+    float e = min(min(uv.x, 1. - uv.x), min(uv.y, 1. - uv.y)); col *= smoothstep(0., edge, e) * .85 + .15;
+    col *= 1. - .55 * pow(rr, 6.);
+    col = mix(col, bgc, bgmix);
+    gl_FragColor = vec4(col, 1.); }`;
+// 3) 时间片交织：四张图按移动的条带/涟漪混合
+const WEAVE_FS = COMMON + `uniform sampler2D A, B, C, D; uniform float mode, ph, soft, aspect; uniform vec2 cen;
+  void main(){ vec2 p = (vUv - .5) * vec2(aspect, 1.);
+    float v;
+    if (mode < .5) v = dot(p, normalize(vec2(1., .55))) * 2.2 + ph;                       // 斜条带
+    else if (mode < 1.5) v = length(p - cen) * 3.2 - ph;                                   // 涟漪
+    else v = atan(p.y - cen.y, p.x - cen.x) / (2. * PI) * 4. + ph;                         // 扇形
+    float s = fract(v); float w = fract(v / 4.) * 4.;   // w 在 [0,4) 内循环，决定用哪张图
+    float i0 = floor(w); float f = smoothstep(1. - soft, 1., fract(w));   // 相邻条带之间柔和过渡
+    vec3 c0 = i0 < .5 ? pick(A, vUv).rgb : i0 < 1.5 ? pick(B, vUv).rgb : i0 < 2.5 ? pick(C, vUv).rgb : pick(D, vUv).rgb;
+    float i1 = mod(i0 + 1., 4.);
+    vec3 c1 = i1 < .5 ? pick(A, vUv).rgb : i1 < 1.5 ? pick(B, vUv).rgb : i1 < 2.5 ? pick(C, vUv).rgb : pick(D, vUv).rgb;
+    vec3 col = mix(c0, c1, f);
+    gl_FragColor = vec4(col, 1.); }`;
+// 4) 万花筒：把画面折成 n 瓣，叠加轻微的 Droste
+const KALEI_FS = COMMON + `uniform sampler2D A, B; uniform float n, ang, zoom, mixab, aspect;
+  void main(){ vec2 p = (vUv - .5) * vec2(aspect, 1.); float a = atan(p.y, p.x) + ang, l = length(p) * zoom;
+    float seg = 2. * PI / n; a = mod(a, seg); a = abs(a - seg * .5);
+    vec2 q = l * vec2(cos(a), sin(a)); vec2 uv = q / vec2(aspect, 1.) + vec2(.5, .5);
+    vec3 col = mix(pick(A, uv).rgb, pick(B, uv).rgb, mixab);
+    col *= 1. - .5 * pow(length(p) * 1.1, 3.);
+    gl_FragColor = vec4(col, 1.); }`;
+const mats = {};
+function mat(name, fs, uni) { if (!mats[name]) mats[name] = new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: fs, uniforms: Object.fromEntries(Object.entries(uni).map(([k, v]) => [k, { value: v }])) }); const m = mats[name]; for (const k in uni) { const u = m.uniforms[k]; if (u.value && u.value.isVector2) u.value.set(...uni[k]); else u.value = uni[k]; } return m; }
+function glDraw(m) { quad.material = m; r.render(scene, cam); return cv; }
+const T2 = (name, defaults) => defaults;
+// ---------------- 2D 工具 ----------------
+function cover(g, im, k = 1, cx = .5, cy = .5, alpha = 1) { // 等比铺满 + 推拉（k>1 放大），cx cy 为注视点
+  const iw = im.width, ih = im.height, s = Math.max(W / iw, H / ih) * k, dw = iw * s, dh = ih * s;
+  const x = W * cx - dw * cx, y = H * cy - dh * cy; g.globalAlpha = alpha; g.drawImage(im, x, y, dw, dh); g.globalAlpha = 1; }
+function kenburns(g, id, u, k0 = 1, k1 = 1.1, c0 = [.5, .5], c1 = [.5, .5]) { const e = ss(u); cover(g, IM[id], mix(k0, k1, e), mix(c0[0], c1[0], e), mix(c0[1], c1[1], e)); }
+// 水墨晕染遮罩：噪声阈值随 u 扩散
+const NOISE = (() => { const c = mk(512, 512), g = c.getContext('2d'); const d = g.createImageData(512, 512); srand(23); const v = new Float32Array(512 * 512);
+  for (let oc = 0; oc < 5; oc++) { const n = 8 << oc; const grid = Array.from({ length: (n + 1) * (n + 1) }, () => rnd()); for (let y = 0; y < 512; y++) for (let x = 0; x < 512; x++) { const gx = x / 512 * n, gy = y / 512 * n, x0 = gx | 0, y0 = gy | 0, fx = gx - x0, fy = gy - y0, sxx = fx * fx * (3 - 2 * fx), syy = fy * fy * (3 - 2 * fy); const a = grid[y0 * (n + 1) + x0], b = grid[y0 * (n + 1) + x0 + 1], c2 = grid[(y0 + 1) * (n + 1) + x0], dd = grid[(y0 + 1) * (n + 1) + x0 + 1]; v[y * 512 + x] += (a * (1 - sxx) + b * sxx) * (1 - syy) * (1 - 0) + (c2 * (1 - sxx) + dd * sxx) * syy; } }
+  let mn = 1e9, mx = -1e9; for (const x of v) { mn = Math.min(mn, x); mx = Math.max(mx, x); } for (let i = 0; i < v.length; i++) { const q = (v[i] - mn) / (mx - mn) * 255; d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = q; d.data[i * 4 + 3] = 255; } g.putImageData(d, 0, 0); return c; })();
+const maskC = mk(), maskG = maskC.getContext('2d'), tmpC = mk(), tmpG = tmpC.getContext('2d');
+function inkReveal(g, drawB, u, cx = .5, cy = .5) { // 用噪声 + 径向渐变做"墨晕开"的遮罩，把 drawB 的画面晕到 g 上
+  if (u <= 0) return; if (u >= 1) { drawB(g); return; }
+  tmpG.clearRect(0, 0, W, H); drawB(tmpG);
+  maskG.globalCompositeOperation = 'source-over'; maskG.clearRect(0, 0, W, H); maskG.drawImage(NOISE, 0, 0, W, H);
+  const rad = maskG.createRadialGradient(W * cx, H * cy, 0, W * cx, H * cy, 1400); rad.addColorStop(0, `rgba(255,255,255,${.5 * u})`); rad.addColorStop(1, `rgba(0,0,0,${.6 * (1 - u)})`); maskG.globalCompositeOperation = 'lighter'; maskG.fillStyle = rad; maskG.fillRect(0, 0, W, H);
+  // 阈值：把灰度图变成二值 + 软边
+  const th = 1 - u; maskG.globalCompositeOperation = 'source-over'; maskG.filter = `contrast(${6 + 10 * u}) brightness(${1.6 - .9 * th}) blur(6px)`; maskG.drawImage(maskC, 0, 0); maskG.filter = 'none';
+  tmpG.globalCompositeOperation = 'destination-in'; tmpG.drawImage(maskC, 0, 0); tmpG.globalCompositeOperation = 'source-over';
+  g.drawImage(tmpC, 0, 0); }
+function vignette(g, a = .5) { const gr = g.createRadialGradient(W / 2, H / 2, 380, W / 2, H / 2, 1250); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, `rgba(0,0,0,${a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+function grain(g, fr, a = .08) { g.globalAlpha = a; g.globalCompositeOperation = 'overlay'; g.drawImage(NOISE, (fr * 37) % 300 - 300, (fr * 53) % 300 - 300, W + 600, H + 600); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; }
+function caption(g, a, main, sub, pos = 'bl', size = 48) {
+  if (a <= 0) return; g.save(); g.globalAlpha = a; g.textBaseline = 'alphabetic';
+  const x = pos === 'c' ? W / 2 : pos === 'br' ? W - 120 : 120, y = pos === 'c' ? H / 2 : H - 80; g.textAlign = pos === 'c' ? 'center' : pos === 'br' ? 'right' : 'left';
+  g.fillStyle = 'rgba(245,238,225,.95)'; g.font = `600 ${pos === 'c' ? size * 1.5 : size}px ${SERIF}`; g.shadowColor = 'rgba(0,0,0,.85)'; g.shadowBlur = 20; g.fillText(main, x, y - (pos === 'c' && sub ? 24 : 0));
+  if (sub) { g.fillStyle = 'rgba(225,215,195,.8)'; g.font = `400 ${pos === 'c' ? 28 : 24}px ${SANS}`; g.letterSpacing = '4px'; g.fillText(sub, x, y + (pos === 'c' ? 50 : 42)); g.letterSpacing = '0px'; }
+  g.restore(); }
+// 竖排字（题词）
+function vtext(g, a, s, x, y, size = 64, col = 'rgba(245,238,225,.95)', gap = 1.18) { if (a <= 0) return; g.save(); g.globalAlpha = a; g.fillStyle = col; g.font = `600 ${size}px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 16; [...s].forEach((ch, i) => g.fillText(ch, x, y + i * size * gap)); g.restore(); }
+// ---------------- 镜头表 ----------------
+const S = []; const shot = (a, b, f, opt = {}) => S.push({ a, b, f, ...opt });
+const PH = { droste: (img, o2) => mat('droste', DROSTE_FS, { img: TEX[img], c: o2.c, r1: o2.r1, rho: o2.rho, zoom: o2.zoom, twist: o2.twist || 0, aspect: 16 / 9, vig: o2.vig ?? .5, t: 0 }),
+  poincare: (ids, o2) => { const q = o2.q || 5, d = Math.acosh(Math.cos(Math.PI / q) / Math.sin(Math.PI / 4)), r0 = Math.tanh(d / 2), Cc = (1 + r0 * r0) / (2 * r0), Rc = Math.sqrt(Cc * Cc - 1);   // {4,q} 镶嵌：方块中心到边的双曲距离 d
+    return mat('poincare', POINCARE_FS, { A: TEX[ids[0]], B: TEX[ids[1]], C: TEX[ids[2]], D: TEX[ids[3]], bg: TEX[o2.bg || ids[0]], mob: o2.mob || [0, 0], rot: o2.rot || 0, Cc, Rc, half_: Math.tanh(d), scale: o2.scale || 1.05, edge: o2.edge ?? .04, bgmix: o2.bgmix || 0, aspect: 16 / 9, t: 0 }); },
+  weave: (ids, o2) => mat('weave', WEAVE_FS, { A: TEX[ids[0]], B: TEX[ids[1]], C: TEX[ids[2]], D: TEX[ids[3]], mode: o2.mode || 0, ph: o2.ph || 0, soft: o2.soft ?? .25, aspect: 16 / 9, cen: o2.cen || [0, 0], t: 0 }),
+  kalei: (ids, o2) => mat('kalei', KALEI_FS, { A: TEX[ids[0]], B: TEX[ids[1]], n: o2.n || 6, ang: o2.ang || 0, zoom: o2.zoom || 1, mixab: o2.mixab || 0, aspect: 16 / 9, t: 0 }) };
+window.PH = PH; window.glDraw = glDraw;
+// ================= 镜头 =================
+// 工具：把 WebGL 画到 g
+const blit = (g, m, a = 1) => { g.globalAlpha = a; g.drawImage(glDraw(m), 0, 0); g.globalAlpha = 1; };
+// 序
+shot(0, 12, (g, t, u) => { g.fillStyle = '#0b0b0d'; g.fillRect(0, 0, W, H); inkReveal(g, gg => kenburns(gg, 'b07', u, 1.05, 1.12, [.5, .5], [.52, .48]), ss((t - .5) / 7), .5, .5);
+  vtext(g, ss((t - 4) / 2) * (1 - ss((t - 10.5) / 1.5)), '无限西湖', W * .86, H * .3, 96); caption(g, ss((t - 6) / 1.5) * (1 - ss((t - 10.5) / 1.5)), '', '', 'bl'); g.save(); g.globalAlpha = ss((t - 6) / 1.5) * (1 - ss((t - 10.5) / 1.5)); g.fillStyle = 'rgba(225,215,195,.85)'; g.font = `400 26px ${SANS}`; g.textAlign = 'center'; g.letterSpacing = '6px'; g.fillText('THE  INFINITE  WEST  LAKE', W * .86, H * .3 + 96 * 1.18 * 4 + 10); g.restore(); });
+shot(11, 24, (g, t, u) => { kenburns(g, 'a20', u, 1.0, 1.15, [.5, .55], [.5, .45]); vignette(g, .45); });
+shot(23, 34, (g, t, u) => { kenburns(g, 'd01', u, 1.12, 1.0, [.5, .5], [.5, .5]); vignette(g, .4); });
+shot(33, 42, (g, t, u) => { kenburns(g, 'a01', u, 1.0, 1.08, [.4, .5], [.55, .5]); vignette(g, .35); });
+// 分形
+shot(41, 50, (g, t, u) => { kenburns(g, 'e01', u, 1.0, 1.25, [.5, .5], [.5, .5]); vignette(g, .4); });
+shot(49, 66, (g, t, u) => { const m = PH.droste('d02', { c: [.5, .5], r1: .16, rho: 3.4, zoom: t * .12, twist: .0, vig: .55 }); blit(g, m); });
+shot(65, 75, (g, t, u) => { kenburns(g, 'd04', u, 1.0, 1.12, [.5, .6], [.5, .4]); vignette(g, .4); });
+shot(74, 84, (g, t, u) => { kenburns(g, 'd12', u, 1.1, 1.0, [.5, .5], [.5, .5]); vignette(g, .4); });
+shot(83, 95, (g, t, u) => { const m = PH.droste('d10', { c: [.552, .372], r1: .13, rho: 3.0, zoom: t * .1, twist: .35, vig: .6 }); blit(g, m); });
+shot(94, 103, (g, t, u) => { kenburns(g, 'd13', u, 1.0, 1.1, [.5, .4], [.5, .5]); vignette(g, .4); });
+// 庞加莱
+shot(102, 122, (g, t, u) => { const z = lmix(.45, 1.02, ss(u * 1.2)); const m = PH.poincare(['a02', 'a04', 'a01', 'a05'], { q: 5, scale: z, mob: [Math.sin(t * .11) * .35, Math.cos(t * .07) * .3], rot: t * .05, edge: .05, bg: 'a16' }); blit(g, m); });
+shot(121, 136, (g, t, u) => { const m = PH.poincare(['b01', 'b02', 'b03', 'b04'], { q: 6, scale: 1.04, mob: [Math.sin(t * .09 + 1) * .5, Math.sin(t * .13) * .4], rot: -t * .07, edge: .035, bg: 'b14', bgmix: 0 }); blit(g, m); });
+shot(135, 146, (g, t, u) => { kenburns(g, 'd03', u, 1.0, 1.18, [.5, .5], [.5, .5]); vignette(g, .4); });
+shot(145, 156, (g, t, u) => { kenburns(g, 'd11', u, 1.1, 1.0, [.5, .45], [.5, .5]); vignette(g, .4); });
+shot(155, 162, (g, t, u) => { kenburns(g, 'a15', u, 1.0, 1.08, [.5, .5], [.5, .5]); vignette(g, .35); });
+// 时空
+shot(161, 180, (g, t, u) => { const m = PH.weave(['c01', 'c02', 'c03', 'a12'], { mode: 0, ph: t * .18, soft: .3 }); blit(g, m); vignette(g, .3); });
+shot(179, 192, (g, t, u) => { const m = PH.weave(['c04', 'c05', 'c06', 'c07'], { mode: 1, ph: t * .32, soft: .35, cen: [.2, -.1] }); blit(g, m); vignette(g, .3); });
+shot(191, 200, (g, t, u) => { kenburns(g, 'c08', u, 1.0, 1.1, [.3, .5], [.7, .5]); vignette(g, .3); });
+shot(199, 207, (g, t, u) => { kenburns(g, 'c09', u, 1.0, 1.1, [.7, .5], [.3, .5]); vignette(g, .3); });
+shot(206, 218, (g, t, u) => { kenburns(g, 'b14', 0, 1.1, 1.1); inkReveal(g, gg => kenburns(gg, 'b08', u, 1.0, 1.08, [.5, .5], [.5, .5]), ss(t / 5), .4, .5); vignette(g, .3); });
+// 交织
+shot(217, 234, (g, t, u) => { const m = PH.kalei(['d05', 'd06'], { n: 6 + 2 * Math.floor(u * 2.99), ang: t * .12, zoom: lmix(1.4, .9, ss(u)), mixab: ss((u - .5) * 3) }); blit(g, m); });
+shot(233, 246, (g, t, u) => { const m = PH.droste('d03', { c: [.5, .5], r1: .2, rho: 2.6, zoom: t * .13, twist: .5, vig: .5 }); blit(g, m); });
+shot(245, 258, (g, t, u) => { const m = PH.weave(['a03', 'b03', 'c02', 'd14'], { mode: 2, ph: t * .1, soft: .3, cen: [0, .15] }); blit(g, m); vignette(g, .3); });
+shot(257, 266, (g, t, u) => { kenburns(g, 'd09', u, 1.0, 1.15, [.5, .5], [.5, .45]); vignette(g, .35); });
+// 尾声
+shot(265, 284, (g, t, u) => { kenburns(g, 'd07', u, 1.12, 1.0, [.5, .45], [.5, .5]); vignette(g, .35); });
+shot(283, 296, (g, t, u) => { kenburns(g, 'd15', u, 1.0, 1.1, [.5, .5], [.5, .5]); vignette(g, .35); });
+shot(295, 306, (g, t, u) => { g.fillStyle = '#0b0b0d'; g.fillRect(0, 0, W, H); kenburns(g, 'b07', u, 1.12, 1.18); g.fillStyle = 'rgba(8,8,10,.72)'; g.fillRect(0, 0, W, H);
+  vtext(g, ss((t - 1) / 1.5), '无限西湖', W * .5, H * .26, 96); g.save(); g.globalAlpha = ss((t - 2.5) / 1.5); g.fillStyle = 'rgba(225,215,195,.8)'; g.font = `400 24px ${SANS}`; g.textAlign = 'center'; g.letterSpacing = '3px';
+  ['画面由 Gemini 图像模型生成，分形、双曲镶嵌与时间片效果由程序渲染', '配乐程序合成  ·  旁白 Gemini TTS  ·  文稿与代码 Claude'].forEach((s, i) => g.fillText(s, W / 2, H * .82 + i * 40)); g.restore(); });
+// 字幕表 [起, 止, 主, 副, 位置]
+const CAP = [[13, 20, '每年三千万人', '', 'bl'], [25, 32, '只有一个西湖', '', 'bl'],
+  [43, 49, '方案一 · 分形西湖', 'FRACTAL', 'bl'], [52, 64, '每一片荷叶里，都有一整个西湖', '', 'bl'], [85, 93, '涟漪里的湖', '', 'bl'],
+  [104, 111, '方案二 · 庞加莱圆盘', 'POINCARÉ  DISK', 'bl'], [112, 120, '圆盘的边缘是无限远', '有限的湖岸，无穷多个三潭印月', 'bl'], [123, 134, '每个人都站在自己的中心', '', 'bl'],
+  [163, 170, '方案三 · 时间切片', 'TIME  SLICES', 'bl'], [171, 178, '白居易的春天 · 苏东坡的雨 · 张岱的雪夜', '', 'bl'], [208, 216, '湖心亭看雪', '张岱', 'bl'],
+  [219, 226, '三条路交织', '', 'bl'], [234, 244, '圆盘里的圆盘', '', 'bl'],
+  [267, 276, '桥上只有一个人', '', 'bl'], [285, 293, '有限的湖，无限的看法', '', 'bl']];
+S.sort((x, y) => x.a - y.a);
+const TOTAL = 306;
+// ================= seek =================
+let FR = 0; const bufA = mk(), bufB = mk(), ga = bufA.getContext('2d'), gb = bufB.getContext('2d');
+function seek(T) {
+  FR = Math.round(T * FPS); const act = S.filter(s => T >= s.a && T < s.b + .001);
+  o.globalCompositeOperation = 'source-over'; o.globalAlpha = 1; o.fillStyle = '#000'; o.fillRect(0, 0, W, H);
+  act.forEach((s, i) => { const g = i ? gb : ga, lt = T - s.a, u = cl(lt / (s.b - s.a)); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); s.f(g, lt, u);
+    const fin = act.length > 1 && i > 0 ? ss((T - s.a) / (act[0].b - s.a)) : 1; o.globalAlpha = fin; o.drawImage(i ? bufB : bufA, 0, 0); o.globalAlpha = 1; });
+  grain(o, FR, .07);
+  if (!window.NOCAP) for (const [a, b, m, s2, p] of CAP) caption(o, Math.min(ss((T - a) / .8), ss((b - T) / .8)), m, s2, p);
+  const fade = Math.min(ss(T / 1.5), ss((TOTAL - .5 - T) / 2.5)); if (fade < 1) { o.fillStyle = `rgba(0,0,0,${1 - fade})`; o.fillRect(0, 0, W, H); }
+}
+window.seek = seek; window.TOTAL = TOTAL; window.TL = { total: TOTAL };
+await loadAll(); await document.fonts.ready; seek(0); window.ready = true;
+{ const sc2 = document.createElement('script'); sc2.src = '../_shared/player.js'; document.body.appendChild(sc2); }
+</script>
+</body></html>
