@@ -1,0 +1,138 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<title>守夜人 · MV</title>
+<style>html,body{margin:0;background:#000;width:1920px;height:1080px;overflow:hidden}canvas{position:absolute;left:0;top:0}</style>
+<body><canvas id="out" width="1920" height="1080"></canvas>
+<script type="module">
+// ================= 基础 =================
+const W = 1920, H = 1080, FPS = 24;
+const ss = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }, cl = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), mix = (a, b, u) => a + (b - a) * u, lmix = (a, b, u) => Math.exp(mix(Math.log(a), Math.log(b), u));
+const mk = (w = W, h = H) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+const out = document.getElementById('out'), o = out.getContext('2d');
+const SERIF = '"Noto Serif CJK SC",serif', SANS = '"Noto Sans CJK SC",sans-serif';
+let SEED = 1; const srand = s => { SEED = s; }; const rnd = () => (SEED = (SEED * 16807) % 2147483647) / 2147483647;
+// ================= 素材 =================
+const PH = "157 035 002 137 162 170 167 204 093 005 010 013 051 199 057 053 062 060 205 207 148 164 083".split(' ').map(x => 'xh_' + x);
+const CUT = "h01 h02 h03 h04 h05 k01 k02 k04 k05 k06 k07 n01 t01 t02 t03 t04 t05 t06".split(' ');
+const GEN = "n02 s01 s02 s03 s04 s05 s06 s07 s08 s09 s10".split(' ');
+const IM = {};
+const load = (id, src) => new Promise(res => { const im = new Image(); im.onload = () => { IM[id] = im; res(); }; im.onerror = () => { console.error('missing', src); IM[id] = mk(64, 64); res(); }; im.src = src; });
+await Promise.all([...PH.map(id => load(id, `photos/${id}.jpg`)), ...CUT.map(id => load(id, `gen/cut/${id}.png`)), ...GEN.map(id => load(id, `gen/img/${id}.jpg`))]);
+// ================= 2D 工具 =================
+// 等比铺满 + 推拉；cx,cy 注视点（0–1）；k 放大；dy 竖直偏移（像素）
+function cover(g, im, k = 1, cx = .5, cy = .5, alpha = 1, dy = 0) { const iw = im.width, ih = im.height, s = Math.max(W / iw, H / ih) * k, dw = iw * s, dh = ih * s; const x = W * cx - dw * cx, y = H * cy - dh * cy + dy; g.globalAlpha = alpha; g.drawImage(im, x, y, dw, dh); g.globalAlpha = 1; }
+function kb(g, id, u, k0 = 1, k1 = 1.08, c0 = [.5, .5], c1 = [.5, .5], a = 1) { const e = ss(u); cover(g, IM[id], mix(k0, k1, e), mix(c0[0], c1[0], e), mix(c0[1], c1[1], e), a); }
+// 夜化：把白天照片压成夜景（蓝黑调 + 压暗）
+function nightify(g, amt = .75) { g.save(); g.globalCompositeOperation = 'multiply'; g.fillStyle = `rgba(30,45,80,${amt})`; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; g.fillStyle = `rgba(0,0,10,${amt * .35})`; g.fillRect(0, 0, W, H); g.restore(); }
+function tint(g, col, a) { g.save(); g.globalCompositeOperation = 'multiply'; g.fillStyle = col; g.globalAlpha = a; g.fillRect(0, 0, W, H); g.restore(); }
+function vignette(g, a = .5) { const gr = g.createRadialGradient(W / 2, H / 2, 380, W / 2, H / 2, 1250); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, `rgba(0,0,0,${a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+// 噪声纹理
+const NOISE = (() => { const c = mk(512, 512), g = c.getContext('2d'); const d = g.createImageData(512, 512); srand(23); const v = new Float32Array(512 * 512);
+  for (let oc = 0; oc < 5; oc++) { const n = 8 << oc; const grid = Array.from({ length: (n + 1) * (n + 1) }, () => rnd()); for (let y = 0; y < 512; y++) for (let x = 0; x < 512; x++) { const gx = x / 512 * n, gy = y / 512 * n, x0 = gx | 0, y0 = gy | 0, fx = gx - x0, fy = gy - y0, sxx = fx * fx * (3 - 2 * fx), syy = fy * fy * (3 - 2 * fy); const a = grid[y0 * (n + 1) + x0], b = grid[y0 * (n + 1) + x0 + 1], c2 = grid[(y0 + 1) * (n + 1) + x0], dd = grid[(y0 + 1) * (n + 1) + x0 + 1]; v[y * 512 + x] += ((a * (1 - sxx) + b * sxx) * (1 - syy) + (c2 * (1 - sxx) + dd * sxx) * syy) / (oc + 1); } }
+  let mn = 1e9, mx = -1e9; for (const x of v) { mn = Math.min(mn, x); mx = Math.max(mx, x); } for (let i = 0; i < v.length; i++) { const q = (v[i] - mn) / (mx - mn) * 255; d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = q; d.data[i * 4 + 3] = 255; } g.putImageData(d, 0, 0); return c; })();
+function grain(g, fr, a = .07) { g.globalAlpha = a; g.globalCompositeOperation = 'overlay'; g.drawImage(NOISE, (fr * 37) % 300 - 300, (fr * 53) % 300 - 300, W + 600, H + 600); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; }
+const maskC = mk(), maskG = maskC.getContext('2d'), tmpC = mk(), tmpG = tmpC.getContext('2d'), tmp2 = mk(), tg2 = tmp2.getContext('2d');
+// 噪声阈值遮罩：u 从 0→1，drawB 的画面按噪声"剥落/晕开"显现（inv=true 则是消退）
+function noiseReveal(g, drawB, u, soft = 8, scale = 1) {
+  if (u <= 0) return; if (u >= 1) { drawB(g); return; }
+  tmpG.clearRect(0, 0, W, H); drawB(tmpG);
+  maskG.globalCompositeOperation = 'source-over'; maskG.clearRect(0, 0, W, H); maskG.drawImage(NOISE, 0, 0, W * scale, H * scale); if (scale < 1) { maskG.drawImage(NOISE, W * scale, 0, W, H); }
+  maskG.filter = `contrast(${8 + 18 * u}) brightness(${2.2 * u + .05}) blur(${soft}px)`; maskG.drawImage(maskC, 0, 0); maskG.filter = 'none';
+  tmpG.globalCompositeOperation = 'destination-in'; tmpG.drawImage(maskC, 0, 0); tmpG.globalCompositeOperation = 'source-over';
+  g.drawImage(tmpC, 0, 0); }
+// 条带拼接：ids 的几张照片沿画面横向接起来（竖条），接缝处有错位与软边；offs 每条的竖向偏移
+function splice(g, ids, seams, jit = 10, offs = null, cxs = null) { const xs = [0, ...seams, W]; ids.forEach((id, i) => { g.save(); g.beginPath(); g.rect(xs[i], 0, xs[i + 1] - xs[i], H); g.clip(); cover(g, IM[id], 1.06, cxs ? cxs[i] : .5, .5, 1, offs ? offs[i] : 0); g.restore(); if (i) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(xs[i] - 1, 0, 2, H); g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(xs[i] + 1, 0, 1, H); } }); }
+// 点云：把 A 的像素采样成点，飘到 B 的位置，再落位（u 0→1）。cells 网格密度
+const PC = {}; function sample(id, nx, ny) { const key = id + nx; if (PC[key]) return PC[key]; const c = mk(nx, ny), g = c.getContext('2d'); cover(g, IM[id], 1, .5, .5); const sc = Math.min(nx / W, ny / H); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, nx, ny); const iw = IM[id].width, ih = IM[id].height, s = Math.max(nx / iw, ny / ih); g.drawImage(IM[id], (nx - iw * s) / 2, (ny - ih * s) / 2, iw * s, ih * s); const d = g.getImageData(0, 0, nx, ny).data; PC[key] = { nx, ny, d }; return PC[key]; }
+function pointcloud(g, idA, idB, u, t, opts = {}) { const nx = opts.nx || 192, ny = Math.round(nx * 9 / 16), A = sample(idA, nx, ny), B = sample(idB, nx, ny), cw = W / nx, ch = H / ny; g.fillStyle = '#05060a'; g.fillRect(0, 0, W, H);
+  const spread = Math.sin(u * Math.PI) * (opts.spread || 1); srand(77);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const k = (j * nx + i) * 4, r1 = rnd(), r2 = rnd(), r3 = rnd(); const ca = A.d.slice(k, k + 3), cb = B.d.slice(k, k + 3); const m = ss(cl((u - r3 * .5) / .5));
+    const col = [mix(ca[0], cb[0], m) | 0, mix(ca[1], cb[1], m) | 0, mix(ca[2], cb[2], m) | 0]; const dx = (r1 - .5) * 260 * spread + Math.sin(t * 1.3 + j * .2) * 6 * spread, dy = (r2 - .5) * 160 * spread - 40 * spread * r3; const sz = cw * (1.05 + .9 * spread * r2);
+    g.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${1 - .55 * spread})`; g.beginPath(); g.ellipse(i * cw + cw / 2 + dx, j * ch + ch / 2 + dy, sz * (1 + .6 * spread), sz * .7 * (1 + .2 * spread), (r1 - .5) * spread * 1.5, 0, 7); g.fill(); } }
+// 锚点蓝灯：沿一条折线布点
+function anchors(g, pts, n, t, a = 1, r0 = 3) { for (let i = 0; i < n; i++) { const s = i / (n - 1), seg = Math.min(pts.length - 2, Math.floor(s * (pts.length - 1))), f = s * (pts.length - 1) - seg; const x = mix(pts[seg][0], pts[seg + 1][0], f), y = mix(pts[seg][1], pts[seg + 1][1], f); const tw = .7 + .3 * Math.sin(t * 2 + i * 1.7); const gr = g.createRadialGradient(x, y, 0, x, y, r0 * 6); gr.addColorStop(0, `rgba(120,200,255,${.55 * a * tw})`); gr.addColorStop(1, 'rgba(120,200,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r0 * 6, 0, 7); g.fill(); g.fillStyle = `rgba(200,240,255,${a * tw})`; g.beginPath(); g.arc(x, y, r0, 0, 7); g.fill(); } }
+// 人物图层：贴抠好的图，h 为目标高度，脚底在 (x, y)；呼吸与视差
+function fig(g, id, x, y, h, t, opts = {}) { const im = IM[id]; const s = h / im.height * (1 + .006 * Math.sin(t * 1.1 + (opts.ph || 0))); const w = im.width * s; g.save(); g.globalAlpha = opts.a ?? 1; if (opts.flip) { g.translate(x, 0); g.scale(-1, 1); g.translate(-x, 0); } if (opts.shadow !== false) { g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x, y - 2, w * .32, h * .03, 0, 0, 7); g.fill(); } g.drawImage(im, x - w / 2 + (opts.dx || 0), y - h + (opts.dy || 0), w, h); g.restore(); }
+// 岸：画面底部压一条暗色石岸，让人物有地方站
+function quay(g, y0 = 900, a = 1) { g.save(); g.globalAlpha = a; const gr = g.createLinearGradient(0, y0 - 30, 0, H); gr.addColorStop(0, 'rgba(20,22,28,0)'); gr.addColorStop(.25, 'rgba(22,24,30,.92)'); gr.addColorStop(1, 'rgba(10,11,14,1)'); g.fillStyle = gr; g.fillRect(0, y0 - 30, W, H - y0 + 30); g.fillStyle = 'rgba(255,255,255,.08)'; g.fillRect(0, y0 + 2, W, 2); g.globalAlpha = a * .5; g.globalCompositeOperation = 'overlay'; g.drawImage(NOISE, 0, y0, W, H - y0); g.restore(); }
+// 旋钮界面：年份刻度与指针
+function dial(g, year, a = 1, t = 0) { if (a <= 0) return; g.save(); g.globalAlpha = a; const cx = W - 260, cy = 180, R = 110; g.strokeStyle = 'rgba(160,220,255,.55)'; g.lineWidth = 2; g.beginPath(); g.arc(cx, cy, R, Math.PI * .75, Math.PI * 2.25); g.stroke();
+  const Y = [1089, 1632, 2049, 2089], ang = y => Math.PI * .75 + (Math.log(y - 900) - Math.log(189)) / (Math.log(1189) - Math.log(189)) * Math.PI * 1.5;
+  g.font = `400 18px ${SANS}`; g.fillStyle = 'rgba(200,235,255,.85)'; g.textAlign = 'center'; Y.forEach(y => { const an = ang(y); g.fillText(y, cx + Math.cos(an) * (R + 26), cy + Math.sin(an) * (R + 26) + 6); g.beginPath(); g.arc(cx + Math.cos(an) * R, cy + Math.sin(an) * R, 3, 0, 7); g.fill(); });
+  const an = ang(cl(year, 1000, 2089)); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + Math.cos(an) * (R - 12), cy + Math.sin(an) * (R - 12)); g.stroke();
+  g.font = `600 34px ${SANS}`; g.fillStyle = 'rgba(230,245,255,.95)'; g.fillText(Math.round(year), cx, cy + 14); g.font = `400 16px ${SANS}`; g.fillStyle = 'rgba(160,220,255,.7)'; g.fillText('全时镜 · 推演', cx, cy + R + 56); g.restore(); }
+// 旧层质感：扫描线、色偏、噪点
+function oldlayer(g, a = 1) { g.save(); g.globalAlpha = a; g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgba(200,220,255,1)'; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < H; y += 4) g.fillRect(0, y, W, 1); g.restore(); }
+function caption(g, a, main, sub, pos = 'bl', size = 44) { if (a <= 0) return; g.save(); g.globalAlpha = a; g.textBaseline = 'alphabetic'; const x = pos === 'c' ? W / 2 : pos === 'br' ? W - 110 : 110, y = pos === 'c' ? H / 2 : H - 72; g.textAlign = pos === 'c' ? 'center' : pos === 'br' ? 'right' : 'left'; g.fillStyle = 'rgba(245,238,225,.95)'; g.font = `600 ${pos === 'c' ? size * 1.6 : size}px ${SERIF}`; g.shadowColor = 'rgba(0,0,0,.9)'; g.shadowBlur = 18; g.fillText(main, x, y - (pos === 'c' && sub ? 24 : 0)); if (sub) { g.fillStyle = 'rgba(225,215,195,.8)'; g.font = `400 ${pos === 'c' ? 26 : 22}px ${SANS}`; g.letterSpacing = '4px'; g.fillText(sub, x, y + (pos === 'c' ? 52 : 40)); g.letterSpacing = '0px'; } g.restore(); }
+function vtext(g, a, s, x, y, size = 64, col = 'rgba(245,238,225,.95)', gap = 1.18) { if (a <= 0) return; g.save(); g.globalAlpha = a; g.fillStyle = col; g.font = `600 ${size}px ${SERIF}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(0,0,0,.85)'; g.shadowBlur = 16; [...s].forEach((ch, i) => g.fillText(ch, x, y + i * size * gap)); g.restore(); }
+function ui(g, lines, x, y, a = 1) { if (a <= 0) return; g.save(); g.globalAlpha = a; g.fillStyle = 'rgba(10,20,35,.55)'; g.strokeStyle = 'rgba(140,210,255,.6)'; g.lineWidth = 1.5; const w = 420, h = 30 + lines.length * 34; g.fillRect(x, y, w, h); g.strokeRect(x, y, w, h); g.font = `400 22px ${SANS}`; g.fillStyle = 'rgba(200,235,255,.92)'; g.textAlign = 'left'; lines.forEach((l, i) => g.fillText(l, x + 20, y + 40 + i * 34)); g.restore(); }
+// 桥身的锚点路径（按断桥照片 xh_157 / xh_162 的桥面大致位置）
+const BRIDGE = [[180, 640], [520, 600], [860, 585], [1200, 600], [1560, 640], [1900, 700]];
+// ================= 镜头 =================
+const S = []; const shot = (a, b, f) => S.push({ a, b, f });
+// —— 1 清场 0–48 ——
+shot(0, 14, (g, t, u) => { // 层剥落：人潮的桥 → 雪 → 荷 → 夜
+  cover(g, IM.xh_157, 1.04); nightify(g, .8);
+  const layers = ['xh_035', 'xh_002', 'xh_137']; layers.forEach((id, i) => { const k = ss((t - 2 - (2 - i) * 2.4) / 2.8); if (k < 1) noiseReveal(g, gg => cover(gg, IM[id], 1.04), 1 - k, 10); });
+  anchors(g, BRIDGE, 28, t, ss((t - 9) / 3)); vignette(g, .45); });
+shot(13, 26, (g, t, u) => { cover(g, IM.xh_162, 1.05 + .04 * ss(u), .5, .5); nightify(g, .3); anchors(g, [[0, 700], [600, 640], [1100, 620], [1700, 660]], 18, t, 1); fig(g, 'k01', 1500 - 520 * ss(u * 1.1), 1010, 460, t); vignette(g, .5); });
+shot(25, 38, (g, t, u) => { splice(g, ['xh_170', 'xh_167', 'xh_204'], [700, 1300], 10, [0, 30, -20]); nightify(g, .4); quay(g, 940); fig(g, 'k02', 760, 1010, 420, t); anchors(g, [[300, 920], [900, 900], [1500, 930]], 7, t, 1, 4); vignette(g, .5); });
+shot(37, 48, (g, t, u) => { kb(g, 'xh_093', u, 1.0, 1.08, [.5, .5], [.55, .45]); vignette(g, .4); });
+// —— 2 长椅 48–100 ——
+shot(47, 62, (g, t, u) => { kb(g, 'xh_005', u, 1.0, 1.06); nightify(g, .35); fig(g, 'k01', 1560, 980, 330, t, { flip: true }); g.save(); g.translate(1330, 790); g.rotate(-.06); const im = IM.n02; g.drawImage(im, 0, 0, 150, 150 * im.height / im.width); g.restore(); vignette(g, .45); });
+shot(61, 76, (g, t, u) => { kb(g, 'xh_010', u, 1.45, 1.38, [0, .1], [.05, .12]); nightify(g, .5); fig(g, 'k06', 1180, 1040, 600, t, { shadow: false, dx: 40 }); vignette(g, .45); });
+shot(75, 90, (g, t, u) => { kb(g, 'xh_010', u, 1.3, 1.36, [0, 0], [.02, .02]); nightify(g, .55); const a = ss((t - 2) / 2) * (1 - ss((t - 9) / 2.5)); fig(g, 'n01', 1180, 980, 380, t, { a: a * .55, shadow: false }); ui(g, ['回忆层 · 阿宁', '状态：未启用'], 110, 120, ss((t - 1) / 1.5)); vignette(g, .45); });
+shot(89, 100, (g, t, u) => { kb(g, 'xh_013', u, 1.0, 1.06); nightify(g, .3); vignette(g, .4); });
+// —— 3 串门 100–152 ——
+shot(99, 112, (g, t, u) => { const yr = lmix(2049 - 1e-6, 1089 + 1, ss((t - 1.5) / 3)); const pu = ss((t - 2) / 5); pointcloud(g, 'xh_157', 'xh_051', pu, t, { nx: 176 }); if (pu > .98) { cover(g, IM.xh_051, 1.02); } tint(g, '#d9c8a0', .35); dial(g, 2049 - (2049 - 1089) * ss((t - 1.5) / 3), ss(t / 1.5), t); });
+shot(111, 124, (g, t, u) => { kb(g, 'xh_051', u, 1.02, 1.1, [.5, .55], [.6, .5]); tint(g, '#e8d8b0', .45); fig(g, 'h01', 980 - 140 * u, 575, 200, t); quay(g, 930); fig(g, 'k01', 300, 990, 330, t, { a: .9 }); dial(g, 1089, 1); vignette(g, .4); });
+shot(123, 136, (g, t, u) => { kb(g, 'xh_002', u, 1.0, 1.07, [.5, .5], [.52, .48]); tint(g, '#dfe6f0', .3); fig(g, 'h02', 1500, 700, 230, t); quay(g, 930); fig(g, 'k04', 560, 1000, 360, t); dial(g, 1632, 1); vignette(g, .4); });
+shot(135, 146, (g, t, u) => { kb(g, 'xh_170', u, 1.7, 1.78, [.65, .2], [.63, .2]); fig(g, 'h03', 1250, 592, 270, t); fig(g, 'k01', 560, 650, 300, t); dial(g, 1500, 1); ui(g, ['虚构层 · 清明 · 断桥', '来源：《白蛇传》'], 110, 120, 1); vignette(g, .4); });
+shot(145, 152, (g, t, u) => { splice(g, ['xh_051', 'xh_002', 'xh_170'], [640, 1280], 10, [0, 0, 0], [.5, .5, .5]); quay(g, 930); [320, 960, 1600].forEach((x, i) => fig(g, 'k01', x, 1000, 320, t, { a: .9 })); vignette(g, .4); });
+// —— 4 她 152–196 ——
+shot(151, 170, (g, t, u) => { const ids = ['xh_002', 'xh_051', 'xh_157', 'xh_170']; const k = Math.floor(t / 3.2) % ids.length; const nxt = ids[(k + 1) % ids.length]; cover(g, IM[ids[k]], 1.04); const f = ss((t % 3.2 - 2.4) / .8); if (f > 0) noiseReveal(g, gg => cover(gg, IM[nxt], 1.04), f, 8); nightify(g, .55); quay(g, 930); fig(g, 't01', 1290, 1000, 360, t); fig(g, 'k01', 480, 1010, 360, t); dial(g, [1632, 1089, 2049, 1500][k], 1); vignette(g, .45); });
+shot(169, 178, (g, t, u) => { const off = Math.floor(t / 1.6) % 2 === 1; cover(g, IM.xh_157, 1.04); nightify(g, .8); quay(g, 930); if (!off) { fig(g, 't01', 1290, 1000, 360, t); } else { grain(g, Math.round(t * 24), .25); } ui(g, [off ? '全时镜 · 关' : '全时镜 · 开'], 110, 120, 1); vignette(g, .5); });
+shot(177, 186, (g, t, u) => { cover(g, IM.xh_157, 1.06, .6, .5); nightify(g, .8); quay(g, 930); fig(g, 't02', 1290, 1000, 360, t); g.strokeStyle = 'rgba(140,210,255,.9)'; g.lineWidth = 2; const bx = 1225, by = 660; g.strokeRect(bx, by, 120, 140); const spin = t * 3; g.beginPath(); g.arc(bx + 60, by - 40, 14, spin, spin + 4); g.stroke(); ui(g, ['人脸检索', `结果：${t > 4 ? '0' : '…'}`], 110, 120, 1); vignette(g, .5); });
+shot(185, 196, (g, t, u) => { kb(g, 'xh_204', u, 1.0, 1.06); nightify(g, .5); quay(g, 940); fig(g, 't02', 1100, 1010, 400, t); const vol = ss((t - 1) / 3); ui(g, ['音量', '▮'.repeat(Math.round(vol * 12)) + '▯'.repeat(12 - Math.round(vol * 12))], 110, 120, 1); vignette(g, .45); });
+// —— 5 古人 196–244 ——
+shot(195, 212, (g, t, u) => { splice(g, ['xh_170', 'xh_199'], [960], 10, [0, 0], [.6, .4]); nightify(g, .55); quay(g, 930); fig(g, 'k04', 760, 1000, 360, t); fig(g, 't01', 1180, 1000, 360, t, { flip: true }); g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(958, 0, 4, H); caption(g, ss((t - 3) / 1), '2049', '', 'bl', 30); g.save(); g.textAlign = 'right'; g.globalAlpha = ss((t - 3) / 1); g.fillStyle = 'rgba(245,238,225,.95)'; g.font = `600 30px ${SERIF}`; g.shadowColor = 'rgba(0,0,0,.9)'; g.shadowBlur = 12; g.fillText('2089', W - 110, H - 72); g.restore(); vignette(g, .45); });
+shot(211, 226, (g, t, u) => { cover(g, IM.s07, 1.04 + .04 * ss(u)); oldlayer(g, 1); dial(g, 2089 - 40 * ss((t - 1) / 3), 1); ui(g, ['旧层 · 2049 · 断桥', '分辨率：低'], 110, 120, 1); vignette(g, .5); });
+shot(225, 236, (g, t, u) => { cover(g, IM.s06, 1.0 + .08 * ss(u)); fig(g, 'k05', 1050, 760, 420, t, { shadow: false }); vignette(g, .45); });
+shot(235, 244, (g, t, u) => { kb(g, 'xh_010', u, 1.36, 1.3, [0, 0], [.03, .02]); nightify(g, .55); vignette(g, .45); });
+// —— 6 推演不了的一格 244–286 ——
+shot(243, 266, (g, t, u) => { const seq = ['xh_057', 'xh_053', 'xh_062', 'xh_005', 'xh_199', 's03']; const yrs = [2049, 2060, 2070, 2080, 2089, 2120]; const n = seq.length; const k = Math.min(n - 1, Math.floor(t / 3.6)); const f = ss((t % 3.6 - 2.8) / .8); cover(g, IM[seq[k]], 1.04); if (k < n - 1 && f > 0) noiseReveal(g, gg => cover(gg, IM[seq[k + 1]], 1.04), f, 8); if (k < 4) { nightify(g, .4 + .1 * k); anchors(g, [[200, 760], [900, 720], [1700, 770]], Math.max(0, 14 - k * 4), t, 1, 3 - k * .6); } if (k === 4) { quay(g, 930); fig(g, 't01', 1200, 1000, 360, t); } dial(g, yrs[k] + (yrs[Math.min(n - 1, k + 1)] - yrs[k]) * f, 1); vignette(g, .45); });
+shot(265, 276, (g, t, u) => { cover(g, IM.xh_205, 1.0 + .03 * u); dial(g, 2049, 1 - ss((t - 1) / 1)); ui(g, ['2049 · 现在', '无法推演'], 110, 120, ss((t - 1.5) / 1)); });
+shot(275, 286, (g, t, u) => { kb(g, 'xh_060', u, 1.0, 1.06); nightify(g, .4); vignette(g, .45); });
+// —— 7 刻痕 286–352 ——
+shot(285, 298, (g, t, u) => { cover(g, IM.xh_010, 2.4, .12, .95); nightify(g, .6); fig(g, 'k05', 1000, 760, 560, t, { shadow: false }); srand(5); for (let i = 0; i < 40; i++) { const tt = (t * .7 + rnd() * 3) % 3, x = 1010 + rnd() * 80, y = 760 + tt * 90; g.fillStyle = `rgba(220,220,230,${(1 - tt / 3) * .8})`; g.fillRect(x, y, 2, 3); } vignette(g, .5); });
+shot(297, 306, (g, t, u) => { cover(g, IM.s08, 1.05); fig(g, 't04', 900, 760, 520, t, { shadow: false }); ui(g, ['2089 · 断桥 · 第三根栏杆'], 110, 120, 1); vignette(g, .5); });
+shot(305, 316, (g, t, u) => { kb(g, 'xh_207', u, 1.3, 1.36, [1, 0], [1, 0]); fig(g, 't03', 960, 1020, 700, t, { shadow: false }); vignette(g, .4); });
+shot(315, 336, (g, t, u) => { splice(g, ['xh_013', 'xh_148', 'xh_199'], [640, 1280], 10, [0, 0, 0], [.6, .5, .5]); nightify(g, .4); const a1 = ss((t - .5) / 1.5), a2 = ss((t - 4) / 1.5), a3 = ss((t - 8) / 1.5); g.save(); g.globalAlpha = a1; g.translate(130, 520); g.rotate(-.04); g.drawImage(IM.n02, 0, 0, 380, 380 * IM.n02.height / IM.n02.width); g.restore(); quay(g, 930); fig(g, 'h04', 960, 1000, 350, t, { a: a2 }); fig(g, 't05', 1600, 1000, 340, t, { a: a3 }); caption(g, ss((t - 10) / 1.5), '断桥 · 第三根栏杆', '2049 → 2089', 'bl', 36); vignette(g, .4); });
+shot(335, 352, (g, t, u) => { cover(g, IM.s09, 1.0 + .06 * ss(u)); vignette(g, .35); });
+// —— 8 回忆层 352–386 ——
+shot(351, 368, (g, t, u) => { kb(g, 'xh_083', u, 1.0, 1.05, [.5, .55], [.5, .5]); quay(g, 930); fig(g, 'k07', 760, 1000, 360, t); fig(g, 'n01', 1100, 1000, 350, t, { a: ss((t - 4) / 3) }); ui(g, ['回忆层 · 阿宁', '状态：已启用'], 110, 120, ss((t - 3) / 1)); vignette(g, .35); });
+shot(367, 378, (g, t, u) => { kb(g, 'xh_083', u, 1.05, 1.1, [.5, .5], [.52, .5]); quay(g, 930); fig(g, 'k07', 760, 1000, 360, t); fig(g, 'n01', 1100, 1000, 350, t); vignette(g, .35); });
+shot(377, 386, (g, t, u) => { kb(g, 'xh_010', u, 1.45, 1.38, [0, .1], [.05, .12]); nightify(g, .2); fig(g, 'k06', 1180, 1040, 600, t, { shadow: false, dx: 40 }); vignette(g, .4); });
+// —— 9 开层 386–428 ——
+shot(385, 404, (g, t, u) => { cover(g, IM.xh_157, 1.04); nightify(g, .8 * (1 - ss((t - 4) / 8))); anchors(g, BRIDGE, 28, t, 1); const k = ss((t - 5) / 6); if (k > 0) { const ids = ['xh_002', 'xh_035', 'xh_170']; const xs = [0, 640, 1280, 1920]; ids.forEach((id, i) => { g.save(); g.beginPath(); g.rect(xs[i], 0, 640, H); g.clip(); g.globalAlpha = k * .85; cover(g, IM[id], 1.04); g.restore(); }); anchors(g, BRIDGE, 28, t, k); } const pk = ss((t - 8) / 5); if (pk > 0) { quay(g, 960, pk); fig(g, 'h05', 960, 1030, 420 * pk, t, { a: pk, shadow: false }); } vignette(g, .4); });
+shot(403, 412, (g, t, u) => { kb(g, 'xh_083', u, 1.0, 1.06, [.5, .5], [.45, .5]); quay(g, 930); fig(g, 'k01', 360 + 60 * u, 1000, 360, t, { flip: true }); vignette(g, .4); });
+shot(411, 420, (g, t, u) => { cover(g, IM.s03, 1.02 + .04 * u); quay(g, 940); fig(g, 't06', 1340, 1010, 420, t); fig(g, 't05', 760, 1010, 320, t, { a: ss((t - 4) / 2) }); g.save(); g.globalAlpha = .9; g.drawImage(IM.s07, 60, 60, 300, 170); g.restore(); g.strokeStyle = 'rgba(160,220,255,.7)'; g.strokeRect(60, 60, 300, 170); dial(g, 2049, 1); vignette(g, .4); });
+shot(419, 430, (g, t, u) => { g.fillStyle = '#07080c'; g.fillRect(0, 0, W, H); cover(g, IM.xh_205, 1.02, .5, .5, .35); vtext(g, ss((t - .5) / 1.5), '守夜人', W * .5, H * .3, 100); g.save(); g.globalAlpha = ss((t - 2) / 1.5); g.fillStyle = 'rgba(225,215,195,.8)'; g.font = `400 22px ${SANS}`; g.textAlign = 'center'; g.letterSpacing = '3px'; ['THE NIGHT KEEPER', '', '实景照片来自 Wikimedia Commons（CC BY / CC BY-SA / CC0 / 公有领域，作者见描述）', '人物图层与非真实场景由 Gemini 图像模型生成  ·  效果程序渲染  ·  配乐合成', '旁白 Gemini TTS  ·  文稿与代码 Claude'].forEach((s, i) => g.fillText(s, W / 2, H * .66 + i * 36)); g.restore(); });
+// 字幕 [起, 止, 主, 副, 位置]
+const CAP = [[2, 10, '凌晨一点 · 清场', '', 'bl'], [38, 46, '雷峰塔 · 夜', '', 'bl'], [90, 98, '回忆层 · 未启用', '', 'bl'], [112, 122, '1089 · 推演', '苏堤', 'bl'], [124, 134, '1632 · 推演', '湖心亭', 'bl'], [136, 144, '清明 · 虚构层', '', 'bl'], [186, 194, '"你是真的吗？"', '', 'bl'], [266, 274, '2049 · 现在', '无法推演', 'bl'], [352, 362, '回忆层 · 已启用', '', 'bl'], [387, 395, '5:00 · 开层', '', 'bl']];
+S.sort((x, y) => x.a - y.a);
+const TOTAL = 430;
+// ================= seek =================
+let FR = 0; const bufA = mk(), bufB = mk(), ga = bufA.getContext('2d'), gb = bufB.getContext('2d');
+function seek(T) {
+  FR = Math.round(T * FPS); const act = S.filter(s => T >= s.a && T < s.b + .001);
+  o.globalCompositeOperation = 'source-over'; o.globalAlpha = 1; o.fillStyle = '#000'; o.fillRect(0, 0, W, H);
+  act.forEach((s, i) => { const g = i ? gb : ga, lt = T - s.a, u = cl(lt / (s.b - s.a)); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W, H); s.f(g, lt, u);
+    const fin = act.length > 1 && i > 0 ? ss((T - s.a) / (act[0].b - s.a)) : 1; o.globalAlpha = fin; o.drawImage(i ? bufB : bufA, 0, 0); o.globalAlpha = 1; });
+  grain(o, FR, .06);
+  if (!window.NOCAP) for (const [a, b, m, s2, p] of CAP) caption(o, Math.min(ss((T - a) / .8), ss((b - T) / .8)), m, s2, p, 36);
+  const fade = Math.min(ss(T / 1.5), ss((TOTAL - .5 - T) / 2.5)); if (fade < 1) { o.fillStyle = `rgba(0,0,0,${1 - fade})`; o.fillRect(0, 0, W, H); }
+}
+window.seek = seek; window.TOTAL = TOTAL; window.TL = { total: TOTAL };
+await document.fonts.ready; seek(0); window.ready = true;
+{ const sc2 = document.createElement('script'); sc2.src = '../../_shared/player.js'; document.body.appendChild(sc2); }
+</script></body></html>
