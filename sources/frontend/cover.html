@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.92) 0,rgba(7,10,18,.7) 45%,rgba(7,10,18,.05) 80%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.95) 0,rgba(7,10,18,.7) 45%,rgba(7,10,18,.1) 70%,rgba(7,10,18,.8) 100%)}
+.t{position:absolute;left:7%;top:12%;max-width:62%}
+.v .t{left:8%;right:8%;top:7%;max-width:none}
+.series{font:900 150px/1 "Noto Serif CJK SC",serif;letter-spacing:.08em;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;background:#ffd27a;padding:8px 22px;border-radius:12px}
+.name{font:900 96px/1.15 "Noto Serif CJK SC",serif;margin-top:26px;text-shadow:0 6px 30px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";color:#ffd27a;margin-top:24px;text-shadow:0 2px 12px #000}
+.v .series{font-size:200px}.v .name{font-size:120px}.v .sub{font-size:44px}.v .ep{font-size:50px}
+.r43 .t{max-width:88%}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="series">现代前端</div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 1, W = innerWidth, H = innerHeight, V = H > W;
+if (V) document.body.classList.add('v'); if (!V && W / H < 1.5) document.body.classList.add('r43');
+const E = { 1: ['上集', '一张从平台到工程的地图', '事件循环 · 渲染流水线 · TypeScript · CSS 2026 · 反应式 · 工具链'],
+            2: ['中集', '度量、加载、渲染、交互、内存', 'Core Web Vitals · 关键路径 · 摇树 · 虚拟化 · 切片 · 泄漏'],
+            3: ['下集', '复杂应用的架构与 Web 客户端', '分层 · 面板 · 键盘 · Worker 池 · OPFS · Electron / Tauri / PWA'] }[EP];
+ep.textContent = E[0]; nm.textContent = E[1]; sub.textContent = E[2];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+// 背景：等轴测的层叠板
+const cols = ['#66728C','#66728C','#66728C','#66728C','#66728C','#66728C','#5CB4FF','#5CB4FF','#C79BFF','#C79BFF','#C79BFF','#FFB25C','#FFB25C'];
+const cx = V ? W * .5 : W * .72, cy = V ? H * .72 : H * .62, sw = V ? W * .78 : W * .34, sh = sw * .55, gap = V ? 36 : 30;
+cols.forEach((c0, i) => { const c = (EP === 2 && i < 6) ? '#5FE0A0' : c0; const y = cy - i * gap, hot = EP === 1 ? i >= 6 : EP === 2 ? i < 6 : i >= 8; g.save(); g.globalAlpha = hot ? .95 : .5; g.setTransform(1, -.42, 1, .42, cx - sw * .5, y); g.shadowColor = c; g.shadowBlur = hot ? 40 : 10; g.fillStyle = hot ? c + 'cc' : '#131B2E'; g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.roundRect(0, 0, sw, sh * .6, 10); g.fill(); g.stroke(); g.restore(); });
+g.setTransform(1,0,0,1,0,0);
+// 网格点
+g.fillStyle = 'rgba(92,180,255,.12)'; for (let x = 0; x < W; x += 40) for (let y = 0; y < H; y += 40) g.fillRect(x, y, 2, 2);
+document.fonts.ready.then(() => window.ready = true);
+</script>
+</body></html>

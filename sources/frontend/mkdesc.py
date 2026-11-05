@@ -1,0 +1,12 @@
+import json
+EP = {1: ('上集', '一张从平台到工程的地图', '现代前端_上集_一张从平台到工程的地图', '把桌面浏览器里的前端知识画成一张十层的地图：事件循环与帧预算、渲染流水线（布局 / 绘制 / 合成）、TypeScript 作为工程契约与 TS 7 的 Go 编译器、CSS 2026 的容器查询 / 锚点定位 / 滚动驱动动画 / :has / 视图过渡与 Baseline、框架的三种反应式模型（虚拟 DOM、编译期、Signals）与 React Compiler、状态的四种来源、页面在哪里渲染与 React2Shell、Vite 8 / Rolldown / Oxc 的 Rust 工具链、供应链安全与 2026 年的 TanStack npm 事件。'),
+      2: ('中集', '度量、加载、渲染、交互、内存', '现代前端_中集_度量加载渲染交互内存', '沿着上集的地图讲优化闭环：Core Web Vitals 与 INP 的三段延迟、实验室 vs 真实用户与 Long Animation Frames；缩短关键路径（代码分割、预加载、优先级、HTTP/3、推测规则）；摇树为什么失效与包体分析；布局抖动、合成层、content-visibility 与 DOM 总量；十万行表格的虚拟化与 Canvas 直绘；切片、startTransition、Worker 与 OffscreenCanvas；长会话的内存泄漏与三次快照；Canvas 2D / WebGL / WebGPU 的选择；三层缓存与 Service Worker；把性能预算放进 CI。'),
+      3: ('下集', '复杂应用的架构与 Web 客户端', '现代前端_下集_复杂应用的架构与Web客户端', '桌面级应用怎么搭：领域 / 应用 / 界面分层与命令模式的撤销重做；Grid + 容器查询的面板布局；快捷键作用域与焦点管理；Worker 池与三种消息传递、Comlink；IndexedDB / OPFS + SQLite Wasm / File System Access API 与 CRDT；BroadcastChannel 与 SharedWorker 的多窗口；PWA / Tauri / Electron 的能力、代价与安全清单；Monorepo、设计令牌、测试分层与可观测性；AI 代理写代码之后的理解债与自动护栏。')}
+o = ['# 现代前端：桌面浏览器里的知识与优化体系（三集）\n\n本系列由 AI 生成：文稿与画面由 Claude 制作，配音为 Gemini TTS 合成（1.25 倍速）。画面全部为程序绘制的示意图与动画；图表中的数字除标明出处（版本号、日期、官方公布的倍数）外均为示意或典型量级，不是实测基准。涉及的事实依据 2026 年上半年的公开资料（LogRocket《Frontend wrapped H1 2026》、VoidZero 2026-08 更新、web.dev《Interop 2026》等）。\n\n标签：前端　Web 开发　性能优化　React　TypeScript　CSS　Vite　Electron　Tauri　桌面应用　Core Web Vitals　AI 生成\n']
+for ep, (k, nm, fn, bl) in EP.items():
+    TL = json.load(open(f'tl_e{ep}.json')); d = TL['total']
+    o.append(f'\n## {k} · {nm}（{int(d//60)}:{int(d%60):02d}）\n\n**标题候选**\n\n1. 现代前端（{k}）｜{nm}\n2. {["桌面浏览器里的前端，一张十层的知识地图", "前端性能优化：从度量到流水线的闭环", "把网页做成桌面级应用：架构、Worker、本地数据与 Electron"][ep-1]}\n3. {["2026 年的前端：Rust 工具链、CSS 新特性与三种反应式模型", "INP 为什么是桌面应用最重要的指标", "PWA、Tauri 还是 Electron？先问够不够"][ep-1]}\n\n**文件**：`{fn}.mp4`　封面：`封面_第{ep}集_16x9.png` / `_4x3.png` / `_9x16.png`\n\n**简介**：{bl}\n\n**章节**\n\n')
+    for s in TL['scenes']:
+        t = 0 if s is TL['scenes'][0] else s['start']; o.append(f"{int(t//60):02d}:{int(t%60):02d} {s['title'].split(' ', 1)[1] if s['chapter'] else '片头'}\n")
+o.append('\n## 参考资料\n\n- LogRocket, *Frontend wrapped H1 2026: the nine biggest storylines*\n- VoidZero, *What\'s New (August 2026)*：Vite 8 / Rolldown / Oxc / Vitest 5 / Vite+\n- web.dev, *Interop 2026*：焦点领域\n- TypeScript 7 Beta（Go 原生编译器）公告；React Compiler Rust 移植 PR #36173\n- CVE-2025-55182（React2Shell）；2026-05 TanStack npm 事件公开报告\n')
+open('标题与描述.md', 'w').write(''.join(o)); print('ok')
