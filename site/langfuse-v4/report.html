@@ -1,0 +1,302 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Langfuse v4 数据链路</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#f3f4f1;--surface:#fff;--ink:#1b1f24;--ink2:#4a525c;--rule:#d6d9d3;--acc:#1f5fa8;--acc2:#b5651d;--warn:#b42318;--ok:#1b7a45;
+--display:"Noto Serif SC","Songti SC",serif;--body:"Noto Sans SC","PingFang SC",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;--warn:#ff8a7a;--ok:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;--warn:#ff8a7a;--ok:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--body);padding:0 16px}
+.layout{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;padding:48px 0 80px}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr);padding-top:24px}.toc{position:static!important;max-height:none!important;border-left:0;padding-left:0;font-size:13px}.toc a{display:inline-block;margin:0 10px 2px 0;padding:0}}
+.toc{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto;font-size:14px;line-height:1.6;border-left:2px solid var(--rule);padding-left:14px}
+.toc a{display:block;color:var(--ink2);text-decoration:none;padding:3px 0}.toc a:hover{color:var(--acc)}
+.toc .k{font:500 12px var(--mono);letter-spacing:.08em;color:var(--acc2);margin-bottom:8px}
+.toc input{width:100%;margin:4px 0 12px;padding:6px 8px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);color:var(--ink);font:14px var(--body)}
+.mast{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:8px}
+.mast .k{font:500 13px var(--mono);letter-spacing:.08em;color:var(--acc2)}
+h1{font:900 clamp(30px,5vw,46px)/1.2 var(--display);margin:8px 0}
+.meta{color:var(--ink2);font-size:14px}
+h2{font:600 26px/1.3 var(--display);margin:48px 0 12px;padding-top:12px;border-top:1px solid var(--rule);scroll-margin-top:16px}
+h3{font:700 18px/1.4 var(--body);margin:28px 0 8px}
+a{color:var(--acc)}
+.tbl{overflow-x:auto;margin:16px 0;background:var(--surface);border:1px solid var(--rule);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.55}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-weight:700;background:color-mix(in srgb,var(--acc) 8%,transparent);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+code{font:500 .88em var(--mono);overflow-wrap:anywhere}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{overflow-wrap:normal}
+.src{font:500 12px var(--mono);color:var(--ink2);overflow-wrap:anywhere}
+.note{border-left:4px solid var(--acc2);background:color-mix(in srgb,var(--acc2) 8%,transparent);padding:10px 14px;margin:16px 0;border-radius:0 6px 6px 0}
+.warn{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.ok{border-left-color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.vid{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.vid a{padding:6px 14px;border:1px solid var(--acc);border-radius:8px;text-decoration:none}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0;font-size:14px}
+.flow span{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:4px 10px}.flow i{color:var(--ink2);font-style:normal}
+.foot{margin-top:56px;color:var(--ink2);font-size:14px;border-top:1px solid var(--rule);padding-top:16px}
+.hide{display:none}
+</style></head><body><div class="layout">
+<nav class="toc" id="toc"><div class="k">LANGFUSE V4</div><input id="q" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+<a href="#base">0 核对基准</a><a href="#arch">1 架构与数据流</a><a href="#cases">2 客户端对接的六种情况</a><a href="#proto">3 上报协议与属性</a><a href="#store">4 转存与队列</a><a href="#proc">5 后台处理与写入路径</a><a href="#schema">6 表结构</a><a href="#chain">7 格式转换总表</a><a href="#size">8 大体积数据</a><a href="#mask">9 脱敏</a><a href="#dual">10 双写与迁移</a><a href="#export">11 导出</a><a href="#env">12 环境变量速查</a><a href="#diff">13 文档与代码的差异</a><a href="#risk">14 改造风险清单</a><a href="#code">15 代码位置索引</a></nav>
+<main>
+<header class="mast"><div class="k">REFERENCE · 2026-11</div><h1>Langfuse v4 数据链路参考</h1>
+<p class="meta">上报 → 转存 → 处理 → 存储 → 导出，以及企业改造关注的三件事：客户端对接、脱敏、大体积数据。每条结论都标了源码位置，改造时以代码为准。</p>
+<nav class="vid"><a href="index.html?ep=1">视频 · 上集 数据怎么进来</a><a href="index.html?ep=2">视频 · 中集 格式转换与大体积</a><a href="index.html?ep=3">视频 · 下集 改造原理与企业脱敏</a></nav></header>
+
+<h2 id="base">0 核对基准</h2>
+<div class="tbl"><table><tr><th>对象</th><th>版本</th><th>说明</th></tr>
+<tr><td>langfuse/langfuse</td><td><code>6918181</code>（2026-11-05），web <code>4.76.0</code></td><td>服务端：web、worker、packages/shared、ClickHouse 迁移</td></tr>
+<tr><td>langfuse/langfuse-python</td><td><code>5.2.0</code></td><td>客户端：请求头、属性名、传播、mask、媒体</td></tr>
+<tr><td>官方文档</td><td>v4 changelog（2026-08-17）、v3→v4 升级指南、OTel 迁移指南、导出文档、2026-03-10 博客</td><td>与代码不一致处见 <a href="#diff">§13</a></td></tr></table></div>
+
+<h2 id="arch">1 架构与数据流</h2>
+<p>两个自有进程：<strong>Web</strong>（Next.js，界面与所有接口，含上报）和 <strong>Worker</strong>（Express，处理上报、评估、导出）。v4 没有新增服务。</p>
+<div class="tbl"><table><tr><th>存储</th><th>内容</th></tr>
+<tr><td>PostgreSQL ≥ 15</td><td>用户、组织、项目、API 密钥、提示词、数据集、评估配置、媒体记录（<code>media</code> 表）</td></tr>
+<tr><td>ClickHouse ≥ 25.12</td><td>追踪数据（<code>events_full</code> / <code>events_core</code>）、评分（<code>scores</code>）；v3 表 <code>traces</code> / <code>observations</code> 仍存在</td></tr>
+<tr><td>Redis / Valkey ≥ 7.0</td><td>BullMQ 队列，API 密钥与提示词缓存，双写游标</td></tr>
+<tr><td>S3 / Blob</td><td>原始上报事件（事件桶）、媒体与溢出字段（媒体桶）、导出文件</td></tr></table></div>
+<div class="flow"><span>SDK / 埋点</span><i>→ OTLP →</i><span>Web 校验</span><i>→ 整批 JSON →</i><span>S3 事件桶</span><i>+ 地址 →</i><span>Redis 队列</span><i>→</i><span>Worker 下载·（脱敏）·转换·补全</span><i>→ 批量 →</i><span>ClickHouse events_full</span><i>→ MV →</i><span>events_core</span></div>
+
+<h2 id="cases">2 客户端对接的六种情况</h2>
+<p>写入路径由 <code>resolveOtelWritePath</code> 决定，优先级：<code>direct_header</code> &gt; <code>direct_env</code> &gt; <code>direct_scope</code> &gt; <code>direct_org_cutoff</code>（仅 Cloud）&gt; <code>dual</code>。<span class="src">worker/src/queues/otelIngestionQueue.ts</span></p>
+<div class="tbl"><table><tr><th>#</th><th>客户端</th><th>请求头 / 识别</th><th>路径（dual 模式 / events_only 模式）</th><th>trace 属性</th><th>注意</th></tr>
+<tr><td>1</td><td>新版 SDK：Python 5.x、JS 6.x</td><td><code>x-langfuse-ingestion-version: 4</code> + sdk 名与版本</td><td>直写 / 直写</td><td>SDK 复制到每个 span</td><td>要求 v4 服务端</td></tr>
+<tr><td>2</td><td>过渡 SDK：Python 4.x、JS 5.x</td><td>sdk 名与版本（Python ≥ 4.0.0、JS ≥ 5.0.0 即直写）</td><td>直写 / 直写</td><td>Python ≥ 4.7.0、JS ≥ 5.4.0 才复制；更早只在根 span</td><td>同时兼容 v3/v4 服务端</td></tr>
+<tr><td>3</td><td>旧 OTel SDK：Python 3.x、JS 4.x</td><td>无版本头；作用域名含 <code>langfuse</code></td><td>默认（<code>NATIVE_OTEL_BEHAVIOUR=direct</code>）直写；设为 <code>dual_write</code>（仅 legacy/dual 模式可用）才走双写，约 10–15 min 延迟</td><td>dual_write：作业从 traces 表补；direct：不补</td><td>直写时子 span 按用户查不到</td></tr>
+<tr><td>4</td><td>非 OTel SDK（Python 2.x、JS 3.x）或自调 <code>/api/public/ingestion</code></td><td>REST 批量接口</td><td>旧路径 / <strong>只收 <code>score-create</code></strong>，其余 400</td><td>—</td><td>升级时最容易漏</td></tr>
+<tr><td>5</td><td>第三方 OTel（OpenInference、Vercel AI SDK、框架自带）</td><td>建议手动加版本头 4</td><td>无头：dual 下走 dual；<code>NATIVE_OTEL_BEHAVIOUR=direct</code>（默认）则直写</td><td>需自己写到每个 span</td><td>未识别属性进 <code>metadata.attributes</code></td></tr>
+<tr><td>6</td><td>企业 OTel Collector 转发</td><td>透传 <code>Authorization</code> 与版本头</td><td>同上游客户端</td><td>可在采集器补资源属性</td><td>采样不能丢根 span；同一 span 不要两路发送（读取不去重）</td></tr></table></div>
+<div class="note">SDK 主版本与服务端：Python SDK v4 / JS SDK v5 可连 v3 和 v4 服务端；Python SDK v5 / JS SDK v6 需要 v4 服务端（官方升级指南）。</div>
+
+<h2 id="proto">3 上报协议与属性</h2>
+<h3>入口</h3>
+<div class="tbl"><table><tr><th>项</th><th>值</th><th>源码</th></tr>
+<tr><td>地址</td><td><code>POST /api/public/otel/v1/traces</code></td><td class="src">web/src/pages/api/public/otel/v1/traces/index.ts</td></tr>
+<tr><td>内容类型</td><td><code>application/x-protobuf</code> 或 <code>application/json</code>；其他 400</td><td class="src">web/src/server/otel/processOtelIngestion.ts</td></tr>
+<tr><td>压缩</td><td><code>Content-Encoding: gzip</code></td><td class="src">同上</td></tr>
+<tr><td>认证</td><td><code>Authorization: Basic base64(publicKey:secretKey)</code></td><td></td></tr>
+<tr><td>体积</td><td><code>LANGFUSE_OTEL_INGESTION_MAX_BODY_BYTES</code> 默认 512 MiB，压缩前后都检查；超限 413 + <code>Connection: close</code>；&gt; 16 MiB 记警告</td><td class="src">web/src/server/otel/otelRequestBody.ts</td></tr>
+<tr><td>编号校验</td><td>任一 span 缺 traceId/spanId 或集合不是数组 → 整批 400（常见：OTLP 日志打到 traces 端点）</td><td class="src">validateOtelSpanIds</td></tr>
+<tr><td>版本头</td><td><code>x-langfuse-ingestion-version</code>：&gt; 4 → 400；= 4 → 直写候选</td><td class="src">processOtelIngestion.ts</td></tr></table></div>
+<h3>Python SDK 默认请求头</h3>
+<pre><code>Authorization: Basic …
+x-langfuse-sdk-name: python
+x-langfuse-sdk-version: 5.2.0
+x-langfuse-public-key: pk-lf-…
+x-langfuse-ingestion-version: 4</code></pre><p class="src">langfuse/_client/span_processor.py</p>
+<h3>属性名（Langfuse 约定）</h3>
+<div class="tbl"><table><tr><th>含义</th><th>属性</th></tr>
+<tr><td>trace 级（每个 span 都要带）</td><td><code>langfuse.trace.name</code> · <code>user.id</code>/<code>langfuse.user.id</code> · <code>session.id</code>/<code>langfuse.session.id</code> · <code>langfuse.trace.tags</code> · <code>langfuse.trace.metadata.&lt;key&gt;</code> · <code>langfuse.version</code> · <code>langfuse.release</code> · <code>langfuse.environment</code></td></tr>
+<tr><td>observation</td><td><code>langfuse.observation.type</code>（span、generation、event、embedding、agent、tool、chain、retriever、guardrail、evaluator）· <code>.input</code> · <code>.output</code> · <code>.metadata.&lt;key&gt;</code> · <code>.level</code> · <code>.status_message</code></td></tr>
+<tr><td>生成类</td><td><code>langfuse.observation.model.name</code> · <code>.model.parameters</code> · <code>.usage_details</code> · <code>.cost_details</code> · <code>.completion_start_time</code> · <code>.prompt.name</code> · <code>.prompt.version</code></td></tr>
+<tr><td>实验</td><td><code>langfuse.experiment.id</code> · <code>.name</code> · <code>.dataset.id</code> · <code>.item.id</code> · <code>.item.expected_output</code> …</td></tr>
+<tr><td>第三方约定（服务端识别）</td><td><code>gen_ai.*</code>（OTel GenAI）· <code>ai.*</code>（Vercel AI SDK）· <code>llm.*</code>（OpenInference）等</td></tr></table></div>
+<p class="src">langfuse/_client/attributes.py · packages/shared/src/server/otel/OtelIngestionProcessor.ts</p>
+<h3>user_id / session_id 的查找顺序</h3>
+<ol><li>span 属性：<code>langfuse.user.id</code>、<code>user.id</code>、<code>langfuse.observation.metadata.langfuse_user_id</code>、<code>langfuse.trace.metadata.langfuse_user_id</code>、<code>ai.telemetry.metadata.userId</code></li><li>资源属性：<code>langfuse.user.id</code>、<code>user.id</code></li><li>最后：<code>user.name</code>（span，再资源）</li></ol>
+<p>session 还识别 <code>gen_ai.conversation.id</code>。<strong>服务端不会在批内从根 span 继承</strong>；资源属性对整个服务生效，可用于“一个服务 = 一个租户”。</p>
+<h3>SDK 传播</h3>
+<pre><code>from langfuse import get_client, propagate_attributes
+with propagate_attributes(user_id="u-42", session_id="s-7", tags=["prod"], metadata={"tenant": "acme"}):
+    ...   # 这里创建的每个 span 都带上这些属性
+# as_baggage=True：通过 OTel Baggage（HTTP 头）传给下游服务 —— 会发给所有下游，不要放敏感值</code></pre><p class="src">langfuse/_client/propagation.py</p>
+
+<h2 id="store">4 转存与队列</h2>
+<div class="tbl"><table><tr><th>路径</th><th>S3 对象键</th><th>队列</th><th>入队延迟</th></tr>
+<tr><td>OTel</td><td><code>{LANGFUSE_S3_EVENT_UPLOAD_PREFIX}otel/{projectId}/yyyy/mm/dd/hh/mm/{uuid}.json</code>，内容为整批 <code>resourceSpans</code> 数组</td><td><code>otel-ingestion-queue</code> / <code>secondary-otel-ingestion-queue</code></td><td>0</td></tr>
+<tr><td>旧 REST</td><td><code>{PREFIX}{projectId}/{entityType}/{entityId}/{eventId}.json</code>，同一实体的多次更新同目录</td><td><code>ingestion-queue</code> / <code>secondary-ingestion-queue</code></td><td>非评分 ≤ 5 s；UTC 23:45–00:15 用 <code>LANGFUSE_INGESTION_QUEUE_DELAY_MS</code></td></tr></table></div>
+<p>OTel 队列任务只带指针：<code>fileKey</code>、<code>authCheck.scope</code>（projectId、orgId）、<code>sdkName</code>、<code>sdkVersion</code>、<code>ingestionVersion</code>、<code>propagatedHeaders</code>。分片键 <code>{projectId}-{fileKey}</code>。<span class="src">OtelIngestionProcessor.ts publishToOtelIngestionQueue · processEventBatch.ts · eventBucketPath.ts</span></p>
+<div class="note">事件桶加密：<code>LANGFUSE_S3_EVENT_UPLOAD_SSE</code>（<code>AES256</code> / <code>aws:kms</code>）+ <code>LANGFUSE_S3_EVENT_UPLOAD_SSE_KMS_KEY_ID</code>。媒体桶有对应的 <code>LANGFUSE_S3_MEDIA_UPLOAD_SSE*</code>。</div>
+
+<h2 id="proc">5 后台处理与写入路径</h2>
+<div class="flow"><span>下载 S3</span><i>→</i><span>脱敏回调（EE，可选）</span><i>→</i><span>processToEvent</span><i>→</i><span>createEventRecord 补全</span><i>→</i><span>观测级评估调度</span><i>→</i><span>字段溢出（可选）</span><i>→</i><span>ClickhouseWriter</span></div>
+<div class="tbl"><table><tr><th>补全</th><th>做法</th></tr>
+<tr><td>提示词</td><td>prompt.name + version → Postgres → <code>prompt_id</code></td></tr>
+<tr><td>模型</td><td><code>provided_model_name</code> → 价格表匹配 → <code>model_id</code></td></tr>
+<tr><td>用量</td><td>未提供时按模型分词器计算 token</td></tr>
+<tr><td>用量与成本</td><td>客户端提供的保留在 <code>provided_usage_details</code> / <code>provided_cost_details</code>；补全结果写入 <code>usage_details</code> / <code>cost_details</code></td></tr>
+<tr><td>元数据</td><td><code>flattenJsonToPathArrays</code> → <code>metadata_names[]</code> / <code>metadata_values[]</code></td></tr></table></div>
+<p>写入缓冲：<code>LANGFUSE_INGESTION_CLICKHOUSE_WRITE_BATCH_SIZE</code>=1000、<code>…_WRITE_INTERVAL_MS</code>=1000、<code>…_MAX_ATTEMPTS</code>=3。<span class="src">worker/src/services/IngestionService/index.ts · worker/src/env.ts</span></p>
+
+<h2 id="schema">6 表结构</h2>
+<h3><code>events_full</code>（迁移 0039）</h3>
+<pre><code>ENGINE = ReplacingMergeTree(event_ts, is_deleted)
+PARTITION BY toYYYYMM(start_time)
+PRIMARY KEY (project_id, toStartOfMinute(start_time), xxHash32(trace_id))
+ORDER BY (project_id, toStartOfMinute(start_time), xxHash32(trace_id), span_id, start_time)
+SAMPLE BY xxHash32(trace_id)
+SETTINGS index_granularity_bytes = '64Mi', merge_max_block_size_bytes = '64Mi', enable_full_text_index = 1, …</code></pre>
+<div class="tbl"><table><tr><th>组</th><th>列</th><th>类型 / 说明</th></tr>
+<tr><td>标识</td><td>project_id, trace_id, span_id, parent_span_id</td><td>String；根 span 的 parent 为空串；历史 trace 为虚拟根 <code>t-&lt;trace_id&gt;</code></td></tr>
+<tr><td>时间</td><td>start_time, end_time, completion_start_time</td><td>DateTime64(6)（v3 为 (3)）</td></tr>
+<tr><td>trace 属性</td><td>trace_name, user_id, session_id, tags, release, version, environment</td><td>直接在行上</td></tr>
+<tr><td>状态</td><td>name, type, level, status_message, is_app_root, bookmarked, public</td><td>bookmarked/public 用轻量更新</td></tr>
+<tr><td>模型</td><td>model_id, provided_model_name, model_parameters</td><td>model_parameters 为 JSON 字符串</td></tr>
+<tr><td>用量成本</td><td>provided_usage_details, usage_details, provided_cost_details, cost_details</td><td>Map(LowCardinality(String), UInt64 / Decimal(18,12))</td></tr>
+<tr><td>派生</td><td>calculated_input_cost, calculated_output_cost, calculated_total_cost</td><td>MATERIALIZED：按键名含 input/output 求和</td></tr>
+<tr><td></td><td>total_cost</td><td>ALIAS <code>cost_details['total']</code></td></tr>
+<tr><td>I/O</td><td>input, output, input_length, output_length</td><td>String ZSTD(3)；长度 MATERIALIZED lengthUTF8</td></tr>
+<tr><td>元数据</td><td>metadata_names, metadata_values</td><td>两个等长 Array(String)</td></tr>
+<tr><td>工具</td><td>tool_definitions, tool_calls, tool_call_names</td><td>Map / Array</td></tr>
+<tr><td>实验</td><td>experiment_id, experiment_name, experiment_item_* …</td><td></td></tr>
+<tr><td>来源</td><td>source, service_name/version, scope_name/version, telemetry_sdk_*, ingestion_api_key, ingestion_sdk_name/version</td><td>source 取值含 <code>otel-dual-write</code>、<code>ingestion-api-dual-write</code> 等</td></tr>
+<tr><td>存储</td><td>blob_storage_file_path, event_bytes, created_at, updated_at, event_ts, is_deleted</td><td>file_path 指回 S3 <strong>原始</strong>文件</td></tr></table></div>
+<p>索引：bloom_filter（span_id、trace_id、user_id、session_id）；text 索引 <code>splitByNonAlpha</code>（lower(input)、lower(output)、metadata_names、metadata_values）；ngrambf（metadata 拼接值、lower(name)、lower(trace_name)、lower(user_id)、lower(session_id)）。<span class="src">canonical/0039, 0043, 0049</span></p>
+<h3><code>events_core</code>（0040）与 <code>events_core_mv</code>（0041）</h3>
+<p>结构相同；物化视图写入时 <code>leftUTF8(input, 200)</code>、<code>leftUTF8(output, 200)</code>、每个 metadata 值截到 200。查询写逻辑表 <code>events</code>，编译期路由：读到被截断列 → <code>events_full</code>，否则 <code>events_core</code>；短值等值/前缀的 metadata 过滤在 core 上也正确；<code>events_truncated</code> 强制 core。<span class="src">packages/shared/src/server/query-ast/eventsRouting.ts</span></p>
+<h3>元数据展平规则</h3>
+<div class="tbl"><table><tr><th>输入</th><th>names</th><th>values</th></tr>
+<tr><td><code>{"tenant":"acme"}</code></td><td>tenant</td><td><code>acme</code></td></tr>
+<tr><td><code>{"req":{"id":"r-1","retry":2}}</code></td><td>req.id, req.retry</td><td><code>r-1</code>, <code>2</code>（字符串）</td></tr>
+<tr><td><code>{"flags":["a","b"]}</code></td><td>flags</td><td><code>["a","b"]</code>（整个数组 JSON）</td></tr>
+<tr><td><code>{"pii":true,"note":null}</code></td><td>pii, note</td><td><code>true</code>, <code>""</code></td></tr></table></div>
+<p>读取还原：<code>mapFromArrays(arrayReverse(metadata_names), arrayReverse(metadata_values))</code>。键名本身含点时与路径无法区分。<span class="src">packages/shared/src/server/otel/utils.ts · query-ast/compile.ts</span></p>
+
+<h2 id="chain">7 格式转换总表</h2>
+<div class="tbl"><table><tr><th>层</th><th>编号</th><th>时间</th><th>input / output</th><th>metadata</th><th>其他</th></tr>
+<tr><td>① OTel span（客户端）</td><td>traceId 16 字节、spanId 8 字节</td><td>startTimeUnixNano 整数</td><td>属性中的 JSON 字符串</td><td><code>langfuse.*.metadata.&lt;k&gt;</code> 多个属性</td><td>属性为 {key, value} 列表</td></tr>
+<tr><td>② S3 原始文件</td><td>protobuf 解析后的对象形式</td><td>int64 → 十进制字符串</td><td>同上</td><td>同上</td><td>不脱敏、不修改</td></tr>
+<tr><td>③ EventInput</td><td>32 / 16 位十六进制字符串</td><td>ISO 字符串</td><td>可为对象</td><td>对象</td><td>未识别属性 → metadata.attributes / resourceAttributes</td></tr>
+<tr><td>④ EventRecordInsertType</td><td>同上</td><td>ClickHouse 时间字符串</td><td>字符串</td><td>names[] / values[]</td><td>+ model_id、usage、cost、prompt_id、source、blob_storage_file_path</td></tr>
+<tr><td>⑤ events_full</td><td>String</td><td>DateTime64(6)</td><td>String（可选：溢出为媒体引用）</td><td>Array(String) ×2</td><td>Map / Decimal(18,12)</td></tr>
+<tr><td>⑥ events_core</td><td>同上</td><td>同上</td><td>≤ 200 字符</td><td>每个值 ≤ 200</td><td>MV 生成</td></tr>
+<tr><td>⑦ API v2 / 导出</td><td>id、trace_id…</td><td>ISO；latency 秒或毫秒</td><td>按字段组；core 表时为截断内容</td><td>对象</td><td>按 span 去重</td></tr></table></div>
+
+<h2 id="size">8 大体积数据：七道关口</h2>
+<div class="tbl"><table><tr><th>关口</th><th>规则</th><th>默认</th><th>源码</th></tr>
+<tr><td>① 客户端</td><td>每批字节上限；媒体识别后抽走（data:*;base64、Anthropic {type: base64}、Gemini inline_data）</td><td><code>LANGFUSE_OTEL_MAX_BATCH_SIZE_BYTES</code> 未设则用导出器默认</td><td class="src">langfuse/_client/span_processor.py · _task_manager/media_manager.py</td></tr>
+<tr><td>② 入口</td><td>OTel 请求体上限；旧 REST 4.5 MB</td><td>512 MiB；&gt;16 MiB 警告</td><td class="src">otelRequestBody.ts · pages/api/public/ingestion.ts</td></tr>
+<tr><td>③ 媒体上传</td><td><code>POST /api/public/media</code> 申请预签名 URL；sha256 去重（已存在则 URL 为空）；键 <code>{prefix}{projectId}/{mediaId}.{ext}</code></td><td>单文件 <code>LANGFUSE_S3_MEDIA_MAX_CONTENT_LENGTH</code> = 1,000,000,000</td><td class="src">pages/api/public/media · server/media/mediaService.ts</td></tr>
+<tr><td>④ 服务端抽取 / 字段溢出</td><td>服务端媒体抽取；input/output/每个 metadata 值 &gt; 阈值 → 上传媒体桶，原位替换为 <code>@@@langfuseMedia:type=text/plain|id=…|source=field_size_limit@@@</code>；上传失败保留原值</td><td><code>LANGFUSE_OTEL_MEDIA_UPLOAD_ENABLED</code>=false；<code>LANGFUSE_OBSERVATION_FIELD_OVERFLOW_ENABLED</code>=false；阈值 2 MiB</td><td class="src">features/observation-field-overflow</td></tr>
+<tr><td>⑤ 写入兜底</td><td>ClickHouse “JSON 过大”或 Node “Invalid string length” → 批次对半拆分；单条仍失败 → input/output &gt; 1M 字符截到前 500K + <code>[TRUNCATED: Field exceeded size limit]</code></td><td>—</td><td class="src">services/ClickhouseWriter/jsonRecords.ts</td></tr>
+<tr><td>⑥ events_core</td><td>200 字符截断</td><td>—</td><td class="src">0041</td></tr>
+<tr><td>⑦ 导出</td><td>选了 io 或 metadata 字段组才读 events_full</td><td>—</td><td class="src">repositories/events.ts buildEventsForBlobStorageExportQuery</td></tr></table></div>
+<div class="note warn">写入兜底按对象形式的 <code>metadata</code> 处理，<strong>不覆盖 events 表的 <code>metadata_values</code> 数组</strong>。元数据里的大值只能靠字段溢出处理。</div>
+<div class="note ok">建议：媒体在客户端抽走；打开字段溢出；检索结果等长文本在客户端或采集器裁剪；导出选 io / metadata 字段组；元数据只放短值。</div>
+
+<h2 id="mask">9 脱敏</h2>
+<div class="tbl"><table><tr><th>位置</th><th>机制</th><th>覆盖</th><th>失败行为</th><th>局限</th></tr>
+<tr><td>① 客户端 SDK</td><td><code>Langfuse(mask=fn)</code>，签名 <code>fn(*, data, **kwargs)</code>；对 input/output/metadata 先抽媒体再 mask</td><td>该 SDK 创建的 span</td><td>抛异常 → 整段替换为 <code>&lt;fully masked due to failed mask function&gt;</code>（metadata 字典逐键）</td><td>每个应用都要接；第三方埋点不经过</td></tr>
+<tr><td>② OTel Collector</td><td>attributes / transform 处理器改写或删除属性</td><td>经过采集器的所有 span</td><td>取决于采集器配置</td><td>I/O 是整段 JSON 字符串；规则语言弱</td></tr>
+<tr><td>③ 服务端回调（EE）</td><td>Worker 下载 S3 后 POST 整批给回调，用返回结果继续</td><td><strong>仅 OTel 路径</strong></td><td>默认放行（原始数据入库）；<code>FAIL_CLOSED=true</code> 丢弃整批并记录 S3 key</td><td>需企业许可证；旧 REST、Scores API 不经过；<strong>S3 原件未脱敏</strong></td></tr></table></div>
+<h3>回调契约</h3>
+<pre><code>POST {LANGFUSE_INGESTION_MASKING_CALLBACK_URL}
+Content-Type: application/json
+X-Langfuse-Org-Id: &lt;orgId&gt;
+X-Langfuse-Project-Id: &lt;projectId&gt;
+&lt;LANGFUSE_INGESTION_MASKING_PROPAGATED_HEADERS 中列出的上报请求头&gt;
+
+[ { "resource": {...}, "scopeSpans": [ { "scope": {...}, "spans": [ ... ] } ] } ]   ← 原始 resourceSpans
+
+→ 200，响应体：同结构的 JSON（改写后的 resourceSpans）</code></pre>
+<div class="tbl"><table><tr><th>变量</th><th>默认</th><th>说明</th></tr>
+<tr><td><code>LANGFUSE_INGESTION_MASKING_CALLBACK_URL</code></td><td>未设</td><td>设置且有 EE 许可证才启用；无许可证时告警并忽略</td></tr>
+<tr><td><code>…_CALLBACK_TIMEOUT_MS</code></td><td>500</td><td>单次超时</td></tr>
+<tr><td><code>…_MAX_RETRIES</code></td><td>1</td><td>退避 100·2^(n−1) ms，封顶 1 s</td></tr>
+<tr><td><code>…_CALLBACK_FAIL_CLOSED</code></td><td>false</td><td>true：丢弃并记录 S3 key，可用 <code>worker/src/scripts/replayIngestionEventsV2</code> 重放</td></tr>
+<tr><td><code>…_PROPAGATED_HEADERS</code></td><td>空</td><td>逗号分隔，大小写不敏感；Web 写进队列任务，Worker 透传给回调</td></tr></table></div>
+<p class="src">packages/shared/src/server/ee/ingestionMasking · worker/src/queues/otelIngestionQueue.ts · worker/src/features/otel-ingestion/prepareOtelBatch.ts（开启 early media 时顺序：脱敏 → 校验 → 抽取媒体）</p>
+<h3>建议的三层方案</h3>
+<ol><li><strong>客户端</strong>：SDK mask 处理确定字段（手机号、证件号）；媒体在此抽走。</li>
+<li><strong>网关</strong>：OTel Collector 作为唯一入口；统一加 <code>x-langfuse-ingestion-version: 4</code>；补租户资源属性；删除不允许出域的属性；限制批大小；采样保留根 span。</li>
+<li><strong>服务端</strong>：脱敏回调 + <code>FAIL_CLOSED=true</code>，做模型识别等复杂处理；事件桶与媒体桶 SSE-KMS + 最小权限 + 短生命周期；打开字段溢出。</li>
+<li><strong>导出侧</strong>：导到自有桶，先读清单，按 id 去重，用 metadata 数组还原结构；回查原件用 <code>blob_storage_file_path</code>。</li></ol>
+
+<h2 id="dual">10 双写与迁移</h2>
+<h3>写入模式</h3>
+<div class="tbl"><table><tr><th></th><th>legacy</th><th>dual</th><th>events_only（默认）</th></tr>
+<tr><td>写 v3 表</td><td>是</td><td>是</td><td>否</td></tr><tr><td>写 events 表</td><td>否</td><td>是</td><td>是</td></tr>
+<tr><td><code>NATIVE_OTEL_BEHAVIOUR=direct</code></td><td>启动报错</td><td>可用</td><td>可用（默认）</td></tr>
+<tr><td><code>NATIVE_OTEL_BEHAVIOUR=dual_write</code></td><td>可用</td><td>可用</td><td>启动报错</td></tr></table></div>
+<p>另：<code>events_only</code> 要求 <code>LANGFUSE_MIGRATION_V4_ALLOW_PREVIEW_OPT_IN=true</code>。<span class="src">worker/src/env.ts validateV4Flags</span></p>
+<h3>双写传播作业</h3>
+<ul><li>暂存表 <code>observations_batch_staging</code>：按 <code>s3_first_seen_timestamp</code> 3 分钟分区，TTL 48 h，<code>ttl_only_drop_parts</code>。</li>
+<li>Redis 游标 <code>langfuse:event-propagation:last-processed-partition</code>；只处理早于 <code>now() − LANGFUSE_EXPERIMENT_EVENT_PROPAGATION_PARTITION_DELAY_MINUTES</code>（默认 10）的分区。</li>
+<li>SQL：<code>observations_batch_staging FINAL LEFT JOIN</code> traces（<code>LIMIT 1 BY project_id, id</code> 取最新，回看 ≤ 7 天）→ <code>INSERT events_full</code>；<code>mapConcat(obs.metadata, trace.metadata)</code>，observation 优先；缺父节点 → <code>t-&lt;trace_id&gt;</code>；排除 24 h 内的实验 trace；<code>parallel_view_processing=1</code>；超时 30 min。</li>
+<li>健康检查：<code>GET :3030/api/health?failIfEventPropagationStuck=true</code>，阈值 <code>LANGFUSE_EVENT_PROPAGATION_STUCK_THRESHOLD_MINUTES</code>（代码默认 35）。</li></ul>
+<p class="src">worker/src/features/eventPropagation/handleEventPropagationJob.ts · canonical/0038</p>
+<h3>历史回填（后台迁移链）</h3>
+<ol><li><code>createRootSpansFromTraces</code>：span_id = <code>t-</code>||trace_id，type <code>SPAN</code>，按 yyyymm 分区分块</li><li><code>rewriteObservationsToPidTidSorting</code></li><li><code>backfillEventsFullFromObservations</code>（JOIN traces 补属性，trace 元数据不复制）</li><li><code>backfillEventsFullFromDatasetRunItems</code></li><li><code>dropPidTidSortingTables</code>（<code>LANGFUSE_BACKGROUND_MIGRATION_V4_DROP_PID_TID_SORTING_TABLES</code>）</li></ol>
+<div class="note warn">升级前 <code>SELECT * FROM background_migrations WHERE finished_at IS NULL</code> 必须 0 行；回填约需现有 ClickHouse 数据 3 倍磁盘；也可不回填，双写一个完整保留周期。</div>
+
+<h2 id="export">11 导出</h2>
+<div class="tbl"><table><tr><th>项</th><th>值</th></tr>
+<tr><td>对象键</td><td><code>{prefix}{projectId}/{observations_v2|scores}/{maxTimestamp}.{ext}[.gz]</code>；时间格式如 <code>2026-11-06T10-00-00</code>（ISO 去毫秒、冒号换连字符）</td></tr>
+<tr><td>清单</td><td><code>{prefix}{projectId}/manifests/{maxTimestamp}.json</code>；清单出现才算完成，按 <code>files[].key</code> 读取</td></tr>
+<tr><td>格式</td><td>Parquet（默认）、CSV、JSON、JSONL；文本可 gzip</td></tr>
+<tr><td>频率</td><td>20 分钟、每小时、每天、每周</td></tr>
+<tr><td>时间窗</td><td>按 start_time <code>[min, max)</code>；相邻窗口共享边界 → 读取方按 id 去重；查询内 <code>LIMIT 1 BY span_id, project_id</code></td></tr>
+<tr><td>读哪张表</td><td>字段组含 io 或 metadata → events_full，否则 events_core</td></tr>
+<tr><td>JSONL 直通</td><td>ClickHouse <code>JSONEachRow</code> 直出，Worker 不逐行解析；整形写在 SQL 中</td></tr>
+<tr><td>单位</td><td>latency / time_to_first_token：2026-04-01 后创建的配置为秒，之前毫秒</td></tr>
+<tr><td>Parquet</td><td>不含 input_price / output_price / total_price；清单行数为 null；ClickHouse &lt; 25.11 可能不完整</td></tr>
+<tr><td>重试</td><td>覆盖同名对象</td></tr></table></div>
+<p>字段组：<code>core</code>（必选）· <code>basic</code> · <code>time</code> · <code>io</code> · <code>metadata</code> · <code>model</code> · <code>usage</code> · <code>prompt</code> · <code>metrics</code> · <code>trace_context</code> · <code>tools</code>。<span class="src">packages/shared/src/domain/observation-field-groups.ts · worker/src/features/blobstorage</span></p>
+
+<h2 id="env">12 环境变量速查</h2>
+<div class="tbl"><table><tr><th>变量</th><th>默认</th><th>作用</th></tr>
+<tr><td><code>LANGFUSE_MIGRATION_V4_WRITE_MODE</code></td><td>events_only</td><td>legacy / dual / events_only</td></tr>
+<tr><td><code>LANGFUSE_MIGRATION_V4_NATIVE_OTEL_BEHAVIOUR</code></td><td>direct</td><td>direct / dual_write</td></tr>
+<tr><td><code>LANGFUSE_MIGRATION_V4_ALLOW_PREVIEW_OPT_IN</code></td><td>true</td><td>v4 读路径与 v2 API</td></tr>
+<tr><td><code>LANGFUSE_MIGRATION_V4_OTEL_DIRECT_WRITE_ORG_CREATED_CUTOFF</code></td><td>未设</td><td>Cloud 用，自部署保持未设</td></tr>
+<tr><td><code>LANGFUSE_BACKGROUND_MIGRATION_V4_ENABLE_HISTORIC_BACKFILL</code></td><td>true</td><td>历史回填</td></tr>
+<tr><td><code>LANGFUSE_BACKGROUND_MIGRATION_V4_DROP_PID_TID_SORTING_TABLES</code></td><td>false</td><td>回填后清中间表</td></tr>
+<tr><td><code>LANGFUSE_EXPERIMENT_EVENT_PROPAGATION_PARTITION_DELAY_MINUTES</code></td><td>10</td><td>双写分区延迟</td></tr>
+<tr><td><code>LANGFUSE_EVENT_PROPAGATION_STUCK_THRESHOLD_MINUTES</code></td><td>35</td><td>双写卡住阈值</td></tr>
+<tr><td><code>LANGFUSE_OTEL_INGESTION_MAX_BODY_BYTES</code></td><td>536870912</td><td>OTel 请求体上限</td></tr>
+<tr><td><code>LANGFUSE_OTEL_MEDIA_UPLOAD_ENABLED</code></td><td>false</td><td>服务端媒体抽取</td></tr>
+<tr><td><code>LANGFUSE_OTEL_EARLY_MEDIA_EXTRACTION_ENABLED</code></td><td>false</td><td>Rust 原生提前抽取</td></tr>
+<tr><td><code>LANGFUSE_OBSERVATION_FIELD_OVERFLOW_ENABLED</code></td><td>false</td><td>字段溢出到媒体桶</td></tr>
+<tr><td><code>LANGFUSE_OBSERVATION_FIELD_SIZE_LIMIT_BYTES</code></td><td>2097152</td><td>溢出阈值</td></tr>
+<tr><td><code>LANGFUSE_S3_MEDIA_MAX_CONTENT_LENGTH</code></td><td>1000000000</td><td>单个媒体文件上限</td></tr>
+<tr><td><code>LANGFUSE_INGESTION_CLICKHOUSE_WRITE_BATCH_SIZE</code> / <code>_INTERVAL_MS</code> / <code>_MAX_ATTEMPTS</code></td><td>1000 / 1000 / 3</td><td>写入缓冲</td></tr>
+<tr><td><code>LANGFUSE_INGESTION_MASKING_*</code></td><td>见 §9</td><td>脱敏回调</td></tr>
+<tr><td><code>LANGFUSE_S3_EVENT_UPLOAD_SSE</code> / <code>_SSE_KMS_KEY_ID</code></td><td>未设</td><td>事件桶加密</td></tr></table></div>
+
+<h2 id="diff">13 文档与代码的差异</h2>
+<div class="tbl"><table><tr><th>项</th><th>文档</th><th>代码（6918181）</th></tr>
+<tr><td>“实时写入”SDK 版本</td><td>Python ≥ 4.7.0、JS ≥ 5.4.0</td><td>服务端直写：Python ≥ 4.0.0、JS ≥ 5.0.0（<code>checkHeaderBasedDirectWrite</code>）；4.7 / 5.4 是 SDK 复制 trace 属性的版本</td></tr>
+<tr><td>双写卡住阈值</td><td>15 分钟</td><td>35 分钟</td></tr>
+<tr><td>双写延迟</td><td>约 15 分钟 / 博客“3 分钟 + 5 分钟”</td><td>3 分钟分区 + 10 分钟延迟</td></tr>
+<tr><td>JSON 类型</td><td>25.12 用于 JSON 类型</td><td>events 表 metadata 为两个 Array(String)，未用 JSON 列</td></tr></table></div>
+
+<h2 id="risk">14 改造风险清单</h2>
+<ul><li>同一 span 重复上报 → 两条记录（读取不保证去重）。</li>
+<li>trace 属性未复制到子 span → 子 span 按用户/会话查不到。</li>
+<li>未识别属性进 <code>metadata.attributes</code> / <code>metadata.resourceAttributes</code>，嵌套键不能直接过滤。</li>
+<li><code>events_only</code> 下 <code>/api/public/ingestion</code> 只收评分。</li>
+<li>脱敏回调放行模式下，回调故障期间未脱敏数据入库；S3 原始事件始终未脱敏。</li>
+<li>大值放在 metadata 时不受写入兜底截断，可能导致写入失败；打开字段溢出。</li>
+<li>导出：latency 单位随创建日期不同；Parquet 缺单价列；导出未选 io/metadata 时内容是截断的。</li>
+<li>采集器采样丢掉根 span → 层级断裂、根上的整体输入输出缺失。</li></ul>
+
+<h2 id="code">15 代码位置索引</h2>
+<div class="tbl"><table><tr><th>主题</th><th>文件</th></tr>
+<tr><td>OTel 入口</td><td class="src">web/src/pages/api/public/otel/v1/traces/index.ts · web/src/server/otel/processOtelIngestion.ts · otelRequestBody.ts</td></tr>
+<tr><td>旧 REST 入口</td><td class="src">web/src/pages/api/public/ingestion.ts · packages/shared/src/server/ingestion/processEventBatch.ts · eventBucketPath.ts</td></tr>
+<tr><td>span → 事件</td><td class="src">packages/shared/src/server/otel/OtelIngestionProcessor.ts · otel/utils.ts</td></tr>
+<tr><td>Worker OTel 队列 / 写入路径</td><td class="src">worker/src/queues/otelIngestionQueue.ts · worker/src/features/otel-ingestion/</td></tr>
+<tr><td>补全与写入</td><td class="src">worker/src/services/IngestionService/index.ts · worker/src/services/ClickhouseWriter/</td></tr>
+<tr><td>字段溢出</td><td class="src">worker/src/features/observation-field-overflow/processObservationFieldOverflow.ts</td></tr>
+<tr><td>媒体</td><td class="src">web/src/pages/api/public/media/ · packages/shared/src/server/media/mediaService.ts · otel/OtelMediaProcessor.ts</td></tr>
+<tr><td>脱敏回调</td><td class="src">packages/shared/src/server/ee/ingestionMasking/</td></tr>
+<tr><td>ClickHouse 迁移</td><td class="src">packages/shared/clickhouse/migrations/canonical/0038–0049</td></tr>
+<tr><td>读路由</td><td class="src">packages/shared/src/server/query-ast/eventsRouting.ts · repositories/events.ts</td></tr>
+<tr><td>双写传播</td><td class="src">worker/src/features/eventPropagation/handleEventPropagationJob.ts</td></tr>
+<tr><td>回填</td><td class="src">worker/src/backgroundMigrations/</td></tr>
+<tr><td>导出</td><td class="src">worker/src/features/blobstorage/ · packages/shared/src/domain/observation-field-groups.ts</td></tr>
+<tr><td>环境变量</td><td class="src">worker/src/env.ts · web/src/env.mjs · packages/shared/src/env.ts</td></tr>
+<tr><td>Python SDK</td><td class="src">langfuse/_client/span_processor.py · attributes.py · propagation.py · span.py · _task_manager/media_manager.py · media.py</td></tr></table></div>
+
+<div class="foot">本页由 AI 根据 Langfuse 源码与官方文档整理（2026-11）。官方资料：<a href="https://langfuse.com/changelog/2026-08-17-langfuse-v4">v4 changelog</a> · <a href="https://langfuse.com/self-hosting/upgrade/upgrade-guides/upgrade-v3-to-v4">v3→v4 升级指南</a> · <a href="https://langfuse.com/integrations/native/opentelemetry/migration-to-v4">自定义上报迁移</a> · <a href="https://langfuse.com/docs/api-and-data-platform/features/export-to-blob-storage">导出到对象存储</a> · <a href="https://langfuse.com/blog/2026-03-10-simplify-langfuse-for-scale">Simplifying Langfuse for Scale</a> · 源码 <a href="https://github.com/langfuse/langfuse">langfuse/langfuse</a> · <a href="https://github.com/langfuse/langfuse-python">langfuse-python</a></div>
+</main></div>
+<script>
+const q = document.getElementById('q'), links = [...document.querySelectorAll('#toc a')];
+q.addEventListener('input', () => { const s = q.value.trim().toLowerCase(); links.forEach(a => a.classList.toggle('hide', s && !a.textContent.toLowerCase().includes(s))); });
+</script>
+</body></html>
