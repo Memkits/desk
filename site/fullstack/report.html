@@ -1,0 +1,360 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>网站上线检查清单</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#f3f4f1;--surface:#fff;--ink:#1b1f24;--ink2:#4a525c;--rule:#d6d9d3;--acc:#1f5fa8;--acc2:#b5651d;--warn:#b42318;--ok:#1b7a45;
+--display:"Noto Serif SC","Songti SC",serif;--body:"Noto Sans SC","PingFang SC",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;--warn:#ff8a7a;--ok:#6fd39a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171b;--surface:#1c2026;--ink:#e7e9ec;--ink2:#a7afb9;--rule:#2f353d;--acc:#6fa8ef;--acc2:#e3a062;--warn:#ff8a7a;--ok:#6fd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 var(--body);padding:0 16px}
+.layout{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;padding:48px 0 80px}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr);padding-top:24px}.toc{position:static!important;max-height:none!important;border-left:0;padding-left:0;font-size:13px}.toc a{display:inline-block;margin:0 10px 2px 0;padding:0}}
+.toc{position:sticky;top:24px;align-self:start;max-height:calc(100vh - 48px);overflow:auto;font-size:14px;line-height:1.6;border-left:2px solid var(--rule);padding-left:14px}
+.toc a{display:block;color:var(--ink2);text-decoration:none;padding:3px 0}.toc a:hover{color:var(--acc)}
+.toc .k{font:500 12px var(--mono);letter-spacing:.08em;color:var(--acc2);margin-bottom:8px}
+.toc input{width:100%;margin:4px 0 12px;padding:6px 8px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);color:var(--ink);font:14px var(--body)}
+.mast{border-bottom:2px solid var(--ink);padding-bottom:24px;margin-bottom:8px}
+.mast .k{font:500 13px var(--mono);letter-spacing:.08em;color:var(--acc2)}
+h1{font:900 clamp(30px,5vw,46px)/1.2 var(--display);margin:8px 0}
+.meta{color:var(--ink2);font-size:14px}
+h2{font:600 26px/1.3 var(--display);margin:48px 0 12px;padding-top:12px;border-top:1px solid var(--rule);scroll-margin-top:16px}
+h3{font:700 18px/1.4 var(--body);margin:28px 0 8px}
+a{color:var(--acc)}
+.tbl{overflow-x:auto;margin:16px 0;background:var(--surface);border:1px solid var(--rule);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.55}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-weight:700;background:color-mix(in srgb,var(--acc) 8%,transparent);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+code{font:500 .88em var(--mono);overflow-wrap:anywhere}
+pre{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{overflow-wrap:normal}
+.src{font:500 12px var(--mono);color:var(--ink2);overflow-wrap:anywhere}
+.note{border-left:4px solid var(--acc2);background:color-mix(in srgb,var(--acc2) 8%,transparent);padding:10px 14px;margin:16px 0;border-radius:0 6px 6px 0}
+.warn{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.ok{border-left-color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.vid{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.vid a{padding:6px 14px;border:1px solid var(--acc);border-radius:8px;text-decoration:none}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:14px 0;font-size:14px}
+.flow span{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:4px 10px}.flow i{color:var(--ink2);font-style:normal}
+.foot{margin-top:56px;color:var(--ink2);font-size:14px;border-top:1px solid var(--rule);padding-top:16px}
+.hide{display:none}
+
+.ck{margin:14px 0;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:6px 4px}
+.ck label{display:flex;gap:10px;align-items:flex-start;padding:6px 10px;border-radius:4px;cursor:pointer;line-height:1.6}
+.ck label:hover{background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.ck input{margin-top:6px;flex:none;accent-color:var(--ok);width:16px;height:16px}
+.ck label:has(input:checked){color:var(--ink2);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--ink2) 50%,transparent)}
+#reset{font:14px var(--body);padding:4px 12px;border:1px solid var(--rule);border-radius:6px;background:var(--surface);color:var(--ink2);cursor:pointer}
+</style></head><body><div class="layout">
+<nav class="toc" id="toc"><div class="k">AI 全栈上线</div><input id="q" type="search" placeholder="筛选章节…" aria-label="筛选章节">
+<a href="#case">0 案例与范围</a><a href="#req">1 需求</a><a href="#stack">2 技术选型</a><a href="#agent">3 与 AI 代理协作</a><a href="#ui">4 设计与前端</a><a href="#backend">5 后端与支付回调</a><a href="#data">6 数据模型</a><a href="#auth">7 认证与权限</a><a href="#env">8 环境与密钥</a><a href="#ci">9 持续集成</a><a href="#deploy">10 部署、迁移与回滚</a><a href="#domain">11 域名、证书与邮件</a><a href="#sec">12 安全基线</a><a href="#perf">13 性能与容量</a><a href="#ready">14 生产准备</a><a href="#launch">15 发布与上线当天</a><a href="#obs">16 可观测性与告警</a><a href="#incident">17 事故处理</a><a href="#backup">18 备份与数据保留</a><a href="#cost">19 成本</a><a href="#secm">20 安全维护</a><a href="#iter">21 持续迭代</a><a href="#aiops">22 AI 参与运维</a><a href="#roles">23 人 · AI · 工具</a><a href="#refs">参考</a></nav>
+<main>
+<header class="mast"><div class="k">CHECKLIST · 2026-11</div><h1>网站上线与维护检查清单</h1>
+<p class="meta">配合视频《AI 时代全栈工程师：一个网站从需求到上线和维护》。勾选状态只保存在你自己的浏览器里。服务名只是举例，不代表推荐；价格、配额以各家最新说明为准；标“示意”的数字只是示例。</p>
+<nav class="vid"><a href="index.html?ep=1">视频 · 上集 从需求到能跑起来</a><a href="index.html?ep=2">视频 · 中集 上线</a><a href="index.html?ep=3">视频 · 下集 维护</a></nav>
+<p class="meta" id="prog"></p><button id="reset" type="button">清空勾选</button></header>
+
+<h2 id="case">0 案例与范围</h2>
+<p>小团队用的活动报名网站：参与者用邮箱登录、填表报名、在线付费、收到确认邮件；组织者在后台看名单、导出、取消、退款。</p>
+<div class="flow"><span>需求</span><i>→</i><span>开发</span><i>→</i><span>上线</span><i>→</i><span>维护</span><i>→ 新需求回到第一步</i></div>
+
+<h2 id="req">1 需求</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="req1"><span>把一句话想法拆成用户故事：作为谁，我想做什么，以便什么</span></label>
+<label><input type="checkbox" data-k="req2"><span>每个故事写验收标准（给定 / 当 / 应该），能直接变成测试</span></label>
+<label><input type="checkbox" data-k="req3"><span>写“第一版不做”清单（如多语言、优惠券、多币种、移动端应用）</span></label>
+<label><input type="checkbox" data-k="req4"><span>让 AI 追问边界情况：重复报名、付款后关页面、取消活动、付款中途名额被占</span></label>
+<label><input type="checkbox" data-k="req5"><span>每条边界情况由你给出答案，写进文档</span></label>
+<label><input type="checkbox" data-k="req6"><span><code>docs/spec.md</code> 放进仓库：目标与不做清单、故事、验收标准、数据模型、外部服务与费用、开放问题</span></label>
+</div>
+<pre><code>给定 活动已满员（40 / 40）
+当   用户点击“报名”
+应该 看到“加入候补”选项
+并且 不创建支付会话，不扣款</code></pre>
+
+<h2 id="stack">2 技术选型</h2>
+<p>标准不是性能，而是你能不能维护得了它。每一块都应能在需要时替换。</p>
+<div class="tbl"><table><tr><th></th><th>全托管</th><th>自己管</th></tr>
+<tr><td>前端 / 函数</td><td>Vercel、Netlify、Cloudflare 等托管平台</td><td>云服务器 + Docker Compose，或 Fly.io、Render、Railway 等容器平台</td></tr>
+<tr><td>数据库</td><td>托管 Postgres（如 Neon、Supabase）</td><td>自己跑 Postgres（或仍用托管）</td></tr>
+<tr><td>登录 · 邮件 · 支付</td><td>现成服务（如 Auth.js / Clerk；Resend / Postmark；Stripe）</td><td>同左，尽量不自建</td></tr>
+<tr><td>优点</td><td>几乎不碰服务器，起步快</td><td>成本可控、可迁移、更自由</td></tr>
+<tr><td>代价</td><td>月费随用量上涨；被平台绑住的程度</td><td>备份、升级、补丁、监控都是你的事</td></tr></table></div>
+<div class="note">用户主要在国内时，国内云厂商也有对应的托管服务和服务器产品，思路相同；网络、合规和可选服务范围不同，按实际情况选。</div>
+
+<h2 id="agent">3 与 AI 代理协作</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="ag1"><span>仓库根目录放代理说明文件（AGENTS.md、CLAUDE.md 等）：项目是什么、怎么跑、怎么测、约定、不要碰的地方</span></label>
+<label><input type="checkbox" data-k="ag2"><span>一次只让代理做一件小事，对应规格里的一条故事</span></label>
+<label><input type="checkbox" data-k="ag3"><span>先写测试、看它失败，再实现</span></label>
+<label><input type="checkbox" data-k="ag4"><span>每次改动都看差异，确认只改了该改的地方</span></label>
+<label><input type="checkbox" data-k="ag5"><span>代理写的代码与人写的代码走同一条流水线</span></label>
+</div>
+<div class="tbl"><table><tr><th>必须由人拍板</th><th>代理可以</th></tr>
+<tr><td>数据模型（改起来最贵）</td><td>给出方案和取舍</td></tr>
+<tr><td>权限：谁能看到谁的数据</td><td>写代码、写测试</td></tr>
+<tr><td>花钱：付费服务、机器规格</td><td>审查、找漏洞</td></tr>
+<tr><td>对用户的承诺：退款规则、隐私</td><td>整理文档</td></tr></table></div>
+<pre><code># 活动报名网站
+规格：docs/spec.md（每个任务先读对应小节）
+
+## 运行
+pnpm install &amp;&amp; pnpm db:migrate &amp;&amp; pnpm db:seed
+pnpm dev     # http://localhost:3000
+pnpm test    # 单元测试；pnpm e2e 走浏览器
+
+## 约定
+- 接口输入一律校验；金额用整数（分），时间存 UTC
+- 改表结构只写新迁移，不改旧迁移
+- 改功能时同时更新 docs/spec.md
+
+## 不要碰
+- .env*、已有的迁移文件、支付回调的验签逻辑
+- 不要新增依赖，除非任务里写了</code></pre>
+
+<h2 id="ui">4 设计与前端（详见前两个系列）</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="ui1"><span>页面清单与关键流程（报名 → 付款 → 成功 / 失败 / 候补）</span></label>
+<label><input type="checkbox" data-k="ui2"><span>设计系统与组件库；空状态、错误状态、加载状态</span></label>
+<label><input type="checkbox" data-k="ui3"><span>表单：前端提示 + 服务端为准；提交中禁用按钮；失败可重试且输入不丢</span></label>
+<label><input type="checkbox" data-k="ui4"><span>可访问性：标签、焦点、对比度、键盘</span></label>
+<label><input type="checkbox" data-k="ui5"><span>性能预算：首屏 JS 体积、LCP、INP；图片压缩与懒加载</span></label>
+</div>
+
+<h2 id="backend">5 后端与支付回调</h2>
+<div class="flow"><span>提交表单</span><i>→</i><span>登录校验</span><i>→</i><span>权限检查</span><i>→</i><span>输入校验</span><i>→</i><span>事务：写报名 + 锁名额</span><i>→</i><span>创建支付会话</span></div>
+<pre><code>BEGIN;
+SELECT taken, capacity FROM events WHERE id = $1 FOR UPDATE;  -- 锁住这一行
+INSERT INTO registrations (...) VALUES (...);
+UPDATE events SET taken = taken + 1 WHERE id = $1;
+COMMIT;</code></pre>
+<h3>支付回调（以 Stripe 为例）</h3>
+<div class="ck">
+<label><input type="checkbox" data-k="wh1"><span>验证 <code>Stripe-Signature</code> 头的签名；验签使用未解析的原始请求体</span></label>
+<label><input type="checkbox" data-k="wh2"><span>按事件 ID 去重：同一事件可能到达多次</span></label>
+<label><input type="checkbox" data-k="wh3"><span>不假设顺序：状态只允许往前走（pending → paid → refunded）</span></label>
+<label><input type="checkbox" data-k="wh4"><span>更新状态与记录事件 ID 放在同一事务</span></label>
+<label><input type="checkbox" data-k="wh5"><span>发邮件等慢操作放进后台任务队列，回调尽快返回 2xx</span></label>
+<label><input type="checkbox" data-k="wh6"><span>退款同样以回调结果改状态，而不是以按钮是否点下</span></label>
+</div>
+<div class="note">Stripe 不保证事件顺序；生产模式下回调失败会持续重试，最长约 3 天，测试模式重试次数更少。官方 SDK 验签有默认时间容差（300 秒）。以 Stripe 当前文档为准。</div>
+<h3>后台任务与上传</h3>
+<div class="ck">
+<label><input type="checkbox" data-k="bg1"><span>队列选型：Postgres 任务表（如 pg-boss）、Redis 队列（如 BullMQ）或平台队列（如 Cloudflare Queues）</span></label>
+<label><input type="checkbox" data-k="bg2"><span>失败重试有上限，超过后进死信记录并告警</span></label>
+<label><input type="checkbox" data-k="bg3"><span>文件上传用预签名地址直传对象存储（S3 / R2），服务器限定类型与大小，对象名用随机 ID</span></label>
+<label><input type="checkbox" data-k="bg4"><span>后台每个操作写审计记录：谁、何时、对哪条数据、做了什么</span></label>
+</div>
+
+<h2 id="data">6 数据模型</h2>
+<p>核心表：<code>users</code>、<code>events</code>、<code>registrations</code>、<code>payments</code>、<code>emails</code>。</p>
+<div class="ck">
+<label><input type="checkbox" data-k="dm1"><span>金额用整数存最小货币单位（<code>amount_cents integer</code>），另存币种</span></label>
+<label><input type="checkbox" data-k="dm2"><span>时间统一存 UTC（<code>timestamptz</code>），显示时再换时区</span></label>
+<label><input type="checkbox" data-k="dm3"><span><code>UNIQUE (event_id, user_id)</code> 从数据库层面防止重复报名</span></label>
+<label><input type="checkbox" data-k="dm4"><span>支付记录保存支付服务的编号（唯一），用于对账</span></label>
+<label><input type="checkbox" data-k="dm5"><span>表结构只通过迁移文件修改，迁移随代码提交，只往前走</span></label>
+</div>
+
+<h2 id="auth">7 认证与权限</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="au1"><span>登录用现成方案：邮箱魔法链接、第三方登录或托管认证服务</span></label>
+<label><input type="checkbox" data-k="au2"><span>每个接口在服务端检查“当前用户能不能做这件事”</span></label>
+<label><input type="checkbox" data-k="au3"><span>按 ID 取数据时带上归属条件（防越权 / IDOR）</span></label>
+<label><input type="checkbox" data-k="au4"><span>后台接口另查角色</span></label>
+<label><input type="checkbox" data-k="au5"><span>支付、邮件、存储包一层自己的接口；测试时换成假实现</span></label>
+</div>
+<pre><code>-- 有漏洞：只检查了已登录
+SELECT * FROM registrations WHERE id = $1;
+-- 修复：同时检查归属
+SELECT * FROM registrations WHERE id = $1 AND user_id = $2;</code></pre>
+
+<h2 id="env">8 环境与密钥</h2>
+<div class="tbl"><table><tr><th></th><th>本地</th><th>预发布</th><th>生产</th></tr>
+<tr><td>代码</td><td colspan="3">同一份</td></tr>
+<tr><td>配置 / 密钥</td><td><code>.env.local</code></td><td>平台密钥管理（预发布）</td><td>平台密钥管理（生产）</td></tr>
+<tr><td>数据</td><td>种子数据</td><td>假数据</td><td>真实数据</td></tr>
+<tr><td>支付 · 邮件</td><td>测试模式</td><td>测试模式</td><td>正式模式</td></tr></table></div>
+<div class="ck">
+<label><input type="checkbox" data-k="en1"><span>仓库只有 <code>.env.example</code>（变量名，无真实值）；<code>.env</code> 在 <code>.gitignore</code> 里</span></label>
+<label><input type="checkbox" data-k="en2"><span>每个环境一套密钥</span></label>
+<label><input type="checkbox" data-k="en3"><span>预发布与生产部署方式、数据库版本一致</span></label>
+<label><input type="checkbox" data-k="en4"><span>每次上线前在预发布完整走一遍：登录、报名、测试卡付款、收到邮件、后台退款</span></label>
+</div>
+
+<h2 id="ci">9 持续集成</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="ci1"><span>每次提交：格式、代码规范、类型检查、单元测试、构建</span></label>
+<label><input type="checkbox" data-k="ci2"><span>依赖安全审计（如 <code>npm audit</code> / <code>pnpm audit</code>）与密钥扫描（如 gitleaks）</span></label>
+<label><input type="checkbox" data-k="ci3"><span>端到端测试（如 Playwright）只覆盖最关键的几条路径</span></label>
+<label><input type="checkbox" data-k="ci4"><span>任一步失败不能合并</span></label>
+<label><input type="checkbox" data-k="ci5"><span>合并后自动部署到预发布；生产手动提升（一个人维护时建议）</span></label>
+</div>
+
+<h2 id="deploy">10 部署、迁移与回滚</h2>
+<div class="tbl"><table><tr><th></th><th>托管平台</th><th>自管服务器 / 容器平台</th></tr>
+<tr><td>部署</td><td>连接仓库，推送即构建；每个分支 / PR 一个预览地址</td><td>流水线构建镜像 → 推到镜像仓库 → 逐个替换实例</td></tr>
+<tr><td>回滚</td><td>切回上一个部署（不重新构建）</td><td>换回上一个镜像版本号</td></tr></table></div>
+<div class="ck">
+<label><input type="checkbox" data-k="dp1"><span>迁移在新代码启动前执行一次，放在流水线里</span></label>
+<label><input type="checkbox" data-k="dp2"><span>迁移必须兼容上一个版本的代码（部署时新旧版本会共存几分钟）</span></label>
+<label><input type="checkbox" data-k="dp3"><span>改表结构“先加后删”：发布 1 加列 → 发布 2 回填并改用新列 → 发布 3 删旧列</span></label>
+<label><input type="checkbox" data-k="dp4"><span>在预发布演练一次回滚：部署新版本再回滚，确认数据库、缓存、后台任务正常，记下耗时</span></label>
+</div>
+
+<h2 id="domain">11 域名、证书与邮件</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="dn1"><span>主站解析到部署平台（如 CNAME）</span></label>
+<label><input type="checkbox" data-k="dn2"><span>HTTPS 证书自动签发、自动续期（托管平台代办；自管用 ACME，如 Let's Encrypt）</span></label>
+<label><input type="checkbox" data-k="dn3"><span>邮件发送域名配置 SPF、DKIM、DMARC（记录由邮件服务后台给出）</span></label>
+<label><input type="checkbox" data-k="dn4"><span>在国内提供服务：提前查清备案等要求并预留时间，以官方和服务商指引为准</span></label>
+</div>
+<div class="tbl"><table><tr><th>生效日期</th><th>公开信任 TLS 证书最长有效期</th></tr>
+<tr><td>2026-03-15 之前</td><td>398 天</td></tr>
+<tr><td>2026-03-15 起</td><td>200 天</td></tr>
+<tr><td>2027-03-15 起</td><td>100 天</td></tr>
+<tr><td>2029-03-15 起</td><td>47 天</td></tr></table></div>
+<p class="src">来源：CA/Browser Forum Ballot SC-081v3。Let's Encrypt 另有缩短默认有效期的计划（2028 年起默认 45 天）。</p>
+
+<h2 id="sec">12 安全基线</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="sc1"><span>密钥：不进仓库、不进日志；每个环境一套；泄露能马上换</span></label>
+<label><input type="checkbox" data-k="sc2"><span>权限：数据库账号最小权限；后台入口单独保护并开启二次验证</span></label>
+<label><input type="checkbox" data-k="sc3"><span>接口：所有输入校验；登录与报名接口限流；错误信息不暴露内部细节</span></label>
+<label><input type="checkbox" data-k="sc4"><span>依赖：锁定版本，定期审计，升级前看变更说明</span></label>
+<label><input type="checkbox" data-k="sc5"><span>数据：备份加密；只收需要的个人信息；导出文件设过期时间</span></label>
+<label><input type="checkbox" data-k="sc6"><span>支付页面交给支付服务托管，不在自己的服务器上处理卡号</span></label>
+<label><input type="checkbox" data-k="sc7"><span>把本清单交给 AI 代理逐条检查代码，你逐条确认结果</span></label>
+</div>
+<p class="src">更完整的参考：OWASP Top 10、OWASP ASVS。</p>
+
+<h2 id="perf">13 性能与容量</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="pf1"><span>估算峰值（开放报名那一分钟），按峰值的几倍准备</span></label>
+<label><input type="checkbox" data-k="pf2"><span>静态资源走 CDN；大家看同样内容的页面加缓存</span></label>
+<label><input type="checkbox" data-k="pf3"><span>按查询条件建索引（如 <code>(event_id, status)</code>）</span></label>
+<label><input type="checkbox" data-k="pf4"><span>在预发布压测（如 k6、Locust、autocannon）：看 p95 延迟、错误率、数据库连接数</span></label>
+<label><input type="checkbox" data-k="pf5"><span>无服务器部署 + Postgres：用连接池（托管数据库的池化连接串、PgBouncer、Cloudflare Hyperdrive 等）</span></label>
+</div>
+
+<h2 id="ready">14 生产准备</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="rd1"><span>数据库自动备份已打开，知道怎么恢复</span></label>
+<label><input type="checkbox" data-k="rd2"><span>错误上报和监控接入生产；故意触发一次错误，确认手机收到告警</span></label>
+<label><input type="checkbox" data-k="rd3"><span>一页运行手册：回滚、关闭功能、各服务后台入口、账号归谁管</span></label>
+<label><input type="checkbox" data-k="rd4"><span>状态页或公告位置</span></label>
+<label><input type="checkbox" data-k="rd5"><span>隐私政策、服务条款、退款规则：AI 可起草，内容由你确认，必要时请专业人士看</span></label>
+</div>
+
+<h2 id="launch">15 发布与上线当天</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="la1"><span>新功能放在功能开关后：先只对自己打开，确认后再放开；出问题先关开关</span></label>
+<label><input type="checkbox" data-k="la2"><span>需要时灰度：新版本先接小部分流量（如 5% → 25% → 100%，示意），看错误率</span></label>
+<label><input type="checkbox" data-k="la3"><span>上线顺序：确认备份 → 执行迁移 → 部署 → 用真实支付走一笔最小金额报名（邮件、后台、退款）→ 观察 30 分钟</span></label>
+<label><input type="checkbox" data-k="la4"><span>时间选在你有空处理问题的时候：不在周五晚上，不在开放报名前一小时</span></label>
+</div>
+
+<h2 id="obs">16 可观测性与告警</h2>
+<div class="tbl"><table><tr><th>信号</th><th>回答的问题</th><th>工具举例</th></tr>
+<tr><td>日志</td><td>每个请求做了什么</td><td>平台自带或集中日志服务</td></tr>
+<tr><td>指标</td><td>多少请求、多少出错、多慢</td><td>OpenTelemetry → Grafana 等</td></tr>
+<tr><td>链路追踪</td><td>请求经过了哪些服务</td><td>OpenTelemetry</td></tr>
+<tr><td>错误上报</td><td>哪里抛异常、影响多少人</td><td>Sentry 等</td></tr>
+<tr><td>真实用户监控</td><td>用户浏览器里页面多快</td><td>Sentry、平台 Web Analytics 等</td></tr></table></div>
+<pre><code>{"ts":"2026-11-06T12:03:41.512Z","level":"error","msg":"webhook signature verification failed",
+ "request_id":"req_8f3a","route":"POST /api/webhooks/stripe","registration_id":1042,
+ "release":"2026.11.06-2","env":"production"}
+// 不要出现：密码、令牌、完整卡号、完整手机号、邮件正文</code></pre>
+<div class="tbl"><table><tr><th>告警（阈值为示意）</th><th>级别</th></tr>
+<tr><td>报名接口 5xx &gt; 2%，持续 5 分钟</td><td>紧急：推送到手机</td></tr>
+<tr><td>已付款未入账 &gt; 0，持续 10 分钟</td><td>紧急</td></tr>
+<tr><td>p95 延迟 &gt; 2 s，持续 10 分钟</td><td>一般：邮件，次日处理</td></tr>
+<tr><td>证书剩余 &lt; 14 天 · 磁盘快满 · DB 连接 &gt; 80%</td><td>一般</td></tr>
+<tr><td>其余</td><td>看板，定期看</td></tr></table></div>
+
+<h2 id="incident">17 事故处理</h2>
+<div class="flow"><span>发现</span><i>→</i><span>止损</span><i>→</i><span>定位</span><i>→</i><span>恢复</span><i>→</i><span>复盘</span></div>
+<div class="tbl"><table><tr><th>阶段</th><th>案例：支付回调失败</th></tr>
+<tr><td>发现</td><td>告警：已付款但报名状态未更新的数量上升</td></tr>
+<tr><td>止损</td><td>确认影响范围；若由刚才的发布引起先回滚；不确定时先挂提示“付款已收到，确认邮件稍后送达”</td></tr>
+<tr><td>定位</td><td>错误上报：验签失败；部署记录：生产环境变量被换成了测试模式的密钥</td></tr>
+<tr><td>恢复</td><td>改回密钥；支付服务重试失败的回调，幂等处理自动补上状态；超过重试期的用对账脚本补齐</td></tr>
+<tr><td>复盘</td><td>写下经过、影响、为什么没更早发现、如何防止（如启动时检测到生产使用测试密钥就拒绝启动）；不追究个人</td></tr></table></div>
+<pre><code>## 发生了什么
+## 影响（多少用户、多长时间）
+## 时间线
+## 为什么没有更早发现
+## 以后怎么防止（负责人、截止日期）</code></pre>
+
+<h2 id="backup">18 备份与数据保留</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="bk1"><span>确认备份保留期</span></label>
+<label><input type="checkbox" data-k="bk2"><span>确认能否按时间点恢复（PITR）</span></label>
+<label><input type="checkbox" data-k="bk3"><span>每季度恢复演练：恢复到新数据库 → 接上预发布 → 检查数据 → 记录耗时</span></label>
+<label><input type="checkbox" data-k="bk4"><span>删除账号：个人信息删除或匿名化；对账所需记录按规则保留</span></label>
+<label><input type="checkbox" data-k="bk5"><span>名单、导出文件的保留期写进规格，并做成定时任务执行</span></label>
+<label><input type="checkbox" data-k="bk6"><span>从备份恢复后，重新执行期间的删除请求</span></label>
+</div>
+
+<h2 id="cost">19 成本</h2>
+<div class="tbl"><table><tr><th>常见意外</th><th>办法</th></tr>
+<tr><td>调试日志忘了关，日志量暴涨</td><td>日志分级；采样；保留期</td></tr>
+<tr><td>大图未压缩、被盗链，带宽暴涨</td><td>压缩、CDN、防盗链</td></tr>
+<tr><td>按用量计费的数据库被慢查询拖满</td><td>慢查询告警、索引</td></tr>
+<tr><td>没限流的 AI 接口一夜花掉预算</td><td>按密钥设花费上限；代码里每用户每日上限</td></tr></table></div>
+<div class="ck">
+<label><input type="checkbox" data-k="co1"><span>每个付费服务都设预算告警</span></label>
+<label><input type="checkbox" data-k="co2"><span>每月看一次账单构成</span></label>
+</div>
+
+<h2 id="secm">20 安全维护</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="sm1"><span>打开代码托管平台的安全提醒和自动升级（如 Dependabot、Renovate）；严重漏洞几天内升级</span></label>
+<label><input type="checkbox" data-k="sm2"><span>密钥可轮换：生成新密钥 → 新旧同时有效 → 确认新密钥在用 → 作废旧密钥</span></label>
+<label><input type="checkbox" data-k="sm3"><span>每季度检查账号与权限：收回离开的合作者，删除不用的接口密钥</span></label>
+<label><input type="checkbox" data-k="sm4"><span>留意异常：同一地址大量注册、反复登录失败、接口被批量调用</span></label>
+</div>
+
+<h2 id="iter">21 持续迭代</h2>
+<div class="ck">
+<label><input type="checkbox" data-k="it1"><span>每个新需求回到第 1 步：故事、验收标准、更新规格，再交给代理</span></label>
+<label><input type="checkbox" data-k="it2"><span>依赖每月升级一次；机器人开 PR，流水线通过再合并</span></label>
+<label><input type="checkbox" data-k="it3"><span>改功能时同时改规格文档（写进代理说明文件）</span></label>
+</div>
+
+<h2 id="aiops">22 AI 参与运维</h2>
+<div class="tbl"><table><tr><th>可以交给 AI</th><th>必须人确认（或只给只读权限）</th></tr>
+<tr><td>读告警和日志，总结发生了什么</td><td>直接修改生产数据库</td></tr>
+<tr><td>写排查用的查询和脚本</td><td>接触生产密钥和权限</td></tr>
+<tr><td>从错误上报定位代码，提修复 PR</td><td>账单、扩容等花钱的操作</td></tr>
+<tr><td>起草复盘文档；定期检查依赖和配置</td><td>对用户发出的任何通知</td></tr></table></div>
+<div class="note ok">实用做法：给代理一个只读的生产账号（日志 / 指标查看、数据库只读副本），没有部署、密钥、账单权限；改动走 PR → 流水线 → 人审。</div>
+
+<h2 id="roles">23 人 · AI · 工具</h2>
+<div class="tbl"><table><tr><th></th><th>需求</th><th>开发</th><th>上线</th><th>维护</th></tr>
+<tr><td>人：决定</td><td>范围 · 不做清单</td><td>数据模型 · 权限</td><td>上线时机 · 花钱</td><td>事故决策 · 对用户承诺</td></tr>
+<tr><td>AI：加速</td><td>追问边界</td><td>写代码和测试</td><td>审查 · 写脚本</td><td>排查 · 起草复盘</td></tr>
+<tr><td>工具：兜底</td><td>规格文档</td><td>测试 · 类型检查</td><td>流水线 · 自动部署 · 证书</td><td>监控告警 · 备份</td></tr></table></div>
+
+<h2 id="refs">参考</h2>
+<ul>
+<li>CA/Browser Forum，Ballot SC-081v3：TLS 证书有效期与数据复用期缩短</li>
+<li>Let's Encrypt 关于缩短证书默认有效期的公告</li>
+<li>Stripe 文档：Webhooks（签名验证、重试、事件顺序）</li>
+<li>OWASP Top 10；OWASP Application Security Verification Standard（ASVS）</li>
+</ul>
+<p class="foot">本页与视频由 AI 生成（文稿与画面：Claude；配音：Gemini TTS）。服务名只是举例；价格、配额与政策以各家和官方最新说明为准。</p>
+</main></div>
+<script>
+const q = document.getElementById('q'), links = [...document.querySelectorAll('#toc a')];
+q.addEventListener('input', () => { const s = q.value.trim().toLowerCase(); links.forEach(a => a.classList.toggle('hide', s && !a.textContent.toLowerCase().includes(s))); });
+const KEY = 'fullstack-checklist-v1', boxes = [...document.querySelectorAll('.ck input[type=checkbox]')], prog = document.getElementById('prog');
+let st = {}; try { st = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { st = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+const upd = () => { const n = boxes.filter(b => b.checked).length; prog.textContent = `已完成 ${n} / ${boxes.length} 项`; };
+boxes.forEach(b => { b.checked = !!st[b.dataset.k]; b.addEventListener('change', () => { st[b.dataset.k] = b.checked; save(); upd(); }); });
+document.getElementById('reset').addEventListener('click', () => { st = {}; boxes.forEach(b => b.checked = false); save(); upd(); });
+upd();
+</script>
+</body></html>

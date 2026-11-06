@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.92) 0,rgba(7,10,18,.7) 45%,rgba(7,10,18,.05) 80%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.95) 0,rgba(7,10,18,.7) 45%,rgba(7,10,18,.1) 70%,rgba(7,10,18,.8) 100%)}
+.t{position:absolute;left:7%;top:12%;max-width:62%}
+.v .t{left:8%;right:8%;top:7%;max-width:none}
+.series{font:900 140px/1 "Noto Serif CJK SC",serif;letter-spacing:.02em;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;background:#ffd27a;padding:8px 22px;border-radius:12px}
+.name{font:900 96px/1.15 "Noto Serif CJK SC",serif;margin-top:26px;text-shadow:0 6px 30px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";color:#ffd27a;margin-top:24px;text-shadow:0 2px 12px #000}
+.v .series{font-size:120px}.v .name{font-size:92px}.v .sub{font-size:44px}.v .ep{font-size:50px}
+.r43 .t{max-width:88%}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="series">AI 全栈上线</div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 1, W = innerWidth, H = innerHeight, V = H > W;
+if (V) document.body.classList.add('v'); if (!V && W / H < 1.5) document.body.classList.add('r43');
+const E = { 1: ['上集', '从需求到能跑起来', '用户故事 · 技术选型 · 与 AI 代理协作 · 后端与支付回调 · 环境'],
+            2: ['中集', '上线', '流水线 · 部署与回滚 · 域名证书 · 安全基线 · 性能 · 发布'],
+            3: ['下集', '维护', '可观测性 · 事故处理 · 备份 · 成本 · 安全 · AI 参与运维'] }[EP];
+ep.textContent = E[0]; nm.textContent = E[1]; sub.textContent = E[2];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+// 背景：四个阶段的层叠板（自下而上：需求 开发 上线 维护）
+const L = [['需求', '#5CB4FF'], ['开发', '#5FE0A0'], ['上线', '#FFB25C'], ['维护', '#C79BFF']];
+const R43 = !V && W / H < 1.5; const cx = V ? W * .4 : (R43 ? W * .64 : W * .8), cy = V ? H * .9 : (R43 ? H * .96 : H * .86), sw = V ? W * .64 : (R43 ? W * .36 : W * .3), sh = sw * .55, gap = V ? 120 : 110;
+L.forEach(([lab, c], i) => { const y = cy - i * gap, hot = EP === 1 ? i <= 1 : EP === 2 ? i === 2 : i === 3; g.save(); g.globalAlpha = hot ? .95 : .45; g.setTransform(1, -.42, 1, .42, cx - sw * .5, y); g.shadowColor = c; g.shadowBlur = hot ? 50 : 8; g.fillStyle = hot ? c + 'bb' : '#131B2E'; g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.roundRect(0, 0, sw, sh * .6, 14); g.fill(); g.stroke(); g.shadowBlur = 0; g.fillStyle = hot ? '#0B1020' : c; g.font = `900 ${Math.round(sw * .1)}px "Noto Sans CJK SC"`; g.textBaseline = 'middle'; g.fillText(lab, sw * .08, sh * .3); g.restore(); });
+g.setTransform(1,0,0,1,0,0);
+// 网格点
+g.fillStyle = 'rgba(92,180,255,.12)'; for (let x = 0; x < W; x += 40) for (let y = 0; y < H; y += 40) g.fillRect(x, y, 2, 2);
+document.fonts.ready.then(() => window.ready = true);
+</script>
+</body></html>
