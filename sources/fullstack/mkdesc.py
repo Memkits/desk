@@ -11,7 +11,7 @@ EP = {1: ('上集', '从需求到能跑起来', 'AI全栈上线_上集_从需求
 o = ['# AI 时代全栈工程师：一个网站从需求到上线和维护（三集）\n\n本系列由 AI 生成：文稿与画面由 Claude 制作，配音为 Gemini TTS 合成（1.25 倍速）。画面为程序绘制的示意图与动画。片中的服务名只是举例，不代表推荐；价格、配额以各家最新说明为准。金额、阈值、耗时、行数等数字除注明外均为示意。设计与前端部分见前两个系列，这里只快速带过；国内部署与备案只做概括，具体以官方和服务商指引为准。\n\n已核对的事实：公开信任 TLS 证书最长有效期按 CA/B 论坛决议，2026-03-15 起 200 天、2027-03-15 起 100 天、2029-03-15 起 47 天；Stripe 回调使用 Stripe-Signature 头的 HMAC 签名，不保证顺序，生产模式下失败后最长重试约 3 天。\n\n标签：全栈开发　网站上线　AI 编程　DevOps　持续集成　部署　可观测性　事故处理　Stripe　AI 生成\n']
 for ep, (k, nm, fn, bl, titles) in EP.items():
     TL = json.load(open(f'tl_e{ep}.json')); d = TL['total']
-    o.append(f'\n## {k} · {nm}（{int(d//60)}:{int(d%60):02d}）\n\n**标题候选**\n\n' + ''.join(f'{i+1}. {t}\n' for i, t in enumerate(titles)) + f'\n**文件**：`{fn}.mp4`　封面：`封面_第{ep}集_16x9.png` / `_4x3.png` / `_9x16.png`\n\n**简介**：{bl}\n\n**章节**\n\n')
+    o.append(f'\n## {k} · {nm}（{int(d//60)}:{int(d%60):02d}）\n\n**标题候选**\n\n' + ''.join(f'{i+1}. {t}\n' for i, t in enumerate(titles)) + f'\n**文件**：`{fn}.mp4`　封面：`封面_第{ep}集_16x9.png` / `_4x3.png` / `_3x4.png`\n\n**简介**：{bl}\n\n**章节**\n\n')
     for s in TL['scenes']:
         t = 0 if s is TL['scenes'][0] else s['start']; o.append(f"{int(t//60):02d}:{int(t%60):02d} {s['title'].split(' ', 1)[1] if s['chapter'] else '片头'}\n")
 o.append('\n## 参考资料\n\n- CA/Browser Forum Ballot SC-081v3（TLS 证书有效期缩短时间表）\n- Let\'s Encrypt 关于证书默认有效期调整的公告\n- Stripe 文档：Webhooks（签名验证、重试、事件顺序）\n- OWASP Top 10 / OWASP ASVS\n')
