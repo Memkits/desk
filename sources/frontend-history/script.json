@@ -1,0 +1,678 @@
+[
+ {
+  "ep": 1,
+  "id": "a_open",
+  "chapter": "",
+  "title": "前端三十年 · 上集：从文档到应用",
+  "beats": [
+   "一九九零年，第一个网页浏览器诞生。三十多年后，前端成了软件行业里变化最快的领域之一，框架和工具一茬接一茬，名字多到让人眼花。",
+   "这个系列换个角度：不按年份罗列技术，而是按问题来梳理。每一种技术，都是为了解决某个具体的问题；问题解决了，往往又带出新的问题。",
+   "如果用一句话概括这三十年：在一个本来为文档设计的平台上，一步步造出应用。上集讲从文档到应用，中集讲框架与工程化，下集讲渲染的钟摆、新的平台能力和 AI 浪潮。本片文稿和画面由 AI 生成，配音由 AI 合成；年份和版本以各项目的官方记录为准，示意性的内容会在画面上标注。"
+  ],
+  "vis": [
+   [
+    "anim:axis"
+   ],
+   [
+    "anim:axis"
+   ],
+   [
+    "anim:axis"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_web",
+  "chapter": "文档",
+  "title": "01 文档与链接",
+  "beats": [
+   "最开始的问题很朴素：欧洲核子研究中心的研究人员分散在世界各地，文档放在不同的电脑上，格式各不相同。怎么方便地共享，并且从一份文档直接跳到另一份？",
+   "Tim Berners-Lee 在一九八九年提出方案，第二年做出了三样东西：用 URL 给每份文档一个地址，用 HTTP 传输，用 HTML 标记内容和链接。他还在 NeXT 电脑上写出了第一个浏览器，名字就叫 WorldWideWeb。",
+   "早期的浏览器有好几个：命令行的 Line Mode Browser 和 Lynx，图形界面的 Viola。真正让网页走向大众的，是一九九三年的 NCSA Mosaic，它第一次把图片直接显示在正文里。",
+   "Mosaic 的主要作者后来参与创办了网景公司，一九九四年推出 Netscape Navigator。同一年，W3C 成立，开始为网页制定标准。这时的网页，本质上还是可以互相链接的文档。"
+  ],
+  "vis": [
+   [
+    "anim:web"
+   ],
+   [
+    "shot:cern"
+   ],
+   [
+    "anim:browsers"
+   ],
+   [
+    "anim:browsers"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_js",
+  "chapter": "交互",
+  "title": "02 让页面动起来",
+  "beats": [
+   "很快，大家不满足于静态文档了。填一张表单，哪怕只是漏写了一项，也要提交到服务器，等它检查完再返回一个新页面。能不能在浏览器里就把这些事做了？",
+   "一九九五年，网景请 Brendan Eich 设计一门脚本语言，据说原型只用了十天左右。它先后叫过 Mocha 和 LiveScript，为了借 Java 的热度，最后改名 JavaScript。",
+   "微软随即在 IE 里做了兼容的 JScript，还加上自家的 VBScript。为了避免分裂，JavaScript 被交给 ECMA 标准化，一九九七年有了 ECMAScript 第一版。",
+   "但第一次浏览器大战已经打响。两家都往浏览器里塞私有功能，号称动态 HTML。想拿到页面上的一个元素，IE 用 document.all，网景用 document.layers，同一个效果要写两套代码。"
+  ],
+  "vis": [
+   [
+    "anim:formtrip"
+   ],
+   [
+    "anim:jsname"
+   ],
+   [
+    "anim:jsname"
+   ],
+   [
+    "code:alllayers"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_css",
+  "chapter": "样式",
+  "title": "03 内容与样式分离",
+  "beats": [
+   "页面的样子也是个问题。早期没有样式表，大家用 font 标签改字体，用表格一层层嵌套来排版，再用一像素的透明图片撑出空白。内容和样式搅在一起，改个配色要翻遍所有页面。",
+   "一九九六年，CSS 第一版发布，核心思路是把样式从内容里分离出去。二零零三年的 CSS Zen Garden 是一个著名的展示：同一份 HTML，换一张样式表，就是完全不同的设计。",
+   "可是 CSS 本来为文档排版而设计，做应用的布局很别扭。多栏布局要靠浮动、清除浮动、负外边距这些技巧，还出现了 960 Grid System、Blueprint 这样的栅格框架，后来的 Bootstrap 更是流行一时。",
+   "直到二零一零年代，Flexbox 和 Grid 先后普及，布局才终于有了真正的原语。同一个三栏页面，用表格、浮动和 Grid 来写，复杂程度完全不同。"
+  ],
+  "vis": [
+   [
+    "code:tablelayout"
+   ],
+   [
+    "anim:zen"
+   ],
+   [
+    "anim:layouts"
+   ],
+   [
+    "anim:layouts"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_compat",
+  "chapter": "兼容性",
+  "title": "04 兼容性地狱",
+  "beats": [
+   "二零零一年，IE6 发布。IE 系列随后占据了九成以上的市场，IE6 却好几年没有大的更新。它的盒模型和标准不一样，还有怪异模式、hasLayout、PNG 透明这些出了名的坑。",
+   "开发者被迫为不同浏览器写不同的代码。一边，Web 标准项目这样的组织推动大家按标准写；另一边，Firefox、Safari，以及二零零八年的 Chrome，一点点打破了 IE 的垄断。",
+   "最实用的办法，是用一个库把差异抹平。Prototype、MooTools、Dojo、YUI、Ext JS 各有拥趸，二零零六年出现的 jQuery 最后胜出：一个美元符号选中元素，链式调用，统治了前端将近十年。",
+   "再往后，polyfill 给旧浏览器补上新接口，Babel 把新语法翻译成旧语法；浏览器改为自动更新，二零二二年 IE 正式退役。jQuery 的很多能力也被标准吸收：选择器变成了 querySelector，ajax 变成了 fetch。"
+  ],
+  "vis": [
+   [
+    "anim:ie6"
+   ],
+   [
+    "anim:ie6"
+   ],
+   [
+    "anim:libs"
+   ],
+   [
+    "code:jq"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_ajax",
+  "chapter": "Ajax",
+  "title": "05 不刷新页面",
+  "beats": [
+   "另一个痛点是整页刷新：每点一次，整个页面白一下再重新加载。一九九九年，微软为网页版 Outlook 做了一个叫 XMLHttpRequest 的对象，可以在后台悄悄地向服务器要数据。",
+   "它在 IE5 里沉睡了好几年，直到二零零四年的 Gmail 和二零零五年的谷歌地图，让人看到网页也能像桌面软件一样流畅。二零零五年，这种做法被命名为 Ajax。",
+   "数据格式上，XML 很快让位给 Douglas Crockford 推广的 JSON；跨域请求先有 JSONP 这样的变通办法；服务器要主动推送消息，先用长轮询，后来有了 WebSocket。网页从一页页的文档，变成了一个持续运行的程序。"
+  ],
+  "vis": [
+   [
+    "anim:ajax"
+   ],
+   [
+    "anim:ajax"
+   ],
+   [
+    "anim:ajax"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_plugin",
+  "chapter": "插件",
+  "title": "06 插件与 HTML5",
+  "beats": [
+   "浏览器原生做不到的事，比如动画、视频和游戏，就交给插件。Flash 是其中最成功的，网页游戏、视频播放器、炫酷的片头都靠它；此外还有 Java Applet、微软的 ActiveX 和 Silverlight。",
+   "插件的问题是封闭、耗电、不安全，搜索引擎也读不懂。二零零七年的 iPhone 干脆不支持 Flash，二零一零年乔布斯发表公开信，解释为什么不支持。",
+   "与此同时，浏览器厂商在 WHATWG 推动 HTML5，把视频、Canvas 画布、本地存储、后台线程都收进了标准。二零二零年底，Flash 正式停止支持。"
+  ],
+  "vis": [
+   [
+    "anim:plugins"
+   ],
+   [
+    "anim:plugins"
+   ],
+   [
+    "anim:plugins"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_v8",
+  "chapter": "引擎",
+  "title": "07 引擎提速与 Node",
+  "beats": [
+   "应用越做越大，JavaScript 的速度成了瓶颈。二零零八年，谷歌发布 Chrome，带着 V8 引擎；火狐的 TraceMonkey、苹果的 Nitro、微软的 Chakra 随即跟进，即时编译的竞赛让 JavaScript 的性能成倍提升。",
+   "V8 还带来一个意外的结果。二零零九年，Ryan Dahl 用它做出了 Node.js，让 JavaScript 可以在服务器上运行；第二年有了 npm。前端工程师第一次可以用同一门语言写工具、写服务。"
+  ],
+  "vis": [
+   [
+    "anim:v8"
+   ],
+   [
+    "anim:v8"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_dead",
+  "chapter": "昙花一现",
+  "title": "08 昙花一现（一）",
+  "beats": [
+   "这个时代也留下了很多曾经风光、后来被淘汰的方案。VRML 想把三维世界搬进网页；frameset 把一个窗口切成好几块；marquee 和 blink 标签让文字滚动、闪烁。",
+   "标准也有夭折的：ECMAScript 第四版野心太大，二零零八年被放弃；XHTML 二点零不兼容旧网页，最后无人采用；谷歌的 Gears 给浏览器加上离线能力，后来被 HTML5 取代。",
+   "还有 Chrome Frame，一个把 Chrome 内核装进 IE 的插件，二零一四年退役；Web SQL 数据库和 AppCache 离线缓存，也都被浏览器移除。它们大多不是失败的设计，而是完成了探路的任务，被标准吸收或者替代。",
+   "一个有趣的余波：MooTools 当年给数组加了一个 flatten 方法。二零一八年，标准想加同名的方法，却发现会弄坏老网站，只好改名叫 flat。旧方案即使被淘汰，也会在网页里留存很久。"
+  ],
+  "vis": [
+   [
+    "anim:graves1"
+   ],
+   [
+    "anim:graves1"
+   ],
+   [
+    "anim:graves1"
+   ],
+   [
+    "code:smoosh"
+   ]
+  ]
+ },
+ {
+  "ep": 1,
+  "id": "a_sum",
+  "chapter": "小结",
+  "title": "09 上集小结",
+  "beats": [
+   "到二零一零年前后，网页已经可以当作应用来做了：有 Ajax，有更快的引擎，有更强的标准。但新的问题来了：代码越来越多，怎么组织？界面越来越复杂，数据和界面怎么保持一致？这是中集的主题。"
+  ],
+  "vis": [
+   [
+    "anim:sum1"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_open",
+  "chapter": "",
+  "title": "前端三十年 · 中集：框架与工程化",
+  "beats": [
+   "上集说到，二零一零年前后，网页已经可以当作应用来做了。这一集讲接下来的十年，前端怎么应对规模：代码怎么组织，界面和数据怎么同步，语言、样式和多端怎么跟上，工程化又怎么成了一门手艺。本片文稿和画面由 AI 生成，配音由 AI 合成；年份和版本以各项目的官方记录为准，示意性的内容会在画面上标注。"
+  ],
+  "vis": [
+   [
+    "anim:axis"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_mod",
+  "chapter": "模块化",
+  "title": "01 代码怎么组织",
+  "beats": [
+   "最早的网页里，脚本就是一串 script 标签，所有变量都挂在全局。顺序写错了就报错，名字撞了就互相覆盖。大家先用命名空间，比如 YUI 的 YAHOO 点什么，再用立即执行的函数把代码包起来。",
+   "接着出现了模块规范。Node 采用 CommonJS，同步地 require；浏览器要异步加载，于是有了 AMD 和 RequireJS，国内还有阿里玉伯的 SeaJS；为了两边都能用，又出现了 UMD。",
+   "包从哪里来也在变。前端先用 Bower 专门管理浏览器的包，后来都转向了 npm，再有 Yarn 和 pnpm 解决速度和磁盘占用的问题。构建任务则交给 Grunt、Gulp 这样的任务运行器。",
+   "真正统一局面的是打包器。Browserify 让浏览器也能用 require；二零一二年的 webpack 把一切都当作模块，图片和样式也不例外；Rollup 擅长打包库，Parcel 主打零配置。二零一五年，语言终于有了原生模块，ES Modules。"
+  ],
+  "vis": [
+   [
+    "code:iife"
+   ],
+   [
+    "anim:modules"
+   ],
+   [
+    "anim:modules"
+   ],
+   [
+    "anim:bundle"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_mvc",
+  "chapter": "MV* 框架",
+  "title": "02 第一代框架",
+  "beats": [
+   "第二个问题更棘手。用 jQuery 写一个复杂界面，数据存在变量里，界面在 DOM 里，每次改数据都要记得去改界面。功能一多，两边就对不上了，代码被戏称为意大利面。",
+   "二零一零年前后，一批框架把服务端的 MVC 思路搬到前端：Backbone 提供模型、集合和视图；Knockout 带来了 MVVM 和数据绑定；Ember 强调约定优于配置；Meteor 试图把前后端打通。当时的 TodoMVC 项目，用同一个待办应用比较各家框架。",
+   "影响最大的是谷歌的 AngularJS。它的双向绑定让数据和输入框自动同步，写起来像魔法；但在大应用里，数据是从哪里改的很难追踪，脏检查的性能也成了问题。"
+  ],
+  "vis": [
+   [
+    "anim:spaghetti"
+   ],
+   [
+    "shot:todomvc"
+   ],
+   [
+    "anim:twoway"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_react",
+  "chapter": "组件化",
+  "title": "03 React 与组件化",
+  "beats": [
+   "二零一三年，Facebook 开源了 React。它的想法很直接：界面是状态的函数。状态一变，就把整个界面重新描述一遍，由虚拟 DOM 找出前后的差异，只修改真正变化的部分。",
+   "React 还带来了 JSX，把模板写回 JavaScript 里，一开始争议很大；以及单向数据流：数据从上往下传，事件从下往上报，问题出在哪里一目了然。",
+   "第二年，尤雨溪发布了 Vue，用响应式数据加模板，上手更平缓，在国内尤其流行。谷歌则用 TypeScript 把 Angular 彻底重写，和 AngularJS 不兼容。还有 Preact、Inferno 这样更轻、更快的同类。",
+   "组件之间怎么共享状态？Facebook 提出 Flux 架构，二零一五年的 Redux 把它精简成一个仓库加纯函数，风靡一时；MobX 走响应式路线；后来又有 Zustand、Jotai 和 Vue 的 Pinia。数据获取则有 GraphQL、Apollo，以及 TanStack Query、SWR。",
+   "二零一九年，React 推出 Hooks，用函数组件取代类组件；Vue 三也推出了组合式 API。组件化成了所有主流框架的共识。"
+  ],
+  "vis": [
+   [
+    "anim:vdom"
+   ],
+   [
+    "code:counter"
+   ],
+   [
+    "code:counter"
+   ],
+   [
+    "anim:state"
+   ],
+   [
+    "anim:state"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_lang",
+  "chapter": "语言",
+  "title": "04 语言补课",
+  "beats": [
+   "语言本身也在补课。二零零九年的 ES5 只做了小修小补，在等待新标准的那几年，社区先在语言外面加糖：CoffeeScript 一度是 Rails 的默认选择，谷歌推出了 Dart，函数式的 Elm、ClojureScript 也各有拥趸。",
+   "二零一五年，ES2015 一次性补齐了类、模块、块级作用域、箭头函数和 Promise，之后改为每年发布一版。异步写法也从回调地狱，走到 Promise，再到二零一七年的 async 和 await。",
+   "类型是另一条线。微软二零一二年发布 TypeScript，Facebook 推出 Flow。十多年下来，TypeScript 成了事实标准：State of JS 二零二五年的调查里，四成受访者只写 TypeScript。"
+  ],
+  "vis": [
+   [
+    "anim:langs"
+   ],
+   [
+    "code:async"
+   ],
+   [
+    "anim:langs"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_css",
+  "chapter": "样式",
+  "title": "05 样式规模化",
+  "beats": [
+   "CSS 在大项目里同样失控：选择器全局生效，没有变量，没有作用域，谁也不敢删一条规则。第一批答案是命名约定，比如 OOCSS、BEM 和 SMACSS，靠纪律避免冲突。",
+   "第二批是预处理器：Sass、Less、Stylus 补上变量、嵌套和函数；PostCSS 和 Autoprefixer 在构建时自动加上浏览器前缀。第三批把作用域交给工具：CSS Modules 自动给类名加上哈希。",
+   "第四批干脆把样式写进 JavaScript：styled-components、Emotion 一度非常流行，但运行时的开销让它们后来退潮。第五批是原子化的 Tailwind，直接在 HTML 里拼工具类，争议很大，却成了今天最常见的写法之一。",
+   "组件库也一代代更替：Bootstrap、Foundation、Material UI，国内的 Ant Design 和 Element，再到只提供无样式基础组件的 Radix，以及把代码直接复制进项目的 shadcn/ui。原生 CSS 也补上了变量、嵌套、has 选择器和容器查询，预处理器的很多理由正在消失。"
+  ],
+  "vis": [
+   [
+    "anim:cssscale"
+   ],
+   [
+    "anim:cssscale"
+   ],
+   [
+    "anim:cssscale"
+   ],
+   [
+    "anim:uilibs"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_multi",
+  "chapter": "多端",
+  "title": "06 多端与移动",
+  "beats": [
+   "智能手机普及之后，同一个网页要在各种屏幕上看。二零一零年，Ethan Marcotte 提出响应式设计，用媒体查询让布局随屏幕变化，移动优先成了新的设计习惯。",
+   "网页和原生 App 也在争夺用户。jQuery Mobile、Sencha Touch 想让网页长得像 App；PhoneGap，也就是后来的 Cordova，把网页包进 App 的外壳；二零一五年的 React Native 换了思路，用 JavaScript 驱动真正的原生组件，阿里的 Weex 也走类似的路线。",
+   "桌面端有 Electron，VS Code、Slack 都基于它，后来的 Tauri 主打更小的体积；网页这边，谷歌提出 PWA，用 Service Worker 让网页可以离线、可以安装。",
+   "国内还有一条独特的路线：二零一七年的微信小程序。各家超级 App 纷纷跟进，Taro、uni-app 这样的框架，让一份代码编译到多个小程序平台。"
+  ],
+  "vis": [
+   [
+    "anim:responsive"
+   ],
+   [
+    "anim:multi"
+   ],
+   [
+    "anim:multi"
+   ],
+   [
+    "anim:multi"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_eng",
+  "chapter": "工程化",
+  "title": "07 工程化成为手艺",
+  "beats": [
+   "工具越来越多，前端工程化成了一门手艺。调试先靠火狐的 Firebug 插件，后来被浏览器自带的开发者工具取代；代码检查从 JSLint、JSHint 走到 ESLint，格式化交给 Prettier，不再为空格争论。",
+   "测试也换了好几代：QUnit、Jasmine、Mocha 加 Karma，再到 Jest 和 Vitest；端到端测试从 PhantomJS 这样的无头浏览器，换成了 Puppeteer、Cypress 和 Playwright；组件可以在 Storybook 里单独开发。",
+   "项目变大以后，有了 Lerna、Nx、Turborepo 管理的单一代码仓库，也有了 single-spa、qiankun、Module Federation 这样的微前端方案，让不同团队各自发布。工具解决了问题，也把复杂度搬进了配置文件。"
+  ],
+  "vis": [
+   [
+    "anim:toolwall"
+   ],
+   [
+    "anim:toolwall"
+   ],
+   [
+    "anim:toolwall"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_dead",
+  "chapter": "昙花一现",
+  "title": "08 昙花一现（二）",
+  "beats": [
+   "这十年也是方案更替最快的十年。Bower、Grunt、Gulp 先后让位给 npm 脚本和打包器；RequireJS 和 SeaJS 随着原生模块退场；CoffeeScript 的很多语法被 ES2015 吸收，自己反而没人用了。",
+   "框架方面，AngularJS 在二零二一年底停止维护，Backbone、Knockout 逐渐淡出；谷歌的 Polymer 让位给更轻的 Lit；HTML Imports 和 Object.observe 这样的标准提案，也被浏览器撤回。",
+   "工具方面，PhantomJS、TSLint、Karma 先后停止维护；脚手架 Create React App 在二零二五年被官方弃用；Facebook 的状态库 Recoil 被归档；谷歌的 AMP 加速页面，也逐渐失去了特殊地位。",
+   "被淘汰的原因大致有三种：标准吸收了它的能力；更好的方案出现了；或者它要解决的问题本身消失了。但每一个都在当时推着前端往前走。"
+  ],
+  "vis": [
+   [
+    "anim:graves2"
+   ],
+   [
+    "anim:graves2"
+   ],
+   [
+    "anim:graves2"
+   ],
+   [
+    "anim:why"
+   ]
+  ]
+ },
+ {
+  "ep": 2,
+  "id": "b_sum",
+  "chapter": "小结",
+  "title": "09 中集小结",
+  "beats": [
+   "到二零二零年前后，组件化、TypeScript、npm 和打包器构成了前端的主流工作方式。但新的问题又冒了出来：单页应用首屏太慢，工具链越来越重。下集讲渲染的钟摆、新的平台能力，以及 AI 浪潮带来的变化。"
+  ],
+  "vis": [
+   [
+    "anim:sum2"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_open",
+  "chapter": "",
+  "title": "前端三十年 · 下集：钟摆、新平台与 AI 浪潮",
+  "beats": [
+   "前两集讲到，二零二零年前后，组件化的单页应用成了主流。这一集看最近十年：渲染的位置怎么来回摆动，框架怎么把工作交给编译器，工具链怎么提速，浏览器又多了哪些能力；最后是 AI 浪潮带来的变化。本片文稿和画面由 AI 生成，配音由 AI 合成；年份和版本以各项目的官方记录为准，示意性的内容会在画面上标注。"
+  ],
+  "vis": [
+   [
+    "anim:axis"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_ssr",
+  "chapter": "钟摆",
+  "title": "01 渲染的钟摆",
+  "beats": [
+   "单页应用有两个老毛病：先下载一大包 JavaScript 才能显示内容，首屏是白的；搜索引擎抓到的也只是一个空壳。解决办法是让渲染重新回到服务器，而这恰恰是 PHP、JSP、Rails 时代的做法。",
+   "二零一六年，Next.js 和 Nuxt 出现：服务器先把页面渲染成 HTML 发给浏览器，再在浏览器里补上交互，这一步叫水合。Svelte、Solid 也有了各自的全栈框架。",
+   "另一条路是干脆在构建时把页面生成好：Jekyll、Hugo、Gatsby、VitePress，配合 Netlify、Vercel 这样的平台，形成了 Jamstack 的潮流。",
+   "但水合本身也有代价：整页的代码还是要下载、执行一遍。于是 Astro 提出岛屿架构：页面默认是纯 HTML，只有需要交互的小块才加载 JavaScript；Qwik 更进一步，试图完全跳过水合。",
+   "React 的答案是服务端组件：一部分组件只在服务器上运行，代码根本不发给浏览器，随 React 十九正式稳定。还有一派干脆回到 HTML：htmx、Hotwire、Phoenix LiveView 让服务器直接返回 HTML 片段。钟摆从服务端摆到客户端，现在停在了两边混合的位置。"
+  ],
+  "vis": [
+   [
+    "anim:pendulum"
+   ],
+   [
+    "anim:hydrate"
+   ],
+   [
+    "anim:hydrate"
+   ],
+   [
+    "anim:islands"
+   ],
+   [
+    "anim:pendulum"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_sig",
+  "chapter": "编译器",
+  "title": "02 交给编译器",
+  "beats": [
+   "框架内部也在变。虚拟 DOM 每次都要把整棵树比较一遍，有没有办法只更新真正变化的地方？二零一六年的 Svelte 给出一个答案：在编译时就分析组件，生成直接修改 DOM 的代码，运行时不需要虚拟 DOM。",
+   "SolidJS 则用信号，也就是 signals：每个数据知道谁依赖它，变化时只通知那几处。这个思路很快被 Preact、Angular、Vue 采纳，Svelte 五也改用了基于信号的 runes，TC39 还有一个把信号标准化的提案。",
+   "React 选择了另一条路：二零二五年十月发布的 React Compiler 一点零，在编译时自动做记忆化，开发者不用再手写 useMemo。还有一派押注浏览器原生的 Web Components，比如谷歌的 Lit。"
+  ],
+  "vis": [
+   [
+    "anim:signals"
+   ],
+   [
+    "anim:signals"
+   ],
+   [
+    "anim:signals"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_tool",
+  "chapter": "工具链",
+  "title": "03 工具链提速",
+  "beats": [
+   "工具链越来越慢，大项目启动一次要等几十秒。二零二零年前后，用 Go 和 Rust 重写的工具接连出现：esbuild、swc，字节跳动的 Rspack，Vercel 的 Turbopack，还有 Biome 和 Oxc。",
+   "Vite 也在这时诞生：开发时直接利用浏览器原生的模块，不再整体打包。二零二六年三月的 Vite 八，用 Rust 写的 Rolldown 统一了开发和生产两套流程。调查里，Vite 的满意度高达百分之九十八。",
+   "运行时也有了新选手：Deno 和 Bun 挑战 Node，Node 则加快了更新，现在可以直接运行 TypeScript 文件。日期处理这个老大难，也终于等来了标准的 Temporal 接口。"
+  ],
+  "vis": [
+   [
+    "anim:speed"
+   ],
+   [
+    "shot:vite8"
+   ],
+   [
+    "anim:speed"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_plat",
+  "chapter": "平台",
+  "title": "04 新的平台能力",
+  "beats": [
+   "浏览器本身也在变强。二零一三年，asm.js 证明了可以把 C 加加编译成高效的 JavaScript；二零一七年，WebAssembly 成为标准，Figma、网页版 Photoshop 这样的重量级应用跑进了浏览器。",
+   "图形方面，WebGL 让网页可以画三维，Three.js、Babylon.js 把它变得好用；新一代的 WebGPU 对应现代显卡接口，到二零二五年底，三大浏览器都已支持。",
+   "原本需要库来实现的能力，也继续被标准吸收：页面切换动画有了 View Transitions，弹出层有了 Popover 和 dialog 元素，音视频有了 WebCodecs。这条规律，从 jQuery 时代一直延续到今天。"
+  ],
+  "vis": [
+   [
+    "anim:wasm"
+   ],
+   [
+    "anim:wasm"
+   ],
+   [
+    "anim:absorb"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_ai1",
+  "chapter": "AI 写代码",
+  "title": "05 AI 浪潮：怎么写前端",
+  "beats": [
+   "接下来是这几年最大的变化：AI。二零二一年，GitHub Copilot 开始在编辑器里补全代码；二零二二年底 ChatGPT 发布，大家开始用对话的方式写代码。",
+   "再往后，Cursor、Windsurf 这样的 AI 编辑器，以及 Claude Code、Codex 这样的编程代理出现了。它们不再只补一行，而是读懂整个仓库、修改多个文件、自己运行测试。国内也有通义灵码、Trae 等工具。",
+   "前端是被 AI 最先改变的领域之一。v0、bolt.new、Lovable 这类工具，用一句话就能生成一个可以运行的界面。二零二五年初，Andrej Karpathy 提出 vibe coding 这个说法：不看代码，只描述想要什么。",
+   "State of JS 二零二五年的调查里，用 Claude 写代码的比例从百分之二十二涨到了四十四，Cursor 从十一涨到了二十六。前端的工作流程，正在从手写组件，变成描述需求、让 AI 生成、再由人审查。"
+  ],
+  "vis": [
+   [
+    "anim:aitimeline"
+   ],
+   [
+    "anim:aitimeline"
+   ],
+   [
+    "anim:aiflow"
+   ],
+   [
+    "anim:aiflow"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_ai2",
+  "chapter": "AI 界面",
+  "title": "06 AI 浪潮：前端做什么",
+  "beats": [
+   "AI 也改变了前端要做的东西。聊天框和流式输出成了新的常见界面，Vercel 的 AI SDK、LangChain.js、CopilotKit 这样的库专门处理这些；还有生成式界面，由模型决定该渲染哪个组件。",
+   "模型也开始跑进浏览器：Transformers.js、WebLLM 借助 WebGPU 在本地推理；Chrome 从一三八版起，内置了摘要、翻译这样的 AI 接口，背后是装在本机的小模型。",
+   "更根本的变化是，网页的读者里多了 AI 代理。ChatGPT Atlas、Perplexity 的 Comet、Claude in Chrome 这样的工具会替人点击和填表；谷歌和微软提出了 WebMCP，让网站把可以执行的操作直接开放给代理。原来为可访问性写的语义化 HTML，现在也成了给 AI 看的接口。"
+  ],
+  "vis": [
+   [
+    "anim:genui"
+   ],
+   [
+    "anim:genui"
+   ],
+   [
+    "anim:agents"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_ai3",
+  "chapter": "新问题",
+  "title": "07 AI 浪潮：新的问题",
+  "beats": [
+   "AI 也带来了新的问题。模型最熟悉训练数据里最多的写法，生成的界面常常是 React、Tailwind 加 shadcn/ui 的组合，主流方案因此更加强势，新框架更难出头。",
+   "生成的代码看起来能跑，不一定正确，也不一定好维护，所以测试、代码审查和设计系统反而更重要了；网页里的文字还可能对代理发起提示注入，这是全新的安全问题。",
+   "前端工程师的角色也在变：从亲手写界面，转向定义需求、约束和验收标准。这些变化还在发生，方向也可能再调整。"
+  ],
+  "vis": [
+   [
+    "anim:newprob"
+   ],
+   [
+    "anim:newprob"
+   ],
+   [
+    "anim:newprob"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_dead",
+  "chapter": "昙花一现",
+  "title": "08 昙花一现（三）",
+  "beats": [
+   "最近十年同样有方案来去匆匆。Gatsby 在 Jamstack 热潮里风光一时，后来逐渐沉寂；Snowpack 开创了开发时不打包的做法，自己却在二零二二年停止维护，思路由 Vite 继承；Remix 后来并入了 React Router。",
+   "CSS-in-JS 遇上服务端组件后很快退潮，styled-components 在二零二五年进入维护模式；Rome 工具链项目停摆，社区接手后改名为 Biome。在 AI 时代，方案的更替只会更快。"
+  ],
+  "vis": [
+   [
+    "anim:graves3"
+   ],
+   [
+    "anim:graves3"
+   ]
+  ]
+ },
+ {
+  "ep": 3,
+  "id": "c_sum",
+  "chapter": "总结",
+  "title": "09 总结",
+  "beats": [
+   "回顾这三十年，可以总结出几条规律。第一，社区先试，平台再吸收：jQuery、插件、预处理器、模块打包器，最后都被标准接手。第二，渲染的位置像钟摆，在服务端和客户端之间来回摆动，每次都带着上一次的教训。",
+   "第三，运行时的工作越来越多地交给编译期。第四，复杂度守恒，解决一个问题，往往把复杂度挪到另一层。第五，前端的很多难题，归根结底是在一个为文档设计的平台上造应用。",
+   "AI 浪潮又添了一条：它正在改变谁来写前端，也在改变网页写给谁看。但最初的那个问题没有变：怎么把信息和功能，可靠地送到每一个使用者面前。"
+  ],
+  "vis": [
+   [
+    "anim:laws"
+   ],
+   [
+    "anim:laws"
+   ],
+   [
+    "anim:laws"
+   ]
+  ]
+ }
+]

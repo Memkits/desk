@@ -11,6 +11,7 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 | `site/langfuse-v4/` | 《Langfuse v4 数据链路》三集的场景代码（`index.html?ep=1/2/3`）与参考网页 `report.html`（格式转换表、六种对接、大体积关口、脱敏回调契约、环境变量、代码位置）；稿子、字幕、源码核对记录与工具在 `sources/langfuse-v4/` |
 | `site/agile-pm/` | 《敏捷团队的项目与任务管理：方法、工具与 AI 时代》三集的场景代码（`index.html?ep=1/2/3`），`shots/` 为各产品官方页面截图（版权归各自所有）；稿子、字幕与工具在 `sources/agile-pm/` |
 | `site/go-json/` | 《Go JSON 迎来 v2：新旧对比与跨语言横评》两集的场景代码（`index.html?ep=1/2`），`shots/` 为原始页面截图（版权归各自所有）；稿子、字幕与工具在 `sources/go-json/` |
+| `site/frontend-history/` | 《前端三十年：按问题梳理的技术史》三集的场景代码（`index.html?ep=1/2/3`），`shots/` 为原始页面截图（版权归各自所有）；稿子、字幕与工具在 `sources/frontend-history/` |
 | `site/fullstack/` | 《AI 时代全栈工程师：一个网站从需求到上线和维护》三集的场景代码（`index.html?ep=1/2/3`）与可勾选的检查清单 `report.html`（勾选状态只存在本地浏览器）；稿子、字幕与工具在 `sources/fullstack/` |
 | `site/frontend/` | 《现代前端：桌面浏览器里的知识与优化体系》三集的场景代码（`?ep=1/2/3`，全部为 canvas 程序动画与代码卡）；稿子、字幕、时间线与合成脚本、标题与描述在 `sources/frontend/` |
 | `site/xihu/nk/` | 《守夜人》科幻音乐短片的网页版 `mv.html`（23 张 Commons 公开授权实景照片缩小版、Gemini 生成的人物图层与非真实场景；层剥落、点云重落位、条带拼接）；分镜、提示词、旁白稿、配乐与混音脚本、照片署名在 `sources/xihu/nk/` |
