@@ -1,0 +1,25 @@
+.det{width:400px}
+.det .ln{display:block;font-family:var(--sans);overflow-wrap:anywhere}
+.codecard{position:absolute;left:100px;top:150px;width:1300px;background:#0B1020;border:1px solid var(--line2);border-radius:16px;padding:26px 34px;z-index:5;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.codecard .fn{font:600 18px var(--mono);color:var(--fg3);letter-spacing:.06em;margin-bottom:14px;display:flex;gap:10px;align-items:center}
+.codecard .fn i{width:12px;height:12px;border-radius:50%;background:#FF6B6B;display:inline-block}
+.codecard .fn i:nth-child(2){background:#FFD27A}.codecard .fn i:nth-child(3){background:#5FD39A}
+.codecard pre{margin:0;font:500 27px/1.55 var(--mono);color:#D6DEEE;white-space:pre;tab-size:2}
+.codecard .k{color:#C79BFF}.codecard .s{color:#5FE0A0}.codecard .c{color:#66728C;font-style:italic}.codecard .t{color:#5CB4FF}.codecard .n{color:#FFB25C}.codecard .f{color:#FFD27A}
+.codecard .hl{background:rgba(255,210,122,.14);display:inline-block;width:100%;border-left:4px solid var(--gold);margin-left:-14px;padding-left:10px}
+.codecard .note{margin-top:18px;font:500 22px var(--sans);color:var(--fg2);border-top:1px solid var(--line);padding-top:14px}
+.ttl .s{font-size:30px}
+
+.shot{position:absolute;left:100px;top:150px;z-index:5;background:#0B1020;border:1px solid var(--line2);border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.shot .bar{height:44px;display:flex;align-items:center;gap:10px;padding:0 18px;background:#131B2E;font:500 18px var(--mono);color:var(--fg3)}
+.shot .bar i{width:12px;height:12px;border-radius:50%;background:#FF6B6B;display:inline-block}.shot .bar i:nth-child(2){background:#FFD27A}.shot .bar i:nth-child(3){background:#5FD39A}
+.shot .bar span{margin-left:14px;background:#0B1020;padding:4px 16px;border-radius:14px}
+.shot .win{position:relative;height:640px;overflow:hidden;background:#0E1424;display:flex;align-items:center;justify-content:center}
+.shot .win img{width:100%;height:100%;object-fit:contain;transform-origin:50% 40%}
+.shot .win b{display:none;font:600 34px var(--sans);color:var(--fg3)}
+.shot .win.miss img{display:none}.shot .win.miss b{display:block}
+.shot .cap{padding:12px 20px;font:500 20px var(--sans);color:var(--fg2);border-top:1px solid var(--line)}
+.codecard .cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.codecard .col{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.codecard .ch{font:800 24px var(--sans);margin-bottom:10px}
+.codecard .hl .c{color:#FFD27A;font-style:normal}
