@@ -86,6 +86,7 @@ dialog .row{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap
     <div class="spacer"></div>
     <div class="bar">
       <div class="seg" role="group" aria-label="显示方式">
+        <button id="vMerge" aria-pressed="false" title="两层合在一张棋盘上：下层大子，上层小子，俯视不遮挡">合一</button>
         <button id="v3d" aria-pressed="true" title="立体叠放，可拖动旋转，方便数气">立体</button>
         <button id="vSide" aria-pressed="false" title="两层并排，互不遮挡">并排</button>
         <button id="vOne" aria-pressed="false" title="一次只看一层，大棋盘，适合手机">单层</button>
@@ -152,6 +153,7 @@ dialog .row{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap
   </ul>
   <h2>操作</h2>
   <ul>
+    <li><b>合一</b>：两层画在同一张棋盘上。下层是大子，上层是小子，叠在同一个点上，所以正对的两个点就在同一个位置，俯视时谁也挡不住谁。点棋子中心是上层，点外圈是下层；空点落在上方选中的那一层（Tab 切换）。气的编号：实心小圆是上层的气，外圈带角标的是下层的气。</li>
     <li><b>并排</b>：两层平铺，不会互相遮挡。鼠标停在一个点上，另一层正对的点会出现同样的圆框。</li>
     <li><b>投影</b>：每层空点上的小圆点，表示另一层同位置有子；棋子中心的竖线标记表示它和另一层的同色子相连。</li>
     <li><b>单层</b>：一次放大显示一层，用上方按钮或 Tab 键切换，适合手机。</li>
@@ -306,6 +308,7 @@ function layout(){
   }
   const lab=24; // title row
   let size;
+  if(UI.view==="merge"){ mkMerged(Math.min(W,H-34)); return; }
   if(UI.view==="one"){ size=Math.min(W,H-lab); mkBoard(UI.active,size,true); }
   else{
     const sideBySide=Math.min((W-14)/2,H-lab), stacked=Math.min(W,(H-14)/2-lab);
@@ -456,7 +459,7 @@ function renderHeader(){
   $("btnUndo").disabled=!S.moves.length; $("btnRedo").disabled=!S.redo.length;
   $("btnPass").disabled=$("btnResign").disabled=!humanCanMove();
   $("btnScore").textContent=S.phase==="score"?"完成数子":"数子";
-  for(const [id,v] of [["vSide","side"],["vOne","one"],["v3d","3d"]]) $(id).setAttribute("aria-pressed",UI.view===v);
+  for(const [id,v] of [["vMerge","merge"],["vSide","side"],["vOne","one"],["v3d","3d"]]) $(id).setAttribute("aria-pressed",UI.view===v);
   $("act0").setAttribute("aria-pressed",UI.active===0); $("act1").setAttribute("aria-pressed",UI.active===1);
   $("view3dCtl").hidden=UI.view!=="3d";
 }
@@ -468,7 +471,7 @@ function renderStatus(){
   if(botBusy){ el.innerHTML=`<span>电脑正在思考…</span>`; return; }
   if(!info||info.kind==="none"){
     if(S.phase==="over"){ el.innerHTML=`<b>${S.result?S.result.text:"对局结束"}</b><span class="hint">悔棋可以回到对局，或开始新对局</span>`; return; }
-    el.innerHTML=`<span class="hint">${UI.confirm?"点一下预览，再点一次（或按“在此落子”）落子。":isTouch?"点一下直接落子；点棋子查看它的气。":"悬停预览，点击落子。"}虚线圆圈标出另一层正对的点；小圆点是另一层的投影；棋子中心的环表示上下相连。</span>`;
+    el.innerHTML=`<span class="hint">${UI.confirm?"点一下预览，再点一次（或按“在此落子”）落子。":isTouch?"点一下直接落子；点棋子查看它的气。":"悬停预览，点击落子。"}${UI.view==="merge"?"大子在下层，小子在上层，叠在同一个点上。点中心是上层，点外圈是下层。":UI.view==="3d"?"拖动可以旋转；棋子上的数字是气数。":"虚线圆圈标出另一层正对的点；小圆点是另一层的投影；棋子中心的环表示上下相连。"}</span>`;
     if(S.passes===1) el.innerHTML=`<span>对方停了一手。再停一手就进入数子。</span>`;
     return;
   }
@@ -492,7 +495,7 @@ function render(){
   if(!S.g) return;
   if(S.phase==="score") S.scoreCache=scoreBoard(S.g,S.board,S.dead);
   renderHeader();
-  if(UI.view==="3d") draw3d(); else document.querySelectorAll("svg.board").forEach(renderFlat);
+  if(UI.view==="3d") draw3d(); else document.querySelectorAll("svg.board").forEach(v=>v.dataset.merge?renderMerged(v):renderFlat(v));
   renderStatus();
 }
 function relayout(){ layout(); render(); save(); }
@@ -677,6 +680,69 @@ function libBadges(){ // one badge per group per layer, on the stone nearest the
       let pick=st[0]; if(UI.view==="3d"&&proj.length) for(const s of st) if(proj[s].y>proj[pick].y) pick=s;
       out.push({i:pick,libs:gr.libs.size,c:b[i]}); } }
   return out;
+}
+
+/* ---------------- Merged view: one board, lower layer = large stones, upper layer = small stones stacked on the same point ---------------- */
+function mkMerged(size){
+  const wrap=document.createElement("div"); wrap.className="boardwrap";
+  const t=document.createElement("div"); t.className="btitle"; t.style.letterSpacing="0";
+  t.innerHTML=`<span style="font-weight:400">落子到</span><div class="seg"><button data-a="0" style="min-height:28px;padding:2px 10px;font-size:13px">● 上层（小子）</button><button data-a="1" style="min-height:28px;padding:2px 10px;font-size:13px">⬤ 下层（大子）</button></div>`;
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("class","board"); svg.setAttribute("width",Math.floor(size)); svg.setAttribute("height",Math.floor(size)); svg.setAttribute("viewBox","0 0 100 100"); svg.dataset.merge=1;
+  wrap.append(t,svg); $("stage").appendChild(wrap);
+  t.querySelectorAll("button").forEach(bt=>bt.onclick=()=>{ UI.active=+bt.dataset.a; UI.pending=-1; render(); save(); });
+  svg.addEventListener("pointermove",e=>{ if(e.pointerType==="mouse") setHover(pickMerged(svg,e)); });
+  svg.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse") setHover(-1); });
+  svg.addEventListener("click",e=>onPoint(pickMerged(svg,e),e));
+}
+const MR={big:0.47,small:0.27};
+// centre zone of a point = upper slot, ring zone = lower slot; an empty zone falls back to the layer chosen for playing
+function pickMerged(svg,e){
+  const r=svg.getBoundingClientRect(), {n,m,step}=geomFlat(), nn=n*n, b=S.board;
+  const px=(e.clientX-r.left)/r.width*100, py=(e.clientY-r.top)/r.height*100, x=Math.round((px-m)/step), y=Math.round((py-m)/step);
+  if(x<0||y<0||x>=n||y>=n) return -1; const d=Math.hypot(px-(m+x*step),py-(m+y*step))/step; if(d>0.62) return -1;
+  const p=y*n+x, inSmall=d<MR.small+0.04;
+  if(inSmall&&b[p]) return p;
+  if(!inSmall&&b[nn+p]) return nn+p;
+  const a=UI.active*nn+p; if(!b[a]) return a;
+  return b[p]&&!b[nn+p]?nn+p:(!b[p]?p:a);
+}
+function renderMerged(svg){
+  const {n,m,step}=geomFlat(), g=S.g, b=S.board, nn=n*n, P=k=>m+k*step, RB=step*MR.big, RS=step*MR.small;
+  const info=hoverInfo(), atari=UI.atari&&S.phase==="play"?atariSet():new Set(), fin=S.phase==="score"||S.phase==="over";
+  const own=fin&&S.scoreCache?S.scoreCache.own:null, gc="var(--gridA)", fs=Math.min(3.2,step*0.42);
+  svg.parentNode.querySelectorAll(".btitle button").forEach(bt=>bt.setAttribute("aria-pressed",+bt.dataset.a===UI.active));
+  let s=DEFS+`<rect width="100" height="100" rx="1.5" fill="var(--woodA)"/><rect width="100" height="100" rx="1.5" fill="none" stroke="var(--woodA2)" stroke-width="1.2"/>`;
+  for(let k=0;k<n;k++){ const w=k===0||k===n-1?0.35:0.18;
+    s+=`<line x1="${P(0)}" y1="${P(k)}" x2="${P(n-1)}" y2="${P(k)}" stroke="${gc}" stroke-width="${w}"/><line x1="${P(k)}" y1="${P(0)}" x2="${P(k)}" y2="${P(n-1)}" stroke="${gc}" stroke-width="${w}"/>`;
+    s+=`<text x="${P(k)}" y="${m*0.5}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle" fill="${gc}" opacity=".6" font-family="var(--f-num)">${LETTERS[k]}</text><text x="${m*0.42}" y="${P(k)}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle" fill="${gc}" opacity=".6" font-family="var(--f-num)">${n-k}</text>`; }
+  const stars=n===13?[3,6,9]:n===9?[2,4,6]:n===7?[3]:[];
+  for(const a of stars)for(const c of stars){ if(n===9&&(a===4)!==(c===4)) continue; s+=`<circle cx="${P(a)}" cy="${P(c)}" r="0.7" fill="${gc}"/>`; }
+  const rad=i=>i<nn?RS:RB, fade=i=>(info&&info.kind==="preview"&&info.cap.has(i))||(fin&&S.dead.has(i));
+  const badge={}; if(UI.libLabels&&S.phase==="play") for(const bd of libBadges()) badge[bd.i]=bd;
+  const txt=(x,y,sz,fill,t)=>`<text x="${x}" y="${y}" font-size="${sz}" text-anchor="middle" dominant-baseline="central" font-weight="700" font-family="var(--f-num)" pointer-events="none" fill="${fill}">${t}</text>`;
+  const bcol=bd=>bd.libs===1?"#e5483a":bd.libs===2?"#e08a1e":(bd.c===BLACK?"#f2f2f2":"#222");
+  for(const layer of [1,0]) for(let p=0;p<nn;p++){   // lower (large) first, then upper (small) on top
+    const i=layer*nn+p, c=b[i], cx=P(p%n), cy=P(Math.floor(p/n)), R=rad(i), up=b[p];
+    if(own&&!c&&own[i]<3){ const q=layer?RB*0.42:RS*0.45; s+=layer?`<rect x="${cx-q}" y="${cy-q}" width="${2*q}" height="${2*q}" fill="none" stroke="${own[i]===1?"#111":"#fff"}" stroke-width="0.7" opacity=".85"/>`:`<rect x="${cx-q/2}" y="${cy-q/2}" width="${q}" height="${q}" fill="${own[i]===1?"#111":"#fff"}" opacity=".85"/>`; }
+    if(!c) continue;
+    const f=fade(i);
+    if(layer===0) s+=`<circle cx="${cx+RS*0.1}" cy="${cy+RS*0.22}" r="${RS*1.06}" fill="#000" opacity="${f?0.1:0.38}"/>`;
+    s+=stoneSVG(cx,cy,R,c,f?0.3:1);
+    if(layer===0) s+=`<circle cx="${cx}" cy="${cy}" r="${RS}" fill="none" stroke="${c===BLACK?"#8d8d8d":"#6f6f6f"}" stroke-width="0.28" opacity="${f?0.3:0.9}"/>`;
+    if(atari.has(i)) s+=`<circle cx="${cx}" cy="${cy}" r="${R*1.04}" fill="none" stroke="var(--danger)" stroke-width="0.6"/>`;
+    if(info&&info.kind==="group"&&info.group.has(i)) s+=`<circle cx="${cx}" cy="${cy}" r="${R*(layer?1.07:1.12)}" fill="none" stroke="var(--accent)" stroke-width="0.6"/>`;
+    if(fin&&S.dead.has(i)){ const q=R*0.5; s+=`<path d="M${cx-q} ${cy-q}L${cx+q} ${cy+q}M${cx+q} ${cy-q}L${cx-q} ${cy+q}" stroke="var(--danger)" stroke-width="0.6"/>`; }
+    if(S.last===i) s+=layer&&up?`<circle cx="${cx+RB*0.7}" cy="${cy-RB*0.7}" r="${RB*0.17}" fill="var(--accent)"/>`:`<circle cx="${cx+R*0.72}" cy="${cy-R*0.72}" r="${RB*0.17}" fill="var(--accent)"/>`;
+    const bd=badge[i]; if(bd) s+=layer&&up?txt(cx,cy+(RB+RS)/2,RB*0.36,bcol(bd),bd.libs):txt(cx,cy,layer?RB*0.8:RS*1.05,bcol(bd),bd.libs);
+  }
+  if(info&&(info.kind==="group"||info.kind==="preview")){ const col=info.libs.size===1?"var(--danger)":"var(--ok)";
+    sortLibs(info.libs).forEach((j,k)=>{ const p=j%nn, cx=P(p%n), cy=P(Math.floor(p/n));
+      if(j<nn) s+=`<g pointer-events="none"><circle cx="${cx}" cy="${cy}" r="${RS*0.82}" fill="${col}"/>${txt(cx,cy,RS*1.0,"#fff",k+1)}</g>`;
+      else { const ox=cx+RB*0.74, oy=cy+RB*0.74; s+=`<g pointer-events="none"><circle cx="${cx}" cy="${cy}" r="${RB*0.97}" fill="none" stroke="${col}" stroke-width="0.7"/><circle cx="${ox}" cy="${oy}" r="${RS*0.62}" fill="${col}"/>${txt(ox,oy,RS*0.8,"#fff",k+1)}</g>`; } }); }
+  if(info&&info.kind==="preview"){ const i=info.i,p=i%nn; s+=stoneSVG(P(p%n),P(Math.floor(p/n)),rad(i),S.turn,UI.pending===i?0.85:0.55); }
+  if(info&&info.kind==="illegal"){ const p=info.i%nn,cx=P(p%n),cy=P(Math.floor(p/n)),q=rad(info.i)*0.6; s+=`<path d="M${cx-q} ${cy-q}L${cx+q} ${cy+q}M${cx+q} ${cy-q}L${cx-q} ${cy+q}" stroke="var(--danger)" stroke-width="0.8"/>`; }
+  svg.innerHTML=s;
 }
 
 /* ---------------- 3D view with three.js: glass plates, lens-shaped stones, wooden table ---------------- */
@@ -873,6 +939,7 @@ function maybeBot(){
 
 /* ---------------- Wiring ---------------- */
 $("vSide").onclick=()=>{UI.view="side";relayout();};
+$("vMerge").onclick=()=>{UI.view="merge";relayout();};
 $("vOne").onclick=()=>{UI.view="one";relayout();};
 $("v3d").onclick=()=>{UI.view="3d";relayout();};
 $("btnSwap").onclick=swapLayers;
