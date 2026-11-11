@@ -19,7 +19,7 @@ starts = [s['start'] for s in TL['scenes']]
 kf = ','.join('%.3f' % s for s in starts[1:])
 out = f'final/{name}.mp4'
 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', f'work/list{ep}.txt', '-i', f'work/voice{ep}.wav', '-map', '0:v', '-map', '1:a',
-    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', CRF, '-maxrate', '3500k', '-bufsize', '7000k', '-pix_fmt', 'yuv420p', '-force_key_frames', kf, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-c:a', 'aac', '-b:a', '128k', '-ar', '48000',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', CRF, '-maxrate', '2700k', '-bufsize', '5400k', '-pix_fmt', 'yuv420p', '-force_key_frames', kf, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11', '-c:a', 'aac', '-b:a', '128k', '-ar', '48000',
     '-movflags', '+faststart', '-shortest', out], check=True)
 cues = json.load(open(f'cues_e{ep}.json'))
 ts = lambda t: f"{int(t//3600):02d}:{int(t%3600//60):02d}:{int(t%60):02d},{int(round((t%1)*1000)) % 1000:03d}"
