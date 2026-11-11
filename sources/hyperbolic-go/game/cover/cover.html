@@ -1,0 +1,28 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<link rel="stylesheet" href="../fonts/noto.css">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.95) 0,rgba(7,10,18,.72) 38%,rgba(7,10,18,0) 62%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.96) 0,rgba(7,10,18,.7) 36%,rgba(7,10,18,0) 52%)}
+.t{position:absolute;left:6.5%;top:13%;max-width:60%}
+.v .t{left:8%;right:8%;top:6%;max-width:none}
+.k{display:inline-block;font:700 40px "Noto Sans CJK SC";color:#0b0f18;background:#FFD27A;padding:8px 22px;border-radius:12px}
+.name{font:800 136px/1.16 "Noto Sans CJK SC";margin-top:28px;text-shadow:0 6px 30px #000}
+.name span{color:#FFD27A}
+.sub{font:600 38px/1.55 "Noto Sans CJK SC";margin-top:26px;color:#FFD27A;text-shadow:0 2px 12px #000}
+.v .name{font-size:128px}.v .sub{font-size:42px}.v .k{font-size:44px}
+.r43 .t{left:6%}.r43 .name{font-size:112px}.r43 .sub{font-size:32px}.r43 .k{font-size:34px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="k">对局解说 · AI 自对弈</div><div class="name">双层围棋<br><span>一盘完整的棋</span></div><div class="sub" id="sub"></div></div>
+<script src="../three.min.js"></script><script src="../game.js"></script><script src="../board3d.js"></script><script>
+const W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+sub.innerHTML = ['大子在下层', '小子在上层', '逐口数气'].map((x, i, a) => `<span style="white-space:nowrap">${x}${i < a.length - 1 ? ' ·' : ''}</span>`).join(' ');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+B3.setGame(GAME); const P = s => (s[0] === '上' ? 0 : 81) + (9 - +s[2]) * 9 + 'ABCDEFGHJ'.indexOf(s[1]);
+const R = V ? { x: 0, y: H * .36, w: W, h: H * .64 } : { x: W * (R43 ? .3 : .34), y: 0, w: W * (R43 ? .7 : .66), h: H };
+B3.draw(g, R, { k: 114, morph: 1, yaw: 16, tilt: 38, zoom: V ? 1.9 : 2.2, fx: 4.3, fy: 4.6, hi: [P('下D6'), P('下E3')], hiA: 1 });
+Promise.all([700, 800, 600].map(w => document.fonts.load(w + ' 40px "Noto Sans CJK SC"', document.body.innerText))).then(() => requestAnimationFrame(() => setTimeout(() => window.ready = true, 300)));
+</script></body></html>
