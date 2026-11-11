@@ -1,0 +1,47 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.9) 0,rgba(7,10,18,.6) 42%,rgba(7,10,18,0) 72%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.92) 0,rgba(7,10,18,.6) 42%,rgba(7,10,18,0) 65%)}
+.t{position:absolute;left:7%;top:11%;max-width:60%}
+.v .t{left:8%;right:8%;top:6%;max-width:none}
+.series{font:900 112px/1.1 "Noto Serif CJK SC",serif;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;padding:8px 22px;border-radius:12px}
+.name{font:900 120px/1.15 "Noto Serif CJK SC",serif;margin-top:22px;text-shadow:0 6px 30px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";margin-top:22px;text-shadow:0 2px 12px #000}
+.v .series{font-size:104px}.v .name{font-size:118px}.v .sub{font-size:42px}.v .ep{font-size:48px}
+.r43 .t{max-width:88%} .r43 .series{font-size:100px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="series">沙洲战备<br>一年推演</div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 0, W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+const E = { 0: ['四集专题', '', '守住 · 强军 · 外交分化 · 拓土', '#FFD27A'],
+  1: ['第一集', '守住', '每天一吨 · 黑户起步 · 止疫 · 收缩防线', '#5FD39A'],
+  2: ['第二集', '强军', '板簧造弩 · 民壮上城 · 远袭乌兰城', '#FFB25C'],
+  3: ['第三集', '外交分化', '安平署盘查 · 秋季报复 · 结好西帐', '#C79BFF'],
+  4: ['第四集', '拓土', '合法身份 · 烽燧连村 · 收复寿昌', '#5CB4FF'] }[EP];
+ep.textContent = E[0]; ep.style.background = E[3]; nm.textContent = E[1]; if (!E[1]) { nm.style.display = 'none'; sub.style.fontSize = '52px'; sub.style.marginTop = '40px'; } sub.style.color = E[3];
+sub.innerHTML = E[2].split(' · ').map((x, i, a) => `<span style="white-space:nowrap">${x}${i < a.length - 1 ? ' ·' : ''}</span>`).join(' ');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const HS = (a, b = 0) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#0A0E1E'); sky.addColorStop(.5, '#2A2238'); sky.addColorStop(.72, '#7A4A3A'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
+const sx = W * (V ? .7 : .76), sy = H * (V ? .55 : .5), gr = g.createRadialGradient(sx, sy, 0, sx, sy, H * .55); gr.addColorStop(0, 'rgba(255,190,110,.8)'); gr.addColorStop(.18, 'rgba(255,150,90,.3)'); gr.addColorStop(1, 'rgba(255,150,90,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+g.fillStyle = '#FFD8A0'; g.beginPath(); g.arc(sx, sy, H * .05, 0, 7); g.fill();
+for (let i = 0; i < 90; i++) { g.fillStyle = `rgba(255,255,255,${.2 + HS(i, 5) * .5})`; g.fillRect(HS(i, 1) * W, HS(i, 2) * H * .4, 2, 2); }
+const dune = (s, amp, base, col) => { g.beginPath(); g.moveTo(0, H); for (let x = 0; x <= W; x += 6) g.lineTo(x, base - amp * (Math.sin(x / W * 5 + s) * .6 + Math.sin(x / W * 13 + s * 2) * .25)); g.lineTo(W, H); g.closePath(); g.fillStyle = col; g.fill(); };
+dune(1, H * .03, H * .7, '#4A3326');
+// 城墙与城楼
+const wx = W * (V ? .3 : .52), ww = W * (V ? .62 : .4), wy = H * .7, wh = H * .09;
+g.fillStyle = '#20160F'; g.fillRect(wx, wy - wh, ww, wh + 10); const n = Math.floor(ww / (H * .022)); for (let i = 0; i < n; i++) g.fillRect(wx + i * ww / n, wy - wh - H * .016, ww / n * .6, H * .016);
+const tx = wx + ww * .45, tw = ww * .18; g.fillRect(tx, wy - wh - H * .07, tw, H * .07); g.beginPath(); g.moveTo(tx - tw * .2, wy - wh - H * .066); g.lineTo(tx + tw / 2, wy - wh - H * .11); g.lineTo(tx + tw * 1.2, wy - wh - H * .066); g.closePath(); g.fill();
+for (let i = 0; i < 6; i++) { g.fillStyle = 'rgba(255,190,110,.8)'; g.fillRect(wx + ww * (.1 + i * .15), wy - wh * .5, 4, 6); }
+dune(3, H * .04, H * .82, '#2E2018'); dune(5, H * .05, H * .94, '#1A120D');
+// 通道光弧
+g.strokeStyle = 'rgba(255,210,122,.7)'; g.lineWidth = 4; g.setLineDash([12, 14]); g.beginPath(); g.moveTo(W * (V ? .05 : .3), H * .98); g.quadraticCurveTo(W * (V ? .4 : .55), H * .45, tx + tw / 2, wy - wh - H * .12); g.stroke(); g.setLineDash([]);
+// 骑兵剪影
+for (let i = 0; i < 9; i++) { const x = W * (V ? .08 : .08) + i * H * .03 + (V ? W * .5 : W * .82) * .0, y = H * .86 - (i % 3) * H * .012; g.fillStyle = '#0E0A08'; g.beginPath(); g.ellipse(W * (V ? .7 : .9) - i * H * .028, y, H * .016, H * .007, 0, 0, 7); g.fill(); g.beginPath(); g.arc(W * (V ? .7 : .9) - i * H * .028 + H * .006, y - H * .014, H * .005, 0, 7); g.fill(); }
+document.fonts.ready.then(() => window.ready = true);
+</script></body></html>

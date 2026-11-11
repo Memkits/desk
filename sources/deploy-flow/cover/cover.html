@@ -1,0 +1,45 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.92) 0,rgba(7,10,18,.55) 45%,rgba(7,10,18,0) 72%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.94) 0,rgba(7,10,18,.6) 45%,rgba(7,10,18,0) 68%)}
+.t{position:absolute;left:7%;top:11%;max-width:60%}
+.v .t{left:8%;right:8%;top:6%;max-width:none}
+.series{font:900 112px/1.1 "Noto Serif CJK SC",serif;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;padding:8px 22px;border-radius:12px}
+.name{font:900 120px/1.15 "Noto Serif CJK SC",serif;margin-top:22px;text-shadow:0 6px 30px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";margin-top:22px;text-shadow:0 2px 12px #000}
+.v .series{font-size:104px}.v .name{font-size:94px}.v .sub{font-size:42px}.v .ep{font-size:48px}
+.r43 .t{max-width:88%} .r43 .series{font-size:100px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="series">软件部署<span style="font-size:.5em;margin-left:.4em;color:#FFD27A">流程</span></div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 0, W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+const E = { 0: ['四集专题', '', '初创公司 · 大厂 · 电商大促 · 金融 · 游戏 · 移动端 · SaaS · 跨国多区域', '#FFD27A'],
+  1: ['第一集', '从一台服务器到流水线', '初创公司 · CI/CD · 环境 · 回滚', '#5CB4FF'],
+  2: ['第二集', '几百个服务一起跑', 'Kubernetes · GitOps · 金丝雀', '#C79BFF'],
+  3: ['第三集', '不能出错的日子', '电商大促 · 金融合规 · 游戏开服', '#FFD27A'],
+  4: ['第四集', '发出去就收不回来', '移动端 · SaaS · 多区域 · AI', '#5FE0A0'] }[EP];
+ep.textContent = E[0]; if (E[1].length > 8) nm.style.fontSize = V ? '80px' : R43 ? '96px' : '100px'; ep.style.background = E[3]; nm.textContent = E[1]; if (!E[1]) { nm.style.display = 'none'; sub.style.fontSize = V ? '44px' : '42px'; sub.style.marginTop = '40px'; sub.style.maxWidth = V ? 'none' : '62%'; } sub.style.color = E[3];
+sub.innerHTML = E[2].split(' · ').map((x, i, a) => `<span style="white-space:nowrap">${x}${i < a.length - 1 ? ' ·' : ''}</span>`).join(' ');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const HS = (a, b = 0) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+g.fillStyle = '#05070F'; g.fillRect(0, 0, W, H);
+const neb = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); };
+const cx = W * (V ? .5 : R43 ? .8 : .73), cy = H * (V ? .7 : R43 ? .7 : .52), S = Math.min(W, H), col = E[3];
+neb(cx, cy, S * .8, col + '44');
+// 背景：星点
+for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(200,215,255,${.05 + HS(i, 5) * .35})`; g.beginPath(); g.arc(HS(i, 1) * W, HS(i, 2) * H, .6 + HS(i, 3) * 1.6, 0, 7); g.fill(); }
+const rr = (x, y, w, h, r, f, st, lw = 3) => { g.beginPath(); g.roundRect(x, y, w, h, r); if (f) { g.fillStyle = f; g.fill(); } if (st) { g.strokeStyle = st; g.lineWidth = lw; g.stroke(); } };
+const T = (s, x, y, fs, c, al = 'center', w = 800, f = 'Noto Sans CJK SC') => { g.font = `${w} ${fs}px "${f}"`; g.textAlign = al; g.textBaseline = 'middle'; g.fillStyle = c; g.fillText(s, x, y); };
+const glowOn = c => { g.shadowColor = c; g.shadowBlur = 24; }, glowOff = () => { g.shadowBlur = 0; };
+const pipeV = (x0, y0, s, c) => { const L = ['代码', '测试', '构建', '部署']; L.forEach((l, i) => { const y = y0 + i * s * 1.15; glowOn(c); rr(x0 - s * 1.3, y, s * 2.6, s * .8, s * .18, 'rgba(14,20,36,.92)', i === 3 ? '#FFD27A' : c, 4); glowOff(); T(l, x0, y + s * .4, s * .34, '#E9EEF7'); if (i < 3) { g.strokeStyle = c; g.lineWidth = 4; g.beginPath(); g.moveTo(x0, y + s * .82); g.lineTo(x0, y + s * 1.13); g.stroke(); } }); };
+if (EP === 1 || EP === 0) { const s = S * (R43 ? .1 : EP ? .14 : .13); pipeV(cx, cy - s * 2.3, s, col); }
+else if (EP === 2) { const n = 5, s = S * .085, x0 = Math.min(cx - n * s * 1.2 / 2, W - n * s * 1.2 - 20), y0 = cy - s * 2.4; for (let r = 0; r < 4; r++) for (let c = 0; c < n; c++) { const nw = r * n + c < 13; glowOn(nw ? '#5FE0A0' : '#5CB4FF'); rr(x0 + c * s * 1.2, y0 + r * s * 1.2, s, s, s * .18, nw ? 'rgba(95,224,160,.18)' : 'rgba(92,180,255,.15)', nw ? '#5FE0A0' : '#5CB4FF', 3); glowOff(); T(nw ? 'v2' : 'v1', x0 + c * s * 1.2 + s / 2, y0 + r * s * 1.2 + s / 2, s * .32, '#E9EEF7', 'center', 800, 'DejaVu Sans Mono'); } }
+else if (EP === 3) { const w = S * (V ? .8 : .7), h = S * .45, x0 = Math.min(cx - w / 2, W - w - 20), y0 = cy + h / 2; g.save(); glowOn('#FFD27A'); g.strokeStyle = '#FFD27A'; g.lineWidth = 6; g.beginPath(); for (let i = 0; i <= 300; i++) { const k = i / 300, p = Math.exp(-((k - .7) ** 2) / .0015) * h, y = y0 - 20 - 10 * Math.sin(k * 40) * HS(i, 3) - p; i ? g.lineTo(x0 + k * w, y) : g.moveTo(x0 + k * w, y); } g.stroke(); g.restore(); T('00:00', x0 + .7 * w, y0 - h - 50, S * .07, '#FF7A93', 'center', 900, 'DejaVu Sans Mono'); }
+else if (EP === 4) { const P = [1, 2, 5, 10, 20, 50, 100], bw = S * (V ? .1 : .085), x0 = Math.min(cx - 3.5 * bw, W - 7 * bw - 20), y0 = cy + S * .25, H = S * .5; P.forEach((p, i) => { const h = H * Math.sqrt(p / 100); glowOn('#5FE0A0'); rr(x0 + i * bw + 6, y0 - h, bw - 12, h, 8, '#5FE0A0', null); glowOff(); T(p + '%', x0 + i * bw + bw / 2, y0 - h - 26, bw * .3, '#E9EEF7', 'center', 800, 'DejaVu Sans Mono'); }); }
+document.fonts.ready.then(() => window.ready = true);
+</script></body></html>

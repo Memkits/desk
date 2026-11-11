@@ -1,0 +1,6 @@
+import { chromium } from '/opt/node-tools/node_modules/playwright-core/index.mjs';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome' });
+for (const [n, w, h] of [['16x9', 1920, 1080], ['4x3', 1440, 1080], ['3x4', 1080, 1440]]) {
+  const p = await b.newPage({ viewport: { width: w, height: h } }); await p.goto('http://127.0.0.1:8195/dlgo/cover/cover.html'); await p.waitForFunction('window.ready');
+  await p.screenshot({ path: `/home/user/dlgo/cover/封面_${n}.png` }); await p.close(); }
+await b.close();

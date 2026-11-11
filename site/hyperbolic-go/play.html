@@ -1,0 +1,768 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>body{margin:0;font-size:14px}[hidden]{display:none!important}</style></head><body>
+<title>双层围棋</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&text=%E5%8F%8C%E5%B1%82%E5%9B%B4%E6%A3%8B%E4%B8%8A%E4%B8%8B&display=swap">
+<style>
+/* Layout: a game table. Two flat boards (upper = pale kaya, lower = cooler ash)
+   side by side or stacked, controls in one bar, a status strip that explains every hover. */
+:root{
+  --bg:#e9e6df; --panel:#f6f4ef; --fg:#24221e; --muted:#6c675d; --line:#d4cfc4;
+  --accent:#2f4b8a; --accent-fg:#fff;
+  --woodA:#e3c48c; --woodA2:#d8b574; --gridA:#4a3a22;
+  --woodB:#b9c3c6; --woodB2:#a8b4b8; --gridB:#2c3a40;
+  --tagA:#a0731f; --tagB:#3f6d7d;
+  --danger:#c0392b; --ok:#2f7d4f;
+  --f-display:"Noto Serif SC","Songti SC","STSong",serif;
+  --f-body:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --f-num:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1c1d1f; --panel:#26282b; --fg:#ece8e0; --muted:#a29d93; --line:#3a3c40;
+  --accent:#9db4ff; --accent-fg:#1c1d1f;
+  --woodA:#c9a868; --woodA2:#b9975a; --woodB:#8fa0a6; --woodB2:#7f9298;
+  --tagA:#e0b45a; --tagB:#8cc4d6; --danger:#ff6b5b; --ok:#6fcf97; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c1d1f; --panel:#26282b; --fg:#ece8e0; --muted:#a29d93; --line:#3a3c40;
+  --accent:#9db4ff; --accent-fg:#1c1d1f;
+  --woodA:#c9a868; --woodA2:#b9975a; --woodB:#8fa0a6; --woodB2:#7f9298;
+  --tagA:#e0b45a; --tagB:#8cc4d6; --danger:#ff6b5b; --ok:#6fcf97; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:10px;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+#app{display:flex;flex-direction:column;gap:10px;height:100%;max-width:1400px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-size:22px;margin:0;letter-spacing:.08em;white-space:nowrap}
+.turn{display:flex;align-items:center;gap:8px;font-size:15px}
+.stone-ico{width:18px;height:18px;border-radius:50%;display:inline-block;flex:none}
+.stone-ico.b{background:radial-gradient(circle at 35% 30%,#666,#111 60%)}
+.stone-ico.w{background:radial-gradient(circle at 35% 30%,#fff,#d6d6d6 70%);box-shadow:inset 0 0 0 1px #9993}
+.caps{font-family:var(--f-num);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+button,select{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg);
+  border-radius:8px;padding:6px 11px;cursor:pointer;min-height:34px}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+#stage{flex:1;min-height:0;position:relative;display:flex;gap:14px;align-items:center;justify-content:center}
+#stage.portrait{flex-direction:column}
+.boardwrap{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;min-height:0}
+.btitle{font-size:13px;font-weight:600;letter-spacing:.1em;display:flex;gap:6px;align-items:center}
+.btitle .tag{display:inline-block;width:10px;height:10px;border-radius:2px}
+.boardwrap.inactive{opacity:.55}
+.boardwrap.inactive svg{cursor:pointer}
+svg.board{display:block;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#c3d{display:block;touch-action:none;cursor:grab}
+#status{min-height:40px;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:9px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#status b{font-weight:600}
+#status .bad{color:var(--danger)} #status .good{color:var(--ok)}
+.hint{color:var(--muted);font-size:12.5px}
+#view3dCtl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
+#view3dCtl input{width:110px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);max-width:min(560px,92vw);padding:18px 20px}
+dialog::backdrop{background:#0006}
+dialog h2{font-family:var(--f-display);margin:0 0 8px;font-size:18px}
+dialog p,dialog li{line-height:1.65;font-size:14px}
+dialog .row{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap}
+.score-table{font-family:var(--f-num);font-variant-numeric:tabular-nums;border-collapse:collapse;margin:6px 0}
+.score-table td{padding:2px 10px}
+@media (max-width:640px){h1{font-size:19px}button,select{padding:6px 9px;font-size:13.5px}.hide-sm{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div id="app">
+  <header>
+    <h1>双层围棋</h1>
+    <div class="turn" id="turn"></div>
+    <div class="caps" id="caps"></div>
+    <div class="spacer"></div>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="显示方式">
+        <button id="v3d" aria-pressed="true" title="立体叠放，可拖动旋转，方便数气">立体</button>
+        <button id="vSide" aria-pressed="false" title="两层并排，互不遮挡">并排</button>
+        <button id="vOne" aria-pressed="false" title="一次只看一层，大棋盘，适合手机">单层</button>
+      </div>
+      <button id="btnHelp" title="规则与操作">规则</button>
+      <button id="btnNew" class="primary">新对局</button>
+    </div>
+  </header>
+
+  <div class="bar">
+    <button id="btnUndo" title="悔棋（Ctrl+Z）">↶ 悔棋</button>
+    <button id="btnRedo" title="重做（Ctrl+Y）">↷ 重做</button>
+    <button id="btnPass">停一手</button>
+    <button id="btnScore">数子</button>
+    <button id="btnResign">认输</button>
+    <span class="spacer"></span>
+    <label class="hint hide-sm"><input type="checkbox" id="optShadow" checked> 显示另一层投影</label>
+    <label class="hint"><input type="checkbox" id="optLibs" checked> 气数标签</label>
+    <label class="hint"><input type="checkbox" id="optAtari" checked> 叫吃提示</label>
+    <label class="hint"><input type="checkbox" id="optConfirm"> 点两下才落子</label>
+  </div>
+
+  <div id="stage"></div>
+  <div id="view3dCtl" hidden>
+    <span class="hint">拖动旋转 · 只能在“当前层”落子</span>
+    <span>当前层：</span>
+    <div class="seg"><button id="act0" aria-pressed="true">上层</button><button id="act1" aria-pressed="false">下层</button></div>
+    <button id="btnSwap" title="上下两层交换位置（快捷键 S）">⇅ 交换上下层</button>
+    <label>层间距 <input type="range" id="gap" min="0.15" max="2.4" step="0.01" value="1.2"></label>
+    <label>倾角 <input type="range" id="tilt" min="0" max="75" step="1" value="58"></label>
+  </div>
+  <div id="status"></div>
+</div>
+
+<dialog id="dlgNew">
+  <h2>新对局</h2>
+  <div class="row"><label for="selSize">棋盘</label>
+    <select id="selSize">
+      <option value="7">7 × 7 × 2（98 点，快棋）</option>
+      <option value="9" selected>9 × 9 × 2（162 点，约等于 13 路）</option>
+      <option value="13">13 × 13 × 2（338 点，约等于 19 路）</option>
+    </select></div>
+  <div class="row"><label for="selMode">对手</label>
+    <select id="selMode">
+      <option value="hh">两人同屏对弈</option>
+      <option value="hb">我执黑，电脑执白</option>
+      <option value="bh">电脑执黑，我执白</option>
+    </select></div>
+  <div class="row"><label for="inKomi">贴目（黑贴白）</label>
+    <input id="inKomi" type="number" step="0.5" value="7.5" style="width:80px;font:inherit;padding:4px 6px"></div>
+  <p class="hint">电脑用蒙特卡洛模拟落子，水平较弱，适合熟悉跨层手筋。</p>
+  <div class="row"><button id="newOk" class="primary">开始</button><button id="newCancel">取消</button></div>
+</dialog>
+
+<dialog id="dlgHelp">
+  <h2>规则</h2>
+  <ul>
+    <li>上下两层棋盘大小相同。每个点除了本层前后左右，还和另一层<b>正对的点</b>相邻：中间的子 5 口气，边上 4 口，角上 3 口。</li>
+    <li>上下正对的同色棋子连成一块，共享所有的气。要提掉它，得把两层的气都堵上。</li>
+    <li>禁止自杀；打劫用“不许重复全局局面”的超级劫规则。</li>
+    <li>双方连续停一手后进入数子：点选死子，按数子法（棋子 + 围住的空）计胜负，黑贴目。</li>
+  </ul>
+  <h2>操作</h2>
+  <ul>
+    <li><b>并排</b>：两层平铺，不会互相遮挡。鼠标停在一个点上，另一层正对的点会出现同样的圆框。</li>
+    <li><b>投影</b>：每层空点上的小圆点，表示另一层同位置有子；棋子中心的竖线标记表示它和另一层的同色子相连。</li>
+    <li><b>单层</b>：一次放大显示一层，用上方按钮或 Tab 键切换，适合手机。</li>
+    <li><b>立体</b>（默认）：棋盘只画线条，棋子是半透明玻璃质感；按“⇅ 交换上下层”（或 S 键）两层会错开半格、从彼此的空隙里穿过去换位。拖动旋转，可调层间距和倾角；只在“当前层”落子，另一层半透明，点不错层。另一层的棋子也能点，用来查看它的气。</li>
+    <li><b>数气</b>：每块棋上的数字是它的气数（每层各标一次，1 气红色、2 气橙色）。悬停或点一块棋，它的每口气都会编号，跨层的气也一起编进去。</li>
+    <li>悬停或轻点一个空点，会预告落子后的气数和提子数；不能下的点会说明原因。悬停在棋子上会高亮整块棋和它的所有气。</li>
+    <li>快捷键：Ctrl+Z 悔棋，Ctrl+Y 重做，P 停一手，Tab 切换层。</li>
+  </ul>
+  <div class="row"><button id="helpOk" class="primary">知道了</button></div>
+</dialog>
+
+<dialog id="dlgEnd">
+  <h2 id="endTitle">数子</h2>
+  <div id="endBody"></div>
+  <div class="row" id="endBtns"></div>
+</dialog>
+
+<script>
+"use strict";
+/* ---------------- Engine ---------------- */
+const EMPTY=0,BLACK=1,WHITE=2, opp=c=>3-c;
+function makeGeom(n){
+  const N=2*n*n, nb=[];
+  for(let l=0;l<2;l++)for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    const a=[];
+    if(x>0)a.push(l*n*n+y*n+x-1); if(x<n-1)a.push(l*n*n+y*n+x+1);
+    if(y>0)a.push(l*n*n+(y-1)*n+x); if(y<n-1)a.push(l*n*n+(y+1)*n+x);
+    a.push((1-l)*n*n+y*n+x);
+    nb.push(a);
+  }
+  return {n,N,nb};
+}
+const L=(g,i)=>Math.floor(i/(g.n*g.n)), X=(g,i)=>i%g.n, Y=(g,i)=>Math.floor(i/g.n)%g.n;
+const other=(g,i)=>(i+g.n*g.n)%g.N;
+function groupAt(g,b,i){
+  const c=b[i], stones=[i], seen=new Uint8Array(g.N), libs=new Set(); seen[i]=1;
+  for(let k=0;k<stones.length;k++) for(const j of g.nb[stones[k]]){
+    if(b[j]===EMPTY) libs.add(j);
+    else if(b[j]===c && !seen[j]){seen[j]=1;stones.push(j);}
+  }
+  return {stones,libs};
+}
+// Try a move; returns {ok, reason, board, captured:[idx]}
+function tryMove(g,b,i,c,seen){
+  if(b[i]!==EMPTY) return {ok:false,reason:"这里已经有子"};
+  const nb=b.slice(); nb[i]=c; const captured=[];
+  for(const j of g.nb[i]) if(nb[j]===opp(c)){
+    const gr=groupAt(g,nb,j); if(gr.libs.size===0) for(const s of gr.stones){ if(nb[s]){nb[s]=EMPTY;captured.push(s);} }
+  }
+  const mine=groupAt(g,nb,i);
+  if(mine.libs.size===0) return {ok:false,reason:"自杀：落下后自己没有气"};
+  if(seen && seen.has(nb.join(""))) return {ok:false,reason:"打劫：会重复之前的局面，先在别处下一手"};
+  return {ok:true,board:nb,captured,libs:mine.libs.size,size:mine.stones.length};
+}
+function scoreBoard(g,b,dead){
+  const bb=b.slice(); for(const d of dead) bb[d]=EMPTY;
+  const own=new Int8Array(g.N); // territory owner 1/2, 3 = dame
+  const seen=new Uint8Array(g.N);
+  let s=[0,0,0], terr=[0,0,0], stones=[0,0,0];
+  for(let i=0;i<g.N;i++) if(bb[i]) {stones[bb[i]]++;}
+  for(let i=0;i<g.N;i++) if(!bb[i]&&!seen[i]){
+    const reg=[i]; seen[i]=1; let touch=0;
+    for(let k=0;k<reg.length;k++) for(const j of g.nb[reg[k]]){
+      if(bb[j]) touch|=bb[j]; else if(!seen[j]){seen[j]=1;reg.push(j);}
+    }
+    const o=(touch===1||touch===2)?touch:3;
+    for(const r of reg) own[r]=o;
+    if(o<3) terr[o]+=reg.length;
+  }
+  for(const d of dead) if(own[d]===3) own[d]=3;
+  return {own,stones,terr,black:stones[1]+terr[1],white:stones[2]+terr[2]};
+}
+
+/* ---------------- Game state ---------------- */
+const S={g:null,moves:[],redo:[],komi:7.5,mode:"hh",board:null,turn:BLACK,caps:[0,0,0],seen:new Set(),
+  last:-1,passes:0,phase:"play",dead:new Set(),result:null,lastCap:[]};
+function replay(){
+  const g=S.g; let b=new Int8Array(g.N); S.caps=[0,0,0]; S.seen=new Set([b.join("")]); S.turn=BLACK; S.last=-1; S.passes=0; S.lastCap=[];
+  S.phase="play"; S.result=null;
+  for(const m of S.moves){
+    if(m.t==="pass"){S.passes++; S.last=-1; S.lastCap=[];}
+    else if(m.t==="resign"){S.phase="over"; S.result={text:(m.c===BLACK?"白":"黑")+"中盘胜（"+(m.c===BLACK?"黑":"白")+"认输）"}; break;}
+    else { const r=tryMove(g,b,m.i,S.turn,S.seen); if(!r.ok) break; b=r.board; S.caps[S.turn]+=r.captured.length; S.seen.add(b.join("")); S.last=m.i; S.passes=0; S.lastCap=r.captured; }
+    S.turn=opp(S.turn);
+  }
+  S.board=b;
+  if(S.phase==="play" && S.passes>=2){ S.phase="score"; S.dead=guessDead(); }
+}
+function newGame(n,komi,mode){
+  S.g=makeGeom(n); S.moves=[]; S.redo=[]; S.komi=komi; S.mode=mode; S.dead=new Set(); replay(); save(); afterChange();
+}
+function botColor(){ return S.mode==="hb"?WHITE:S.mode==="bh"?BLACK:0; }
+function humanCanMove(){ return S.phase==="play" && S.turn!==botColor() && !botBusy; }
+function play(i){
+  const r=tryMove(S.g,S.board,i,S.turn,S.seen); if(!r.ok) return r;
+  S.moves.push({t:"move",i}); S.redo=[]; replay(); save(); afterChange(); return r;
+}
+function pass(){ if(S.phase!=="play")return; S.moves.push({t:"pass"}); S.redo=[]; replay(); save(); afterChange(); }
+function undo(){
+  if(!S.moves.length) return;
+  const bc=botColor(); cancelBot();
+  do{ S.redo.push(S.moves.pop()); replay(); } while(bc && S.moves.length && S.turn===bc);
+  save(); afterChange(false);
+}
+function redoMove(){ if(!S.redo.length)return; cancelBot(); S.moves.push(S.redo.pop()); replay(); save(); afterChange(false); }
+function resign(){ if(S.phase!=="play")return; S.moves.push({t:"resign",c:S.turn}); S.redo=[]; replay(); save(); afterChange(); }
+
+// Dead-stone guess: groups with ≤1 liberty, or small groups inside opponent territory after naive scoring.
+function guessDead(){
+  const g=S.g,b=S.board,dead=new Set(),done=new Uint8Array(g.N);
+  for(let i=0;i<g.N;i++) if(b[i]&&!done[i]){
+    const gr=groupAt(g,b,i); gr.stones.forEach(s=>done[s]=1);
+    if(gr.libs.size<=1) gr.stones.forEach(s=>dead.add(s));
+  }
+  return dead;
+}
+function toggleDead(i){
+  if(!S.board[i]) return;
+  const gr=groupAt(S.g,S.board,i); // whole connected group (also flood through empty? keep simple)
+  const isDead=S.dead.has(i); gr.stones.forEach(s=>isDead?S.dead.delete(s):S.dead.add(s));
+  render(); showScore();
+}
+
+/* ---------------- Persistence ---------------- */
+const KEY="dlgo-state-v1";
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify({n:S.g.n,moves:S.moves,redo:S.redo,komi:S.komi,mode:S.mode,view:UI.view,act:UI.active,shadow:UI.shadow,atari:UI.atari,libLabels:UI.libLabels,flip:Math.round(UI.flip),vv:3,confirm:UI.confirm,gap:UI.gap,tilt:UI.tilt,yaw:UI.yaw})); }catch(e){} }
+function load(){ try{ const d=JSON.parse(localStorage.getItem(KEY)||"null"); return d; }catch(e){ return null; } }
+
+/* ---------------- UI ---------------- */
+const $=id=>document.getElementById(id);
+const isTouch=matchMedia("(pointer:coarse)").matches;
+const UI={flip:0,libLabels:true,view:"3d",active:0,hover:-1,pending:-1,shadow:true,atari:true,confirm:isTouch,gap:1.2,tilt:58,yaw:-18,msg:null};
+const LETTERS="ABCDEFGHJKLMNOPQRST";
+const coordName=i=>(L(S.g,i)===0?"上":"下")+LETTERS[X(S.g,i)]+(S.g.n-Y(S.g,i));
+
+function layout(){
+  const st=$("stage"), r=st.getBoundingClientRect();
+  const W=r.width, H=Math.max(200,r.height);
+  st.innerHTML=""; st.classList.remove("portrait");
+  if(UI.view==="3d"){
+    const cv=document.createElement("canvas"); cv.id="c3d";
+    const s=Math.min(W,H); const dpr=devicePixelRatio||1;
+    cv.style.width=W+"px"; cv.style.height=H+"px"; cv.width=W*dpr; cv.height=H*dpr;
+    st.appendChild(cv); setup3d(cv); return;
+  }
+  const lab=24; // title row
+  let size;
+  if(UI.view==="one"){ size=Math.min(W,H-lab); mkBoard(UI.active,size,true); }
+  else{
+    const sideBySide=Math.min((W-14)/2,H-lab), stacked=Math.min(W,(H-14)/2-lab);
+    if(stacked>sideBySide*1.08){ st.classList.add("portrait"); size=stacked; } else size=sideBySide;
+    mkBoard(0,size,false); mkBoard(1,size,false);
+  }
+}
+const boards=[];
+function mkBoard(l,size,single){
+  const wrap=document.createElement("div"); wrap.className="boardwrap"; wrap.dataset.l=l;
+  const t=document.createElement("div"); t.className="btitle";
+  t.innerHTML=`<span class="tag" style="background:var(--tag${l?"B":"A"})"></span>${l?"下层":"上层"}`+(single?` <button class="swap" style="min-height:26px;padding:2px 8px;font-size:12px">切换到${l?"上层":"下层"} ⇅</button>`:"");
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("class","board"); svg.setAttribute("width",Math.floor(size)); svg.setAttribute("height",Math.floor(size));
+  svg.setAttribute("viewBox","0 0 100 100"); svg.dataset.l=l;
+  wrap.append(t,svg); $("stage").appendChild(wrap);
+  if(single) t.querySelector(".swap").onclick=()=>{UI.active=1-UI.active;UI.pending=-1;relayout();};
+  svg.addEventListener("pointermove",e=>{ if(e.pointerType==="mouse") setHover(pickFlat(svg,e)); });
+  svg.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse") setHover(-1); });
+  svg.addEventListener("click",e=>onPoint(pickFlat(svg,e),e));
+}
+function geomFlat(){ const n=S.g.n, m=7, step=(100-2*m)/(n-1); return {n,m,step}; }
+function pickFlat(svg,e){
+  const r=svg.getBoundingClientRect(), {n,m,step}=geomFlat();
+  const px=(e.clientX-r.left)/r.width*100, py=(e.clientY-r.top)/r.height*100;
+  const x=Math.round((px-m)/step), y=Math.round((py-m)/step);
+  if(x<0||y<0||x>=n||y>=n) return -1;
+  if(Math.hypot(px-(m+x*step),py-(m+y*step))>step*0.62) return -1;
+  return (+svg.dataset.l)*n*n+y*n+x;
+}
+
+function setHover(i){ if(i===UI.hover)return; UI.hover=i; render(); }
+function onPoint(i,e){
+  if(i<0) return;
+  if(S.phase==="score"){ toggleDead(i); return; }
+  if(!humanCanMove()){ if(S.phase==="play") flash("电脑正在思考…"); return; }
+  if(S.board[i]!==EMPTY){ UI.hover=i; UI.pending=-1; render(); return; }
+  if(UI.confirm && UI.pending!==i){ UI.pending=i; UI.hover=i; render(); return; }
+  const r=play(i);
+  if(!r.ok){ UI.hover=i; flash(r.reason,true); }
+  else { UI.pending=-1; if(isTouch) UI.hover=-1; }
+}
+let flashT=0;
+function flash(text,bad){ UI.msg={text,bad}; clearTimeout(flashT); flashT=setTimeout(()=>{UI.msg=null;renderStatus();},2600); renderStatus(); }
+
+// Info for hover/preview
+function hoverInfo(){
+  const i=UI.pending>=0?UI.pending:UI.hover; if(i<0||!S.g) return null;
+  const b=S.board;
+  if(S.phase!=="play"){ return {i,kind:"none"}; }
+  if(b[i]===EMPTY){
+    if(!humanCanMove()) return {i,kind:"none"};
+    const r=tryMove(S.g,b,i,S.turn,S.seen);
+    if(!r.ok) return {i,kind:"illegal",reason:r.reason};
+    // groups put in atari by this move
+    let atari=0; const seenG=new Set();
+    for(const j of S.g.nb[i]) if(r.board[j]===opp(S.turn)&&!seenG.has(j)){ const gr=groupAt(S.g,r.board,j); gr.stones.forEach(s=>seenG.add(s)); if(gr.libs.size===1) atari++; }
+    const gr=groupAt(S.g,r.board,i);
+    return {i,kind:"preview",cap:new Set(r.captured),libs:gr.libs,size:gr.stones.length,group:new Set(gr.stones),atari,cross:gr.stones.some(s=>gr.stones.includes(other(S.g,s)))};
+  }
+  const gr=groupAt(S.g,b,i);
+  const layers=new Set(gr.stones.map(s=>L(S.g,s)));
+  return {i,kind:"group",color:b[i],group:new Set(gr.stones),libs:gr.libs,size:gr.stones.length,cross:layers.size>1};
+}
+
+function atariSet(){
+  const g=S.g,b=S.board,res=new Set(),done=new Uint8Array(g.N);
+  for(let i=0;i<g.N;i++) if(b[i]&&!done[i]){ const gr=groupAt(g,b,i); gr.stones.forEach(s=>done[s]=1); if(gr.libs.size===1) gr.stones.forEach(s=>res.add(s)); }
+  return res;
+}
+
+function stoneSVG(cx,cy,r,c,op=1,extra=""){
+  const fill=c===BLACK?"url(#gb)":"url(#gw)";
+  return `<circle cx="${cx}" cy="${cy+r*0.08}" r="${r}" fill="#0004" opacity="${op*0.6}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" opacity="${op}" ${c===WHITE?'stroke="#8886" stroke-width="0.15"':''} ${extra}/>`;
+}
+const DEFS=`<defs><radialGradient id="gb" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#6a6a6a"/><stop offset=".55" stop-color="#1a1a1a"/><stop offset="1" stop-color="#050505"/></radialGradient>
+<radialGradient id="gw" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e9e7e2"/><stop offset="1" stop-color="#c4c1ba"/></radialGradient></defs>`;
+
+function renderFlat(svg){
+  const l=+svg.dataset.l, {n,m,step}=geomFlat(), g=S.g, b=S.board, nn=n*n;
+  const info=hoverInfo(), atari=UI.atari&&S.phase==="play"?atariSet():new Set();
+  const own=S.phase==="score"||S.phase==="over"&&S.result&&S.result.own?(S.scoreCache||{}).own:null;
+  const P=k=>m+k*step, R=step*0.47;
+  let s=DEFS;
+  s+=`<rect x="0" y="0" width="100" height="100" rx="1.5" fill="var(--wood${l?"B":"A"})"/>`;
+  s+=`<rect x="0" y="0" width="100" height="100" rx="1.5" fill="none" stroke="var(--wood${l?"B2":"A2"})" stroke-width="1.2"/>`;
+  const gc=`var(--grid${l?"B":"A"})`;
+  for(let k=0;k<n;k++){
+    s+=`<line x1="${P(0)}" y1="${P(k)}" x2="${P(n-1)}" y2="${P(k)}" stroke="${gc}" stroke-width="${k===0||k===n-1?0.35:0.18}"/>`;
+    s+=`<line x1="${P(k)}" y1="${P(0)}" x2="${P(k)}" y2="${P(n-1)}" stroke="${gc}" stroke-width="${k===0||k===n-1?0.35:0.18}"/>`;
+  }
+  // star points
+  const stars=n===13?[3,6,9]:n===9?[2,4,6]:n===7?[3]:[];
+  for(const a of stars)for(const c of stars){ if(n===9&&(a===4)!==(c===4)) continue; s+=`<circle cx="${P(a)}" cy="${P(c)}" r="0.7" fill="${gc}"/>`; }
+  // coordinates
+  const fs=Math.min(3.2,step*0.42);
+  for(let k=0;k<n;k++){
+    s+=`<text x="${P(k)}" y="${m*0.55}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle" fill="${gc}" opacity=".6" font-family="var(--f-num)">${LETTERS[k]}</text>`;
+    s+=`<text x="${m*0.45}" y="${P(k)}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle" fill="${gc}" opacity=".6" font-family="var(--f-num)">${n-k}</text>`;
+  }
+  const hi=info?info.i:-1, hiPos=hi>=0?hi%nn:-1;
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    const i=l*nn+y*n+x, c=b[i], cx=P(x), cy=P(y), o=b[other(g,i)];
+    if(own && !c && own[i]<3){ s+=`<rect x="${cx-R*0.35}" y="${cy-R*0.35}" width="${R*0.7}" height="${R*0.7}" fill="${own[i]===1?"#111":"#fff"}" opacity=".75"/>`; }
+    if(c){
+      const capNow=info&&info.kind==="preview"&&info.cap.has(i);
+      const dead=S.dead.has(i)&&(S.phase==="score"||S.phase==="over");
+      s+=stoneSVG(cx,cy,R,c,capNow||dead?0.35:1);
+      if(dead){ s+=`<path d="M${cx-R*.45} ${cy-R*.45}L${cx+R*.45} ${cy+R*.45}M${cx+R*.45} ${cy-R*.45}L${cx-R*.45} ${cy+R*.45}" stroke="var(--danger)" stroke-width="0.6"/>`; if(own&&own[i]<3){} }
+      if(capNow) s+=`<circle cx="${cx}" cy="${cy}" r="${R*0.9}" fill="none" stroke="var(--danger)" stroke-width="0.5" stroke-dasharray="1 0.8"/>`;
+      // vertical link mark: same colour directly on other layer
+      if(o===c) s+=`<circle cx="${cx}" cy="${cy}" r="${R*0.28}" fill="none" stroke="${c===BLACK?"#ddd":"#333"}" stroke-width="0.45"/><circle cx="${cx}" cy="${cy}" r="${R*0.08}" fill="${c===BLACK?"#ddd":"#333"}"/>`;
+      if(atari.has(i)) s+=`<circle cx="${cx}" cy="${cy}" r="${R*1.02}" fill="none" stroke="var(--danger)" stroke-width="0.55"/>`;
+      if(info&&info.kind==="group"&&info.group.has(i)) s+=`<circle cx="${cx}" cy="${cy}" r="${R*1.08}" fill="none" stroke="var(--accent)" stroke-width="0.5"/>`;
+      if(S.last===i) s+=UI.libLabels?`<circle cx="${cx+R*0.62}" cy="${cy-R*0.62}" r="${R*0.22}" fill="var(--accent)"/>`:`<circle cx="${cx}" cy="${cy}" r="${R*0.38}" fill="none" stroke="${c===BLACK?"#fff":"#000"}" stroke-width="0.55"/>`;
+    } else {
+      // projection of other layer
+      if(UI.shadow&&o) s+=`<circle cx="${cx}" cy="${cy}" r="${R*0.3}" fill="${o===BLACK?"#000":"#fff"}" opacity="${o===BLACK?0.38:0.75}" ${o===WHITE?'stroke="#0005" stroke-width="0.15"':''}/>`;
+      if(S.lastCap.includes(i)) s+=`<circle cx="${cx}" cy="${cy}" r="${R*0.55}" fill="none" stroke="var(--muted)" stroke-width="0.25" stroke-dasharray="0.6 0.6"/>`;
+    }
+  }
+  if(UI.libLabels&&S.phase==="play") for(const bd of libBadges()) if(L(g,bd.i)===l){ const cx=P(X(g,bd.i)),cy=P(Y(g,bd.i));
+    s+=`<text x="${cx}" y="${cy+R*0.05}" font-size="${R*0.85}" text-anchor="middle" dominant-baseline="middle" font-weight="700" font-family="var(--f-num)" pointer-events="none" fill="${bd.libs===1?"#e5483a":bd.libs===2?"#e08a1e":(bd.c===BLACK?"#f2f2f2":"#222")}">${bd.libs}</text>`; }
+  // liberties highlight
+  if(info&&(info.kind==="group"||info.kind==="preview")){
+    sortLibs(info.libs).forEach((j,k)=>{ if(L(g,j)!==l) return; const col=info.libs.size===1?"var(--danger)":"var(--ok)";
+      s+=`<g pointer-events="none"><circle cx="${P(X(g,j))}" cy="${P(Y(g,j))}" r="${R*0.5}" fill="${col}"/><text x="${P(X(g,j))}" y="${P(Y(g,j))+R*0.04}" font-size="${R*0.62}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-weight="700" font-family="var(--f-num)">${k+1}</text></g>`; });
+  }
+  // preview ghost
+  if(info&&info.kind==="preview"&&L(g,hi)===l){ s+=stoneSVG(P(X(g,hi)),P(Y(g,hi)),R,S.turn,UI.pending===hi?0.8:0.5); }
+  if(info&&info.kind==="illegal"&&L(g,hi)===l){ const cx=P(X(g,hi)),cy=P(Y(g,hi)); s+=`<path d="M${cx-R*.5} ${cy-R*.5}L${cx+R*.5} ${cy+R*.5}M${cx+R*.5} ${cy-R*.5}L${cx-R*.5} ${cy+R*.5}" stroke="var(--danger)" stroke-width="0.7"/>`; }
+  // corresponding point / hover ring on both layers
+  if(hiPos>=0){
+    const x=hiPos%n, y=Math.floor(hiPos/n), mine=L(g,hi)===l;
+    s+=`<circle cx="${P(x)}" cy="${P(y)}" r="${R*1.25}" fill="none" stroke="var(--tag${l?"B":"A"})" stroke-width="${mine?0.5:0.9}" ${mine?"":'stroke-dasharray="1.6 1"'}/>`;
+    if(!mine) s+=`<text x="${P(x)}" y="${P(y)-R*1.55}" font-size="${fs}" text-anchor="middle" fill="var(--tag${l?"B":"A"})" font-weight="700">↕</text>`;
+  }
+  svg.innerHTML=s;
+}
+
+function renderHeader(){
+  const t=$("turn"), stoneN=c=>`<span class="stone-ico ${c===BLACK?"b":"w"}"></span>`;
+  const bc=botColor();
+  if(S.phase==="play") t.innerHTML=`${stoneN(S.turn)}<span>第 ${S.moves.filter(m=>m.t==="move"||m.t==="pass").length+1} 手 · ${S.turn===BLACK?"黑":"白"}方${S.turn===bc?"（电脑）":""}</span>`;
+  else if(S.phase==="score") t.innerHTML=`<span>数子中：点击棋块标记死子</span>`;
+  else t.innerHTML=`<span>${S.result?S.result.text:"对局结束"}</span>`;
+  $("caps").textContent=`提子 黑 ${S.caps[1]} · 白 ${S.caps[2]} · 贴目 ${S.komi}`;
+  $("btnUndo").disabled=!S.moves.length; $("btnRedo").disabled=!S.redo.length;
+  $("btnPass").disabled=$("btnResign").disabled=!humanCanMove();
+  $("btnScore").textContent=S.phase==="score"?"完成数子":"数子";
+  for(const [id,v] of [["vSide","side"],["vOne","one"],["v3d","3d"]]) $(id).setAttribute("aria-pressed",UI.view===v);
+  $("act0").setAttribute("aria-pressed",UI.active===0); $("act1").setAttribute("aria-pressed",UI.active===1);
+  $("view3dCtl").hidden=UI.view!=="3d";
+}
+function renderStatus(){
+  const el=$("status");
+  if(UI.msg){ el.innerHTML=`<span class="${UI.msg.bad?"bad":""}">${UI.msg.text}</span>`; return; }
+  const info=hoverInfo();
+  if(S.phase==="score"){ const sc=S.scoreCache; el.innerHTML=`点击棋块切换死活（打叉 = 死子）。当前：黑 <b>${sc.black}</b> · 白 <b>${sc.white}</b> + 贴目 ${S.komi} = <b>${sc.white+S.komi}</b>　<span class="hint">按“完成数子”结束；悔棋可回到对局</span>`; return; }
+  if(botBusy){ el.innerHTML=`<span>电脑正在思考…</span>`; return; }
+  if(!info||info.kind==="none"){
+    if(S.phase==="over"){ el.innerHTML=`<b>${S.result?S.result.text:"对局结束"}</b><span class="hint">悔棋可以回到对局，或开始新对局</span>`; return; }
+    el.innerHTML=`<span class="hint">${UI.confirm?"点一下预览，再点一次（或按“在此落子”）落子。":isTouch?"点一下直接落子；点棋子查看它的气。":"悬停预览，点击落子。"}虚线圆圈标出另一层正对的点；小圆点是另一层的投影；棋子中心的环表示上下相连。</span>`;
+    if(S.passes===1) el.innerHTML=`<span>对方停了一手。再停一手就进入数子。</span>`;
+    return;
+  }
+  const where=`<b>${coordName(info.i)}</b>`;
+  if(info.kind==="illegal"){ el.innerHTML=`${where}<span class="bad">不能下：${info.reason}</span>`; return; }
+  if(info.kind==="preview"){
+    const parts=[`落子后这块棋 ${info.size} 子 · <b>${info.libs.size}</b> 气`];
+    if(info.cap.size) parts.push(`<span class="good">提掉 ${info.cap.size} 子</span>`);
+    if(info.atari) parts.push(`<span class="good">叫吃 ${info.atari} 块</span>`);
+    if(info.libs.size===1) parts.push(`<span class="bad">落下后自己只剩 1 气</span>`);
+    if(info.cross) parts.push("跨两层");
+    el.innerHTML=`${where}<span>${parts.join(" · ")}</span>`+(UI.pending===info.i?`<button id="confirmBtn" class="primary">在此落子</button>`:"");
+    if(UI.pending===info.i) $("confirmBtn").onclick=()=>{ const r=play(info.i); if(r.ok){UI.pending=-1;UI.hover=-1;render();} else flash(r.reason,true); };
+    return;
+  }
+  const libs=info.libs.size;
+  el.innerHTML=`${where}<span>${info.color===BLACK?"黑":"白"}棋 ${info.size} 子${info.cross?"（跨两层）":""} · <b class="${libs===1?"bad":""}">${libs}</b> 气${libs===1?"，被叫吃":""}</span><span class="hint">绿色编号就是它的气，两层一起数</span>`;
+}
+
+function render(){
+  if(!S.g) return;
+  if(S.phase==="score") S.scoreCache=scoreBoard(S.g,S.board,S.dead);
+  renderHeader();
+  if(UI.view==="3d") draw3d(); else document.querySelectorAll("svg.board").forEach(renderFlat);
+  renderStatus();
+}
+function relayout(){ layout(); render(); save(); }
+function afterChange(runBot=true){
+  UI.hover=-1; UI.pending=-1;
+  if(UI.view==="one" && S.last>=0 && botColor() && S.turn!==botColor()){ /* show the layer where the bot just played */ const l=L(S.g,S.last); if(l!==UI.active){UI.active=l; layout();} }
+  render();
+  if(S.phase==="score") showScore();
+  if(S.phase==="over"&&S.result) showResult();
+  if(runBot) maybeBot();
+}
+
+/* ---------------- Scoring dialog ---------------- */
+function showScore(){
+  // non-modal: status bar handles it; dialog only on finish
+}
+function finishScore(){
+  const sc=scoreBoard(S.g,S.board,S.dead), w=sc.white+S.komi, b=sc.black;
+  S.phase="over"; S.scoreCache=sc;
+  const diff=Math.abs(b-w);
+  S.result={own:true,text:b>w?`黑胜 ${diff} 子`:w>b?`白胜 ${diff} 子`:"和棋",sc};
+  render(); showResult();
+}
+function showResult(){
+  const r=S.result; $("endTitle").textContent=r.text;
+  if(r.sc){ const sc=r.sc;
+    $("endBody").innerHTML=`<table class="score-table"><tr><td></td><td>棋子</td><td>围空</td><td>贴目</td><td>合计</td></tr>
+      <tr><td>黑</td><td>${sc.stones[1]}</td><td>${sc.terr[1]}</td><td>—</td><td><b>${sc.black}</b></td></tr>
+      <tr><td>白</td><td>${sc.stones[2]}</td><td>${sc.terr[2]}</td><td>${S.komi}</td><td><b>${sc.white+S.komi}</b></td></tr></table>
+      <p class="hint">棋盘上的小方块标出了各自的地。</p>`;
+  } else $("endBody").innerHTML="";
+  $("endBtns").innerHTML=`<button class="primary" id="eNew">新对局</button><button id="eUndo">悔棋继续</button><button id="eClose">看棋盘</button>`;
+  $("eNew").onclick=()=>{$("dlgEnd").close();$("dlgNew").showModal();};
+  $("eUndo").onclick=()=>{$("dlgEnd").close();undo();};
+  $("eClose").onclick=()=>$("dlgEnd").close();
+  if(!$("dlgEnd").open) $("dlgEnd").showModal();
+}
+function fixScoreStones(){ // stones count in scoreBoard excludes dead already (dead removed from bb)
+}
+
+/* ---------------- 3D view ---------------- */
+let cv3=null, ctx3=null, proj=[];
+function setup3d(cv){
+  cv3=cv; ctx3=cv.getContext("2d");
+  let drag=null, moved=false;
+  cv.addEventListener("pointerdown",e=>{ drag={x:e.clientX,y:e.clientY,yaw:UI.yaw,tilt:UI.tilt}; moved=false; cv.setPointerCapture(e.pointerId); cv.style.cursor="grabbing"; });
+  cv.addEventListener("pointermove",e=>{
+    if(drag){ const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.hypot(dx,dy)>6) moved=true;
+      if(moved){ UI.yaw=drag.yaw+dx*0.4; UI.tilt=Math.max(0,Math.min(75,drag.tilt-dy*0.3)); $("tilt").value=UI.tilt; draw3d(); return; } }
+    if(e.pointerType==="mouse"&&!drag) setHover(pick3d(e));
+  });
+  cv.addEventListener("pointerup",e=>{ cv.style.cursor="grab"; const wasDrag=moved; drag=null; if(!wasDrag) onPoint(pick3d(e),e); else save(); });
+  cv.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse"&&!drag) setHover(-1); });
+}
+function P3(l,x,y,rest){
+  const n=S.g.n, sg=l===0?1:-1, ph=rest?0:UI.flip*Math.PI, sh=rest?0:sg*0.25*Math.sin(ph);
+  const u=((x+sh)/(n-1)-0.5)*2, v=((y+sh)/(n-1)-0.5)*2, z=sg*UI.gap/2*Math.cos(ph);
+  const a=UI.yaw*Math.PI/180, t=UI.tilt*Math.PI/180;
+  const X1=u*Math.cos(a)-v*Math.sin(a), Y1=u*Math.sin(a)+v*Math.cos(a);
+  const Y2=Y1*Math.cos(t)-z*Math.sin(t), Z2=Y1*Math.sin(t)+z*Math.cos(t);
+  const f=5, s=f/(f-Z2);
+  return {x:X1*s,y:Y2*s,z:Z2,s};
+}
+function draw3d(){
+  if(!cv3) return;
+  const dpr=devicePixelRatio||1, W=cv3.width, H=cv3.height, g=S.g, n=g.n, b=S.board, nn=n*n;
+  const ctx=ctx3; ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  // fit: compute extents
+  const corners=[]; for(const l of [0,1]) for(const [x,y] of [[0,0],[n-1,0],[0,n-1],[n-1,n-1]]) corners.push(P3(l,x,y,true));
+  const minx=Math.min(...corners.map(p=>p.x)), maxx=Math.max(...corners.map(p=>p.x)), miny=Math.min(...corners.map(p=>p.y)), maxy=Math.max(...corners.map(p=>p.y));
+  const pad=1.12, sc=Math.min(W/((maxx-minx)*pad+0.2), H/((maxy-miny)*pad+0.2));
+  const ox=W/2-(minx+maxx)/2*sc, oy=H/2-(miny+maxy)/2*sc;
+  const S2=p=>({x:ox+p.x*sc,y:oy+p.y*sc,z:p.z,s:p.s});
+  const cs=getComputedStyle(document.documentElement), tok=k=>cs.getPropertyValue(k).trim();
+  const info=hoverInfo(), atari=UI.atari&&S.phase==="play"?atariSet():new Set();
+  const stepPx=sc*2/(n-1);
+  // order layers by depth (far first)
+  const zl=[0,1].map(l=>({l,z:P3(l,(n-1)/2,(n-1)/2).z})).sort((a,b)=>a.z-b.z);
+  proj=new Array(g.N);
+  for(let i=0;i<g.N;i++) proj[i]=S2(P3(L(g,i),X(g,i),Y(g,i)));
+  const drawLayer=(l,front)=>{
+    const act=l===UI.active, alpha=act?1:0.45;
+    const ext=0.55;
+    const c4=[[-ext,-ext],[n-1+ext,-ext],[n-1+ext,n-1+ext],[-ext,n-1+ext]].map(([x,y])=>S2(P3(l,x,y)));
+    ctx.globalAlpha=act?0.07:0.03; ctx.fillStyle=tok(l?"--tagB":"--tagA");
+    ctx.beginPath(); c4.forEach((p,k)=>k?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=act?1:0.5; ctx.strokeStyle=tok(l?"--tagB":"--tagA"); ctx.lineWidth=(act?2.5:1.2)*dpr; ctx.stroke();
+    ctx.globalAlpha=act?0.85:0.45; ctx.strokeStyle=tok(l?"--tagB":"--tagA"); ctx.lineWidth=(act?1.3:1)*dpr;
+    for(let k=0;k<n;k++){ let a=proj[l*nn+k*n], c=proj[l*nn+k*n+n-1]; ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(c.x,c.y);ctx.stroke();
+      a=proj[l*nn+k]; c=proj[l*nn+(n-1)*n+k]; ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(c.x,c.y);ctx.stroke(); }
+    labels.push({l,act,p:c4[0]});
+    // liberties
+
+    // stones
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+      const i=l*nn+y*n+x, c=b[i], p=proj[i], r=stepPx*0.45*p.s;
+      if(!c) continue;
+      const capNow=info&&info.kind==="preview"&&info.cap.has(i);
+      ctx.globalAlpha=(act?1:0.78)*(capNow?0.4:1);
+      glassStone(ctx,p.x,p.y,r,r*Math.max(0.35,Math.cos(UI.tilt*Math.PI/180)),c);
+      if(atari.has(i)){ctx.strokeStyle=tok("--danger");ctx.lineWidth=2*dpr;ctx.stroke();}
+      if(info&&info.kind==="group"&&info.group.has(i)){ctx.strokeStyle=tok("--accent");ctx.lineWidth=2.5*dpr;ctx.stroke();}
+      if(S.last===i){ctx.fillStyle=UI.libLabels?tok("--accent"):(c===BLACK?"#fff":"#000");ctx.beginPath();UI.libLabels?ctx.arc(p.x+r*0.75,p.y-r*0.45,r*0.2,0,7):ctx.arc(p.x,p.y,r*0.22,0,7);ctx.fill();}
+    }
+    ctx.globalAlpha=1;
+  };
+  const labels=[];
+  drawLayer(zl[0].l,false);
+  // vertical links between same-colour stacked stones + hover column
+  for(let k=0;k<nn;k++){
+    const a=b[k], c=b[k+nn];
+    if(a&&a===c){ const p=proj[k],q=proj[k+nn]; ctx.globalAlpha=0.7; ctx.strokeStyle=a===BLACK?"#222":"#a9b0ba"; ctx.lineWidth=3*dpr; ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke(); }
+  }
+  if(info){ const k=info.i%nn, p=proj[k], q=proj[k+nn]; ctx.globalAlpha=0.9; ctx.setLineDash([5*dpr,4*dpr]); ctx.strokeStyle=tok("--accent"); ctx.lineWidth=1.5*dpr; ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke(); ctx.setLineDash([]);
+    for(const pp of [p,q]){ ctx.beginPath(); ctx.arc(pp.x,pp.y,stepPx*0.55*pp.s,0,7); ctx.stroke(); } }
+  ctx.globalAlpha=1;
+  drawLayer(zl[1].l,true);
+  for(const lb of labels){ ctx.globalAlpha=lb.act?1:0.7; ctx.fillStyle=tok(lb.l?"--tagB":"--tagA"); ctx.font=`600 ${13*dpr}px ${tok("--f-body")}`; ctx.fillText((lb.l?"下层":"上层")+(Math.round(UI.flip)?(lb.l?" · 已换到上面":" · 已换到下面"):"")+(lb.act?"（当前，可落子）":""), lb.p.x+4*dpr, lb.p.y-6*dpr); }
+  ctx.globalAlpha=1;
+  // per-group liberty badges
+  if(UI.libLabels&&S.phase==="play"){ for(const bd of libBadges()){ const p=proj[bd.i], r=stepPx*0.45*p.s;
+    ctx.font=`700 ${Math.max(10*dpr,r*0.95)}px ${tok("--f-num")}`; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillStyle=bd.libs===1?tok("--danger"):bd.libs===2?"#e08a1e":(bd.c===BLACK?"#f2f2f2":"#222"); ctx.fillText(bd.libs,p.x,p.y+dpr); } }
+  // numbered liberties of hovered group, drawn on top so none is hidden
+  if(info&&(info.kind==="group"||info.kind==="preview")){
+    const list=sortLibs(info.libs); const col=info.libs.size===1?tok("--danger"):tok("--ok");
+    list.forEach((j,k)=>{ const p=proj[j], r=Math.max(8*dpr,stepPx*0.24*p.s);
+      ctx.globalAlpha=0.95; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,7); ctx.fill();
+      ctx.fillStyle="#fff"; ctx.font=`700 ${r*1.15}px ${tok("--f-num")}`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(k+1,p.x,p.y+dpr); });
+    ctx.globalAlpha=1; }
+  ctx.textAlign="start"; ctx.textBaseline="alphabetic";
+  // ghost
+  if(info&&info.kind==="preview"){ const p=proj[info.i], r=stepPx*0.45*p.s; ctx.globalAlpha=UI.pending===info.i?0.85:0.5; glassStone(ctx,p.x,p.y,r,r*Math.max(0.35,Math.cos(UI.tilt*Math.PI/180)),S.turn); ctx.globalAlpha=1; }
+  if(info&&info.kind==="illegal"){ const p=proj[info.i], r=stepPx*0.3*p.s; ctx.strokeStyle=tok("--danger"); ctx.lineWidth=3*dpr; ctx.beginPath(); ctx.moveTo(p.x-r,p.y-r);ctx.lineTo(p.x+r,p.y+r);ctx.moveTo(p.x+r,p.y-r);ctx.lineTo(p.x-r,p.y+r);ctx.stroke(); }
+  if(S.phase==="score"||S.phase==="over"&&S.dead.size) for(const d of S.dead){ const p=proj[d], r=stepPx*0.3*p.s; ctx.strokeStyle=tok("--danger"); ctx.lineWidth=2.5*dpr; ctx.beginPath(); ctx.moveTo(p.x-r,p.y-r);ctx.lineTo(p.x+r,p.y+r);ctx.moveTo(p.x+r,p.y-r);ctx.lineTo(p.x-r,p.y+r);ctx.stroke(); }
+}
+// Glass stone: translucent body, darker rim, small specular highlight
+function glassStone(ctx,x,y,rx,ry,c){
+  const gr=ctx.createRadialGradient(x-rx*0.3,y-ry*0.35,rx*0.05,x,y,rx);
+  if(c===BLACK){gr.addColorStop(0,"rgba(110,115,130,.78)");gr.addColorStop(.6,"rgba(25,27,34,.8)");gr.addColorStop(1,"rgba(5,6,10,.9)");}
+  else{gr.addColorStop(0,"rgba(255,255,255,.82)");gr.addColorStop(.65,"rgba(232,236,240,.7)");gr.addColorStop(1,"rgba(170,178,188,.85)");}
+  ctx.fillStyle=gr; ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,7); ctx.fill();
+  ctx.lineWidth=Math.max(1,rx*0.06); ctx.strokeStyle=c===BLACK?"rgba(0,0,0,.6)":"rgba(120,128,140,.6)"; ctx.stroke();
+  const a=ctx.globalAlpha; ctx.globalAlpha=a*(c===BLACK?0.55:0.9); ctx.fillStyle="#fff";
+  ctx.beginPath(); ctx.ellipse(x-rx*0.38,y-ry*0.42,rx*0.22,ry*0.13,-0.5,0,7); ctx.fill(); ctx.globalAlpha=a;
+  ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,7);
+}
+// Animate the two layers swapping places; they slide half a cell sideways so stones pass through the gaps
+let flipAnim=0;
+function swapLayers(){
+  if(UI.view!=="3d"){ UI.view="3d"; relayout(); }
+  const from=Math.round(UI.flip), to=1-from, t0=performance.now(), dur=matchMedia("(prefers-reduced-motion:reduce)").matches?1:1100;
+  cancelAnimationFrame(flipAnim);
+  const step=now=>{ const k=Math.min(1,(now-t0)/dur), e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2; UI.flip=from+(to-from)*e; draw3d();
+    if(k<1) flipAnim=requestAnimationFrame(step); else { UI.flip=to; UI.active=to?1:0; render(); save(); } };
+  flipAnim=requestAnimationFrame(step);
+}
+function pick3d(e){
+  if(!proj.length) return -1;
+  const r=cv3.getBoundingClientRect(), dpr=devicePixelRatio||1, mx=(e.clientX-r.left)*dpr, my=(e.clientY-r.top)*dpr;
+  const g=S.g, nn=g.n*g.n, base=UI.active*nn; let best=-1, bd=1e9;
+  for(let k=0;k<nn;k++){ const p=proj[base+k]; const d=Math.hypot(p.x-mx,p.y-my); if(d<bd){bd=d;best=base+k;} }
+  const p0=proj[base], p1=proj[base+1]; const step=Math.hypot(p1.x-p0.x,p1.y-p0.y);
+  if(bd<step*0.65) return best;
+  const ob=(1-UI.active)*nn; let b2=-1,d2=1e9;
+  for(let k=0;k<nn;k++){ if(!S.board[ob+k]) continue; const p=proj[ob+k]; const d=Math.hypot(p.x-mx,p.y-my); if(d<d2){d2=d;b2=ob+k;} }
+  return d2<step*0.5?b2:-1;
+}
+function sortLibs(libs){ return [...libs].sort((a,b)=>a-b); }
+function libBadges(){ // one badge per group per layer, on the stone nearest the viewer (3D) or first stone (flat)
+  const g=S.g,b=S.board,done=new Uint8Array(g.N),out=[];
+  for(let i=0;i<g.N;i++) if(b[i]&&!done[i]){ const gr=groupAt(g,b,i); gr.stones.forEach(s=>done[s]=1);
+    for(const l of [0,1]){ const st=gr.stones.filter(s=>L(g,s)===l); if(!st.length) continue;
+      let pick=st[0]; if(UI.view==="3d"&&proj.length) for(const s of st) if(proj[s].y>proj[pick].y) pick=s;
+      out.push({i:pick,libs:gr.libs.size,c:b[i]}); } }
+  return out;
+}
+
+/* ---------------- Bot (flat Monte Carlo in a worker) ---------------- */
+const workerSrc=`
+const EMPTY=0;
+let nb,N;
+function setup(n){N=2*n*n;nb=[];for(let l=0;l<2;l++)for(let y=0;y<n;y++)for(let x=0;x<n;x++){const a=[];
+ if(x>0)a.push(l*n*n+y*n+x-1);if(x<n-1)a.push(l*n*n+y*n+x+1);if(y>0)a.push(l*n*n+(y-1)*n+x);if(y<n-1)a.push(l*n*n+(y+1)*n+x);a.push((1-l)*n*n+y*n+x);nb.push(a);}}
+const st=new Int32Array(4096),mark=new Int32Array(4096);let stamp=1;
+function libsOf(b,i,lim){stamp++;const c=b[i];let sp=0,top=0,libs=0;st[sp++]=i;mark[i]=stamp;
+ while(top<sp){const s=st[top++];for(const j of nb[s]){if(mark[j]===stamp)continue;if(b[j]===EMPTY){mark[j]=stamp;libs++;if(libs>=lim)return libs;}else if(b[j]===c){mark[j]=stamp;st[sp++]=j;}}}return libs;}
+function removeGroup(b,i){const c=b[i];const q=[i];b[i]=0;let n=1;while(q.length){const s=q.pop();for(const j of nb[s])if(b[j]===c){b[j]=0;n++;q.push(j);}}return n;}
+function play(b,i,c){ // returns -1 illegal, else captures
+ if(b[i])return -1;b[i]=c;let cap=0;const o=3-c;
+ for(const j of nb[i])if(b[j]===o&&libsOf(b,j,1)===0)cap+=removeGroup(b,j);
+ if(libsOf(b,i,1)===0){b[i]=0;return -1;}return cap;}
+function isEye(b,i,c){for(const j of nb[i])if(b[j]!==c)return false;return true;}
+function playout(b,c,maxM){let passes=0;const empt=[];
+ for(let m=0;m<maxM&&passes<2;m++){empt.length=0;for(let i=0;i<N;i++)if(!b[i]&&!isEye(b,i,c))empt.push(i);
+  let ok=false;while(empt.length){const k=(Math.random()*empt.length)|0;const i=empt[k];empt[k]=empt[empt.length-1];empt.pop();
+   // prefer capture/atari-escape lightly: plain random
+   if(play(b,i,c)>=0){ok=true;break;}}
+  passes=ok?0:passes+1;c=3-c;}
+ // area score from black
+ let s=0;for(let i=0;i<N;i++){if(b[i]===1)s++;else if(b[i]===2)s--;else{let bl=0,wh=0;for(const j of nb[i]){if(b[j]===1)bl=1;else if(b[j]===2)wh=1;}if(bl&&!wh)s++;else if(wh&&!bl)s--;}}
+ return s;}
+onmessage=e=>{const {n,board,color,komi,banned,budget}=e.data;setup(n);
+ const base=Int8Array.from(board);const cands=[];
+ for(let i=0;i<N;i++){if(base[i]||isEye(base,i,color)||banned.includes(i))continue;const t=base.slice();if(play(t,i,color)>=0)cands.push(i);}
+ if(!cands.length){postMessage({move:-1});return;}
+ const w=new Float64Array(cands.length),v=new Float64Array(cands.length);let total=0;const t0=performance.now();
+ const maxM=N*2;
+ while(performance.now()-t0<budget){
+  let bi=0,bs=-1e9;for(let k=0;k<cands.length;k++){const s=v[k]===0?1e9:w[k]/v[k]+0.9*Math.sqrt(Math.log(total+1)/v[k]);if(s>bs){bs=s;bi=k;}}
+  const b=base.slice();play(b,cands[bi],color);const sc=playout(b,3-color,maxM)-komi;
+  const win=(color===1?sc>0:sc<0)?1:0;w[bi]+=win;v[bi]++;total++;}
+ let best=0;for(let k=1;k<cands.length;k++)if(v[k]>v[best])best=k;
+ const rate=w[best]/Math.max(1,v[best]);
+ postMessage({move:rate<0.06&&total>200?-1:cands[best],rate,total});};
+`;
+let worker=null, botBusy=false, botToken=0;
+function getWorker(){ if(!worker){ try{ worker=new Worker(URL.createObjectURL(new Blob([workerSrc],{type:"text/javascript"}))); }catch(e){ worker=null; } } return worker; }
+function cancelBot(){ if(botBusy){ botToken++; botBusy=false; if(worker){worker.terminate();worker=null;} } }
+function maybeBot(){
+  const bc=botColor(); if(!bc||S.phase!=="play"||S.turn!==bc||botBusy) return;
+  const w=getWorker(); if(!w){ flash("浏览器不支持后台计算，电脑对手不可用",true); return; }
+  botBusy=true; const tok=++botToken; render();
+  // moves that would recreate a seen position (superko) are banned
+  const banned=[]; for(let i=0;i<S.g.N;i++) if(!S.board[i]){ const r=tryMove(S.g,S.board,i,bc,S.seen); if(!r.ok && r.reason.startsWith("打劫")) banned.push(i); }
+  // opponent passed and we are not behind? pass too
+  w.onmessage=e=>{
+    if(tok!==botToken) return; botBusy=false;
+    const m=e.data.move;
+    if(m<0) pass(); else { const r=play(m); if(!r.ok) pass(); }
+  };
+  const budget=S.g.n>=13?2200:S.g.n>=9?1500:1000;
+  setTimeout(()=>{ if(tok===botToken) w.postMessage({n:S.g.n,board:Array.from(S.board),color:bc,komi:S.komi,banned,budget}); },60);
+}
+
+/* ---------------- Wiring ---------------- */
+$("vSide").onclick=()=>{UI.view="side";relayout();};
+$("vOne").onclick=()=>{UI.view="one";relayout();};
+$("v3d").onclick=()=>{UI.view="3d";relayout();};
+$("btnSwap").onclick=swapLayers;
+$("act0").onclick=()=>{UI.active=0;render();save();};
+$("act1").onclick=()=>{UI.active=1;render();save();};
+$("gap").oninput=e=>{UI.gap=+e.target.value;draw3d();};
+$("tilt").oninput=e=>{UI.tilt=+e.target.value;draw3d();};
+$("gap").onchange=$("tilt").onchange=save;
+$("optShadow").onchange=e=>{UI.shadow=e.target.checked;render();save();};
+$("optAtari").onchange=e=>{UI.atari=e.target.checked;render();save();};
+$("optLibs").onchange=e=>{UI.libLabels=e.target.checked;render();save();};
+$("optConfirm").onchange=e=>{UI.confirm=e.target.checked;UI.pending=-1;render();save();};
+$("btnUndo").onclick=undo; $("btnRedo").onclick=redoMove; $("btnPass").onclick=pass; $("btnResign").onclick=()=>{
+  const b=$("btnResign"); if(b.dataset.arm){ delete b.dataset.arm; b.textContent="认输"; resign(); } else { b.dataset.arm=1; b.textContent="确认认输？"; setTimeout(()=>{delete b.dataset.arm;b.textContent="认输";},3000); } };
+$("btnScore").onclick=()=>{ if(S.phase==="score") finishScore(); else if(S.phase==="play"){ cancelBot(); S.phase="score"; S.dead=guessDead(); render(); } };
+$("btnNew").onclick=()=>{ $("selSize").value=S.g.n; $("selMode").value=S.mode; $("inKomi").value=S.komi; $("dlgNew").showModal(); };
+$("newOk").onclick=()=>{ $("dlgNew").close(); cancelBot(); newGame(+$("selSize").value,+$("inKomi").value||0,$("selMode").value); relayout(); };
+$("newCancel").onclick=()=>$("dlgNew").close();
+$("btnHelp").onclick=()=>$("dlgHelp").showModal(); $("helpOk").onclick=()=>$("dlgHelp").close();
+document.addEventListener("keydown",e=>{
+  if(document.querySelector("dialog[open]")) return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault(); e.shiftKey?redoMove():undo();}
+  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="y"){e.preventDefault(); redoMove();}
+  else if(e.key==="Tab"&&UI.view!=="side"){e.preventDefault(); UI.active=1-UI.active; UI.view==="one"?relayout():(render(),save());}
+  else if((e.key==="s"||e.key==="S")&&!e.ctrlKey&&!e.metaKey){ swapLayers(); }
+  else if(e.key==="p"||e.key==="P"){ if(humanCanMove()) pass(); }
+  else if(e.key==="Escape"){ UI.pending=-1; UI.hover=-1; render(); }
+});
+let rzT=0; addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(relayout,80);});
+
+(function boot(){
+  const d=load();
+  if(d&&d.n){ Object.assign(UI,{libLabels:d.libLabels!==false,flip:d.flip||0,view:d.vv===3?(d.view||"3d"):"3d",active:d.act||0,shadow:d.shadow!==false,atari:d.atari!==false,confirm:d.confirm??isTouch,gap:d.gap||1.2,tilt:d.tilt??58,yaw:d.yaw??-18});
+    S.g=makeGeom(d.n); S.moves=d.moves||[]; S.redo=d.redo||[]; S.komi=d.komi??7.5; S.mode=d.mode||"hh"; replay();
+  } else {
+    S.g=makeGeom(9); S.komi=7.5; S.mode="hh";
+    S.moves=[]; replay();
+    if(innerWidth<640){ UI.yaw=0; UI.tilt=50; UI.gap=1.4; }
+  }
+  $("optShadow").checked=UI.shadow; $("optAtari").checked=UI.atari; $("optLibs").checked=UI.libLabels; $("optConfirm").checked=UI.confirm;
+  $("gap").value=UI.gap; $("tilt").value=UI.tilt;
+  requestAnimationFrame(()=>{relayout(); if(S.phase==="score") render(); maybeBot();});
+})();
+</script>
+</body></html>

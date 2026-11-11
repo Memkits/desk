@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.93) 0,rgba(7,10,18,.6) 45%,rgba(7,10,18,0) 70%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.94) 0,rgba(7,10,18,.6) 48%,rgba(7,10,18,0) 66%)}
+.t{position:absolute;left:7%;top:12%;max-width:62%}
+.v .t{left:8%;right:8%;top:6%;max-width:none}
+.k{display:inline-block;font:700 40px "Noto Sans CJK SC";color:#0b0f18;background:#FFD27A;padding:8px 22px;border-radius:12px}
+.name{font:900 150px/1.15 "Noto Serif CJK SC",serif;margin-top:28px;text-shadow:0 6px 30px #000}
+.name span{color:#FFD27A}
+.sub{font:600 36px/1.55 "Noto Sans CJK SC";margin-top:26px;color:#FFD27A;text-shadow:0 2px 12px #000}
+.v .name{font-size:140px}.v .sub{font-size:42px}.v .k{font-size:46px}
+.r43 .t{max-width:90%}.r43 .name{font-size:130px}.r43 .sub{font-size:32px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="k">新棋介绍 · AI 模拟</div><div class="name">双层<span>围棋</span></div><div class="sub" id="sub"></div></div>
+<script src="../game.js"></script><script>
+const W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+sub.innerHTML = ['把两张棋盘叠起来', '多一口气', '征子失效'].map((x, i, a) => `<span style="white-space:nowrap">${x}${i < a.length - 1 ? ' ·' : ''}</span>`).join(' ');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const HS = (a, b = 0) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+g.fillStyle = '#05070F'; g.fillRect(0, 0, W, H);
+const neb = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); };
+const S = Math.min(W, H), cx = W * (V ? .5 : R43 ? .72 : .7), cy = H * (V ? .67 : R43 ? .6 : .52);
+neb(cx, cy, S * .8, 'rgba(255,210,122,.16)'); neb(cx - S * .3, cy + S * .2, S * .5, 'rgba(92,180,255,.16)');
+for (let i = 0; i < 300; i++) { g.fillStyle = `rgba(200,215,255,${.05 + HS(i, 5) * .3})`; g.beginPath(); g.arc(HS(i, 1) * W, HS(i, 2) * H, .6 + HS(i, 3) * 1.6, 0, 7); g.fill(); }
+const n = 9, cell = S * (V ? .075 : R43 ? .056 : .066), gap = cell * 6.1, tilt = .42, th = Math.PI / 4;
+const P = (i, j, z) => { const a = i - 4, b = j - 4; return [cx + (a * Math.cos(th) - b * Math.sin(th)) * cell, cy + (a * Math.sin(th) + b * Math.cos(th)) * cell * tilt - (z - .5) * gap]; };
+const stones = window.GAME.at(70);
+function plate(z, fill) { const q = [P(-.6, -.6, z), P(n - .4, -.6, z), P(n - .4, n - .4, z), P(-.6, n - .4, z)];
+  g.fillStyle = 'rgba(0,0,0,.45)'; g.beginPath(); q.forEach((p, i) => i ? g.lineTo(p[0], p[1] + 18) : g.moveTo(p[0], p[1] + 18)); g.fill();
+  g.fillStyle = fill; g.beginPath(); q.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.fill();
+  g.strokeStyle = 'rgba(60,36,12,.75)'; g.lineWidth = 2; for (let i = 0; i < n; i++) { let a = P(i, 0, z), b = P(i, n - 1, z); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); a = P(0, i, z); b = P(n - 1, i, z); g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.stroke(); } }
+function stone(x, y, r, c) { g.save(); g.translate(x, y); g.scale(1, .78); g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(r * .12, r * .18, r, 0, 7); g.fill(); const gr = g.createRadialGradient(-r * .35, -r * .4, r * .1, 0, 0, r); if (c === 1) { gr.addColorStop(0, '#6a6f7a'); gr.addColorStop(.45, '#24272e'); gr.addColorStop(1, '#0a0b0e'); } else { gr.addColorStop(0, '#fff'); gr.addColorStop(.6, '#e6e8ee'); gr.addColorStop(1, '#a9aeb9'); } g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); g.restore(); }
+const lay = z => stones.filter(s => s[2] === z).map(s => [s, P(s[0], s[1], z)]).sort((a, b) => a[1][1] - b[1][1]).forEach(([s, p]) => stone(p[0], p[1], cell * .42, s[3]));
+plate(0, '#B5844A'); lay(0);
+g.save(); g.strokeStyle = '#FFD27A'; g.lineWidth = 3; g.setLineDash([8, 8]); g.shadowColor = '#FFD27A'; g.shadowBlur = 12; [[4, 4], [2, 6], [6, 2]].forEach(([i, j]) => { g.beginPath(); g.moveTo(...P(i, j, 0)); g.lineTo(...P(i, j, 1)); g.stroke(); }); g.restore();
+plate(1, '#C99A5B'); lay(1);
+document.fonts.ready.then(() => window.ready = true);
+</script></body></html>

@@ -1,0 +1,49 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.94) 0,rgba(7,10,18,.6) 42%,rgba(7,10,18,0) 70%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.95) 0,rgba(7,10,18,.6) 42%,rgba(7,10,18,0) 66%)}
+.t{position:absolute;left:7%;top:11%;max-width:60%}
+.v .t{left:8%;right:8%;top:6%;max-width:none}
+.series{font:900 116px/1.1 "Noto Serif CJK SC",serif;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;padding:8px 22px;border-radius:12px}
+.name{font:900 116px/1.15 "Noto Serif CJK SC",serif;margin-top:22px;text-shadow:0 6px 30px #000}
+.yr{font:700 40px "Noto Sans CJK SC";margin-top:16px;color:#E9EEF7;text-shadow:0 2px 12px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";margin-top:18px;text-shadow:0 2px 12px #000}
+.v .series{font-size:108px}.v .name{font-size:112px}.v .sub{font-size:40px}.v .ep{font-size:46px}
+.r43 .t{max-width:86%} .r43 .series{font-size:104px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="series">物理的地图</div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="yr" id="yr"></div><div class="sub" id="sub"></div></div>
+<script src="../data.js"></script><script src="../mapdata.js"></script>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 0, W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+const E = { 0: ['五集专题', '', '从米利都到引力波', '亚历山大港 · 巴格达 · 开罗 · 帕多瓦 · 剑桥 · 柏林 · 哥本哈根 · 普林斯顿', '#FFD27A', 2026, [-125, -30, 150, 62]],
+  1: ['第一集', '石头、光与冲力', '约前 600 – 1543', '原子论 · 阿基米德 · 墨经 · 光学之书 · 磁偏角', '#FFB25C', 1543, [-15, 10, 125, 52]],
+  2: ['第二集', '从比萨到剑桥', '1543 – 1800', '开普勒 · 伽利略 · 气压 · 光速 · 牛顿 · 电', '#5CB4FF', 1800, [-12, 38, 34, 60]],
+  3: ['第三集', '电、热与光', '1800 – 1900', '电磁感应 · 热力学 · 麦克斯韦 · X 射线 · 电子', '#C79BFF', 1900, [-12, 38, 34, 60]],
+  4: ['第四集', '量子的城市', '1900 – 1945', '光量子 · 相对论 · 量子力学 · 核裂变 · 大迁徙', '#FF7A93', 1945, [-100, 20, 40, 62]],
+  5: ['第五集', '大科学时代', '1945 – 今', '标准模型 · 宇宙学 · 超导 · 中微子 · 引力波', '#FF7A93', 2026, [-125, -30, 150, 62]] }[EP];
+ep.textContent = E[0]; ep.style.background = E[4]; nm.textContent = E[1]; if (!E[1]) nm.style.display = 'none'; yr.textContent = E[2]; sub.textContent = E[3]; sub.style.color = E[4];
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const P = (lat, lon) => { const l = lon * Math.PI / 180, p = lat * Math.PI / 180, p2 = p * p, p4 = p2 * p2; return [l * (0.8707 - 0.131979 * p2 + p4 * (-0.013791 + p4 * (0.003971 * p2 - 0.001529 * p4))) * 180, -p * (1.007226 + p2 * (0.015085 + p4 * (-0.044475 + 0.028874 * p2 - 0.005916 * p4))) * 180]; };
+const b = E[6], A = P(b[3], b[0]), B = P(b[1], b[2]);
+// 地图放在画面右侧（横版）或下方（竖版）
+const box = V ? { x: 0, y: H * .38, w: W, h: H * .62 } : { x: W * .25, y: 0, w: W * .75, h: H };
+const s = Math.min(box.w / (B[0] - A[0]), box.h / (B[1] - A[1])) * (V ? 1.25 : 1.12), cx = (A[0] + B[0]) / 2, cy = (A[1] + B[1]) / 2;
+const OX = box.x + box.w / 2, OY = box.y + box.h / 2, X = p => [OX + (p[0] - cx) * s, OY + (p[1] - cy) * s];
+const ERA = ['#FFB25C', '#5FE0A0', '#5CB4FF', '#C79BFF', '#FF7A93'], eraOf = y => y < 500 ? 0 : y < 1500 ? 1 : y < 1800 ? 2 : y < 1900 ? 3 : 4;
+const recs = RECORDS.filter(r => r[0] <= E[5]); const lo = { 0: -1e9, 1: -1e9, 2: 1543, 3: 1800, 4: 1900, 5: 1945 }[EP];
+const cnt = {}; recs.filter(r => r[0] >= lo).forEach(r => { const iso = PLACES[r[5]][3]; (cnt[iso] = cnt[iso] || new Set()).add(r[2]); }); const mx = Math.max(3, ...Object.values(cnt).map(x => x.size));
+g.fillStyle = '#0A1426'; g.fillRect(0, 0, W, H); g.setTransform(s, 0, 0, s, OX - cx * s, OY - cy * s);
+MAP.forEach(c => { const p = new Path2D(c.d); const k = cnt[c.id]; g.fillStyle = k ? `rgba(255,178,92,${.18 + .5 * Math.sqrt(k.size / mx)})` : '#172238'; g.fill(p); g.lineWidth = .8 / s; g.strokeStyle = '#33415f'; g.stroke(p); });
+g.setTransform(1, 0, 0, 1, 0, 0);
+const grp = {}; recs.forEach(r => (grp[r[5]] = grp[r[5]] || []).push(r));
+Object.entries(grp).forEach(([pk, rs]) => { const last = rs.reduce((a, r) => r[0] > a[0] ? r : a); const [x, y] = X(P(PLACES[pk][0], PLACES[pk][1])); const old = last[0] < lo; const rad = (6 + Math.sqrt(rs.length) * 4) * Math.min(1.8, Math.pow(s / 1.6, .4));
+  g.globalAlpha = old ? .35 : 1; const gr = g.createRadialGradient(x, y, 0, x, y, rad * 3); gr.addColorStop(0, ERA[eraOf(last[0])] + '88'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad * 3, 0, 7); g.fill();
+  g.fillStyle = ERA[eraOf(last[0])]; g.beginPath(); g.arc(x, y, rad, 0, 7); g.fill(); g.strokeStyle = 'rgba(7,10,18,.9)'; g.lineWidth = 2; g.stroke(); g.globalAlpha = 1; });
+document.fonts.ready.then(() => window.ready = true);
+</script>
+</body></html>

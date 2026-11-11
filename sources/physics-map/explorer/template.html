@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>物理学家世界地图</title>
+<style>
+:root{
+  --bg:#f4f1ea; --panel:#fffdf8; --ink:#1f2328; --muted:#6b6f76; --line:#d9d3c7;
+  --sea:#dfe8ee; --land:#ece6d9; --land-stroke:#b9b0a0; --accent:#b4532a;
+  --c0:#c8862b; --c1:#2a8a7b; --c2:#3b6fc0; --c3:#8a4fbf; --c4:#c43d4b;
+  --heat:180,83,42;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171b; --panel:#1d2026; --ink:#e7e4dd; --muted:#9a9ea6; --line:#343840;
+    --sea:#1a2530; --land:#2a2d33; --land-stroke:#4a4f58; --accent:#e58a5c;
+    --c0:#e0a548; --c1:#45b3a1; --c2:#6f9ae6; --c3:#b386e0; --c4:#ec6a76;
+    --heat:229,138,92;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171b; --panel:#1d2026; --ink:#e7e4dd; --muted:#9a9ea6; --line:#343840;
+  --sea:#1a2530; --land:#2a2d33; --land-stroke:#4a4f58; --accent:#e58a5c;
+  --c0:#e0a548; --c1:#45b3a1; --c2:#6f9ae6; --c3:#b386e0; --c4:#ec6a76;
+  --heat:229,138,92;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:baseline;gap:16px;padding:10px 16px 6px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;font-weight:650}
+header .sub{color:var(--muted);font-size:12.5px}
+header .sp{flex:1}
+button,select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.seg{display:inline-flex}.seg button{border-radius:0;margin-left:-1px}.seg button:first-child{border-radius:6px 0 0 6px;margin:0}.seg button:last-child{border-radius:0 6px 6px 0}
+main{flex:1;display:flex;min-height:0;gap:10px;padding:0 10px}
+#mapwrap{flex:1;position:relative;min-width:0;background:var(--sea);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+#map{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#map.drag{cursor:grabbing}
+.country{fill:var(--land);stroke:var(--land-stroke);stroke-width:.35;vector-effect:non-scaling-stroke}
+.country.hot{stroke:var(--accent);stroke-width:1.2}
+.mk{stroke:var(--panel);cursor:pointer;vector-effect:non-scaling-stroke;stroke-width:1.2;transition:opacity .2s}
+.mk.dim{opacity:.18}
+.mk.sel{stroke:var(--ink);stroke-width:2.4}
+.pulse{fill:none;stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}
+.trail{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;pointer-events:none;opacity:.8}
+.trailnum{font-size:9px;fill:var(--ink);pointer-events:none;font-weight:700;paint-order:stroke;stroke:var(--panel);stroke-width:3px}
+#bigyear{position:absolute;left:14px;bottom:10px;font-size:44px;font-weight:700;color:var(--ink);opacity:.82;pointer-events:none;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+#bigyear small{display:block;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0}
+#legend{position:absolute;right:10px;bottom:10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;opacity:.95}
+#legend span{display:inline-flex;align-items:center;gap:4px;margin-right:8px}
+#legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+#zoomctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
+#zoomctl button{width:30px;padding:2px 0}
+#presets{position:absolute;left:10px;top:10px;display:flex;gap:4px;flex-wrap:wrap}
+#presets button{font-size:12px;padding:2px 8px;opacity:.92}
+#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12px;box-shadow:0 2px 10px rgba(0,0,0,.15);display:none;max-width:260px;z-index:5}
+aside{width:380px;flex-shrink:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:0}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:0;border-radius:0;background:transparent;padding:8px 0;color:var(--muted)}
+.tabs button.on{color:var(--accent);background:transparent;box-shadow:inset 0 -2px 0 var(--accent)}
+.pane{flex:1;overflow:auto;padding:10px 12px;display:none}
+.pane.on{display:block}
+.kpi{display:flex;gap:12px;margin-bottom:8px}
+.kpi div{flex:1;background:var(--bg);border-radius:8px;padding:6px 8px}
+.kpi b{font-size:20px;display:block;font-variant-numeric:tabular-nums}
+.kpi span{font-size:11.5px;color:var(--muted)}
+.bar{display:grid;grid-template-columns:150px 1fr 52px;align-items:center;gap:6px;font-size:12.5px;padding:2px 0;cursor:pointer}
+.bar:hover .lbl{color:var(--accent)}
+.bar .lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .trk{height:12px;background:var(--bg);border-radius:3px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:3px}
+.bar .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.bar .num b{color:var(--ink)}
+.h{font-size:12px;color:var(--muted);margin:10px 0 4px;display:flex;justify-content:space-between;align-items:center}
+.rec{padding:7px 8px;border-radius:7px;border:1px solid transparent;margin-bottom:4px;cursor:pointer;border-left:3px solid var(--c);}
+.rec:hover{border-color:var(--line);border-left-color:var(--c)}
+.rec.sel{background:var(--bg)}
+.rec .t{display:flex;justify-content:space-between;gap:6px}
+.rec .who{font-weight:600}
+.rec .yr{color:var(--muted);font-size:12px;white-space:nowrap}
+.rec .what{font-size:13px;margin-top:1px}
+.rec .where{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rec .note{font-size:11.5px;color:var(--muted);margin-top:2px;font-style:italic}
+.unc{display:inline-block;font-size:10.5px;color:#fff;background:#b07a1d;border-radius:3px;padding:0 4px;margin-left:4px;font-style:normal;vertical-align:1px}
+.person{background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.person h3{margin:0 0 2px;font-size:16px}
+.person .en{color:var(--muted);font-size:12px}
+.empty{color:var(--muted);padding:20px 4px;text-align:center}
+#search{width:100%;font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);margin-bottom:8px}
+footer{padding:8px 10px 10px}
+#tl{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px 6px;display:flex;gap:12px;align-items:center}
+#tlctl{display:flex;gap:6px;align-items:center;flex-shrink:0}
+#play{width:84px;white-space:nowrap}
+#track{flex:1;position:relative;height:58px;cursor:pointer;user-select:none;touch-action:none}
+#hist{position:absolute;left:0;right:0;top:0;height:30px;display:block}
+#axis{position:absolute;left:0;right:0;top:32px;height:1px;background:var(--line)}
+.tick{position:absolute;top:34px;font-size:11px;color:var(--muted);transform:translateX(-50%);white-space:nowrap}
+.tick::before{content:"";position:absolute;left:50%;top:-4px;height:4px;width:1px;background:var(--line)}
+#win{position:absolute;top:0;height:31px;background:rgba(var(--heat),.13);border-radius:3px;pointer-events:none}
+#knob{position:absolute;top:-2px;width:3px;height:36px;background:var(--accent);transform:translateX(-1px);border-radius:2px;pointer-events:none}
+#knob::after{content:"";position:absolute;left:-5px;top:-4px;width:13px;height:13px;border-radius:50%;background:var(--accent)}
+.foot-note{font-size:11.5px;color:var(--muted);padding:4px 4px 0}
+@media (max-width:900px){
+  body{overflow:auto;height:auto}
+  main{flex-direction:column;padding:0 16px}
+  #mapwrap{height:56vh;flex:none}
+  aside{width:100%;height:60vh}
+  footer{padding:8px 16px}
+  #tl{flex-direction:column;align-items:stretch}
+  #bigyear{font-size:30px}
+  .bar{grid-template-columns:96px 1fr 48px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>物理学家世界地图 · 从米利都到引力波</h1>
+  <span class="sub">按“做出/发表成果时所在地点”标注，一人可出现在多个地点</span>
+  <span class="sp"></span>
+  <span class="seg" id="modeSeg"><button data-m="cum" class="on">累计</button><button data-m="win">当时活跃</button></span>
+  <span class="seg" id="grpSeg"><button data-g="r" class="on">按当时政权</button><button data-g="c">按今国家</button></span>
+  <button id="themeBtn" title="切换明暗">明 / 暗</button>
+</header>
+<main>
+  <div id="mapwrap">
+    <svg id="map" viewBox="-495 -262 990 452" preserveAspectRatio="xMidYMid meet">
+      <g id="vp"><g id="countries"></g><g id="trails"></g><g id="markers"></g></g>
+    </svg>
+    <div id="bigyear"></div>
+    <div id="zoomctl"><button id="zin" title="放大">＋</button><button id="zout" title="缩小">－</button><button id="zreset" title="全球">⟲</button></div>
+    <div id="presets"><button data-v="eu">欧洲</button><button data-v="me">地中海/中东</button><button data-v="as">东亚/南亚</button><button data-v="na">北美</button></div>
+    <div id="legend"></div>
+    <div id="tip"></div>
+  </div>
+  <aside>
+    <div class="tabs"><button data-t="stats" class="on">分布统计</button><button data-t="list">成果列表</button><button data-t="detail">详情</button></div>
+    <div class="pane on" id="p-stats"></div>
+    <div class="pane" id="p-list"><input id="search" placeholder="搜索人物、成果、地点…"><div id="listbody"></div></div>
+    <div class="pane" id="p-detail"><div class="empty">点击地图上的圆点，或列表中的条目，查看详情</div></div>
+  </aside>
+</main>
+<footer>
+  <div id="tl">
+    <div id="tlctl">
+      <button id="play">▶ 播放</button>
+      <select id="speed" title="播放速度"><option value="0.6">慢</option><option value="1.5" selected>中</option><option value="4">快</option></select>
+    </div>
+    <div id="track"><canvas id="hist"></canvas><div id="axis"></div><div id="win"></div><div id="knob"></div></div>
+  </div>
+  <div class="foot-note">时间轴为分段比例尺（古代压缩、近代展开）。<span class="unc">存疑</span> 表示年代、地点或归属不确定。底图为今日国界（Natural Earth 1:110m），“当时政权”为成果当时的地域归属。物理学家人数按人去重计数；多人合作的成果计为一条，标在主要工作地点。</div>
+</footer>
+<script>
+/*DATA*/
+const MAP = /*MAP*/;
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+// ── 投影（Natural Earth I，与底图一致） ──
+function proj(lat,lon){const l=lon*Math.PI/180,p=lat*Math.PI/180,p2=p*p,p4=p2*p2;
+  const x=l*(0.8707-0.131979*p2+p4*(-0.013791+p4*(0.003971*p2-0.001529*p4)));
+  const y=p*(1.007226+p2*(0.015085+p4*(-0.044475+0.028874*p2-0.005916*p4)));
+  return [x*180,-y*180];}
+// ── 记录 ──
+const ERAS=[{n:"古代",max:500},{n:"中世纪",max:1500},{n:"科学革命",max:1800},{n:"19世纪",max:1900},{n:"20世纪以后",max:1e9}];
+const eraOf=y=>ERAS.findIndex(e=>y<e.max);
+const recs=RECORDS.map((r,i)=>{const P=PLACES[r[5]];if(!P)console.warn("missing place",r[5]);
+  return {i,y:r[0],yl:r[1],who:r[2],en:r[3],what:r[4],pk:r[5],reg:r[6],note:r[7],unc:!!r[8],
+    pl:P[2],iso:P[3],cn:P[4],xy:proj(P[0],P[1]),era:eraOf(r[0])};}).sort((a,b)=>a.y-b.y||a.i-b.i);
+const byPerson={};recs.forEach(r=>(byPerson[r.who]=byPerson[r.who]||[]).push(r));
+// ── 分段时间轴 ──
+const BP=[[0,-600],[170,500],[300,1500],[540,1800],[690,1900],[1000,2026]];
+function pos2y(p){for(let k=1;k<BP.length;k++){if(p<=BP[k][0]){const[a,ya]=BP[k-1],[b,yb]=BP[k];return ya+(yb-ya)*(p-a)/(b-a);}}return 2026;}
+function y2pos(y){for(let k=1;k<BP.length;k++){if(y<=BP[k][1]){const[a,ya]=BP[k-1],[b,yb]=BP[k];return a+(b-a)*(y-ya)/(yb-ya);}}return 1000;}
+recs.forEach(r=>r.pos=y2pos(r.y));
+const WIN=55; // “当时活跃”窗口（时间轴单位）
+let pos=1000, mode="cum", grp="r", playing=false, selPlace=null, selPerson=null, selRec=null;
+const fmtY=y=>{y=Math.round(y);return y<0?`公元前${-y}年`:`${y}年`;};
+// ── 底图 ──
+const NS="http://www.w3.org/2000/svg";
+const gC=$("#countries"),gM=$("#markers"),gT=$("#trails");
+const cEl={};
+MAP.forEach(c=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",c.d);p.setAttribute("class","country");p.dataset.id=c.id;gC.appendChild(p);cEl[c.id]=p;});
+const cName={};MAP.forEach(c=>cName[c.id]=c.zh);
+// ── 平移缩放 ──
+const svg=$("#map");let vb={x:-495,y:-262,w:990,h:452};const VB0={...vb};
+function setVB(){svg.setAttribute("viewBox",`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);drawMarkers();}
+function zoomAt(f,cx,cy){const nw=Math.min(VB0.w,Math.max(40,vb.w*f));const k=nw/vb.w;vb.x=cx-(cx-vb.x)*k;vb.y=cy-(cy-vb.y)*k;vb.w=nw;vb.h=vb.w*VB0.h/VB0.w;setVB();}
+function svgPt(e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse());}
+svg.addEventListener("wheel",e=>{e.preventDefault();const p=svgPt(e);zoomAt(e.deltaY>0?1.2:1/1.2,p.x,p.y);},{passive:false});
+let drag=null;
+svg.addEventListener("pointerdown",e=>{if(e.target.classList.contains("mk"))return;drag={x:e.clientX,y:e.clientY,vx:vb.x,vy:vb.y,moved:false};svg.setPointerCapture(e.pointerId);svg.classList.add("drag");});
+svg.addEventListener("pointermove",e=>{if(!drag)return;const s=vb.w/svg.clientWidth*Math.max(1,(VB0.w/VB0.h)/(svg.clientWidth/svg.clientHeight));
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;vb.x=drag.vx-dx*s;vb.y=drag.vy-dy*s;setVB();});
+svg.addEventListener("pointerup",e=>{if(drag&&!drag.moved&&!e.target.classList.contains("mk")){selPlace=null;selPerson=null;selRec=null;render();}drag=null;svg.classList.remove("drag");});
+$("#zin").onclick=()=>zoomAt(1/1.5,vb.x+vb.w/2,vb.y+vb.h/2);
+$("#zout").onclick=()=>zoomAt(1.5,vb.x+vb.w/2,vb.y+vb.h/2);
+$("#zreset").onclick=()=>{vb={...VB0};setVB();};
+const PRE={eu:[-11,36,32,61],me:[-6,22,72,44],as:[66,5,145,46],na:[-125,25,-66,50]};
+function fitBox([lo1,la1,lo2,la2]){const a=proj(la2,lo1),b=proj(la1,lo2),c=proj(la2,lo2),d=proj(la1,lo1);
+  const x1=Math.min(a[0],d[0]),x2=Math.max(b[0],c[0]),y1=Math.min(a[1],c[1]),y2=Math.max(b[1],d[1]);
+  let w=x2-x1,h=y2-y1;const R=VB0.w/VB0.h;if(w/h<R)w=h*R;else h=w/R;vb={x:(x1+x2)/2-w/2,y:(y1+y2)/2-h/2,w,h};setVB();}
+$$("#presets button").forEach(b=>b.onclick=()=>fitBox(PRE[b.dataset.v]));
+// ── 可见记录 ──
+function visible(){const y=pos2y(pos);return recs.filter(r=>r.pos<=pos+1e-6&&(mode==="cum"||r.pos>=pos-WIN));}
+// ── 图例 ──
+$("#legend").innerHTML=ERAS.map((e,i)=>`<span><i style="background:var(--c${i})"></i>${e.n}</span>`).join("");
+// ── 提示框 ──
+const tip=$("#tip");
+function showTip(e,html){tip.innerHTML=html;tip.style.display="block";const R=$("#mapwrap").getBoundingClientRect();let x=e.clientX-R.left+12,y=e.clientY-R.top+12;if(x>R.width-270)x-=280;if(y>R.height-80)y-=70;tip.style.left=x+"px";tip.style.top=y+"px";}
+function hideTip(){tip.style.display="none";}
+gC.addEventListener("pointermove",e=>{const id=e.target.dataset.id;if(!id)return;const v=lastVis.filter(r=>r.iso===id);const ppl=new Set(v.map(r=>r.who)).size;
+  showTip(e,`<b>${cName[id]||id}</b>（今）<br>${ppl} 位物理学家 · ${v.length} 项成果`);});
+gC.addEventListener("pointerleave",hideTip);
+// ── 绘制 ──
+let lastVis=[];
+function drawMarkers(){
+  const vis=lastVis, k=vb.w/VB0.w; // 缩放系数
+  const groups={};vis.forEach(r=>(groups[r.pk]=groups[r.pk]||[]).push(r));
+  const y=pos;
+  gM.innerHTML="";
+  const order=Object.values(groups).sort((a,b)=>b.length-a.length);
+  const focusSet=selPerson?new Set(byPerson[selPerson].map(r=>r.pk)):null;
+  order.forEach(g=>{
+    const last=g[g.length-1];const [x,yy]=last.xy;
+    const rad=(2.6+Math.sqrt(g.length)*1.9)*Math.max(.2,Math.pow(k,.75));
+    const fresh=g.some(r=>pos-r.pos<14);
+    if(fresh&&playing){const c=document.createElementNS(NS,"circle");c.setAttribute("cx",x);c.setAttribute("cy",yy);c.setAttribute("r",rad*1.9);c.setAttribute("class","pulse");c.setAttribute("stroke",`var(--c${last.era})`);gM.appendChild(c);}
+    const c=document.createElementNS(NS,"circle");
+    c.setAttribute("cx",x);c.setAttribute("cy",yy);c.setAttribute("r",rad);c.setAttribute("fill",`var(--c${last.era})`);
+    let cls="mk";if(focusSet&&!focusSet.has(last.pk))cls+=" dim";if(selPlace===last.pk)cls+=" sel";
+    c.setAttribute("class",cls);c.dataset.pk=last.pk;
+    c.addEventListener("pointerenter",e=>{const ppl=[...new Set(g.map(r=>r.who))];showTip(e,`<b>${last.pl}</b>（今${last.cn}）<br>${ppl.slice(0,6).join("、")}${ppl.length>6?` 等${ppl.length}人`:""}<br><span style="color:var(--muted)">${g.length} 项成果，点击查看</span>`);});
+    c.addEventListener("pointerleave",hideTip);
+    c.addEventListener("click",e=>{e.stopPropagation();selPlace=last.pk;selPerson=null;selRec=null;showTab("detail");render();});
+    gM.appendChild(c);
+  });
+  // 人物轨迹
+  gT.innerHTML="";
+  if(selPerson){const rs=byPerson[selPerson];const pts=[];rs.forEach(r=>{const l=pts[pts.length-1];if(!l||l.pk!==r.pk)pts.push(r);});
+    if(pts.length>1){const p=document.createElementNS(NS,"path");p.setAttribute("d","M"+pts.map(r=>r.xy.join(",")).join("L"));p.setAttribute("class","trail");gT.appendChild(p);}
+    pts.forEach((r,i)=>{const t=document.createElementNS(NS,"text");t.setAttribute("x",r.xy[0]+4*Math.sqrt(k));t.setAttribute("y",r.xy[1]-4*Math.sqrt(k));t.setAttribute("class","trailnum");t.setAttribute("font-size",11*Math.sqrt(k));t.textContent=(i+1)+"";gT.appendChild(t);
+      if(!lastVis.includes(r)){const c=document.createElementNS(NS,"circle");c.setAttribute("cx",r.xy[0]);c.setAttribute("cy",r.xy[1]);c.setAttribute("r",3*Math.max(.2,Math.pow(k,.75)));c.setAttribute("fill","none");c.setAttribute("stroke",`var(--c${r.era})`);c.setAttribute("stroke-dasharray","2 2");c.setAttribute("class","pulse");gT.appendChild(c);}});
+  }
+}
+function heat(vis){const cnt={};vis.forEach(r=>{(cnt[r.iso]=cnt[r.iso]||new Set()).add(r.who);});
+  const max=Math.max(1,...Object.values(cnt).map(s=>s.size));
+  MAP.forEach(c=>{const s=cnt[c.id];const el=cEl[c.id];if(s){const a=.28+.62*Math.sqrt(s.size/max);el.style.fill=`rgba(var(--heat),${a.toFixed(3)})`;}else el.style.fill="";});}
+function recHTML(r,showWhere=true){return `<div class="rec${selRec===r?" sel":""}" style="--c:var(--c${r.era})" data-i="${r.i}">
+  <div class="t"><span class="who">${r.who}</span><span class="yr">${r.yl}</span></div>
+  <div class="what">${r.what}</div>
+  ${showWhere?`<div class="where">📍 ${r.pl}（今${r.cn}）· 当时：${r.reg}</div>`:""}
+  ${r.note||r.unc?`<div class="note">${r.unc?'<span class="unc">存疑</span> ':""}${r.note}</div>`:""}</div>`;}
+function bindRecs(root){root.querySelectorAll(".rec").forEach(el=>el.onclick=()=>{const r=recs.find(x=>x.i==el.dataset.i);selRec=r;selPerson=r.who;selPlace=null;showTab("detail");render();});}
+function renderStats(vis){
+  const ppl=new Set(vis.map(r=>r.who));
+  const key=grp==="r"?(r=>r.reg):(r=>r.cn);
+  const g={};vis.forEach(r=>{const k=key(r);(g[k]=g[k]||{p:new Set(),n:0}).p.add(r.who);g[k].n++;});
+  const rows=Object.entries(g).sort((a,b)=>b[1].p.size-a[1].p.size||b[1].n-a[1].n);
+  const max=rows.length?rows[0][1].p.size:1;
+  const recent=vis.slice(-6).reverse();
+  $("#p-stats").innerHTML=`<div class="kpi"><div><b>${ppl.size}</b><span>位物理学家（去重）</span></div><div><b>${vis.length}</b><span>项成果</span></div><div><b>${rows.length}</b><span>${grp==="r"?"个政权/地域":"个今国家"}</span></div></div>
+  <div class="h"><span>${grp==="r"?"按成果当时的政权/地域":"按今日国家"}（人数 · 成果数）</span></div>
+  ${rows.length?rows.map(([k,v])=>`<div class="bar" data-k="${k}" title="${k}"><span class="lbl">${k}</span><span class="trk"><span class="fill" style="display:block;width:${(v.p.size/max*100).toFixed(1)}%"></span></span><span class="num"><b>${v.p.size}</b> · ${v.n}</span></div>`).join(""):'<div class="empty">这一时期还没有记录</div>'}
+  <div class="h"><span>${mode==="cum"?"最近加入":"此时段成果"}</span></div>
+  ${recent.map(r=>recHTML(r)).join("")}`;
+  $("#p-stats").querySelectorAll(".bar").forEach(b=>b.onclick=()=>{$("#search").value=b.dataset.k;showTab("list");renderList();});
+  bindRecs($("#p-stats"));
+}
+function renderList(){
+  const q=$("#search").value.trim().toLowerCase();
+  let v=lastVis;if(q)v=v.filter(r=>[r.who,r.en,r.what,r.pl,r.cn,r.reg,r.yl].join(" ").toLowerCase().includes(q));
+  $("#listbody").innerHTML=`<div class="h"><span>${v.length} 条（随时间轴变化）</span></div>`+(v.length?v.slice().reverse().map(r=>recHTML(r)).join(""):'<div class="empty">没有匹配的记录</div>');
+  bindRecs($("#listbody"));
+}
+$("#search").oninput=renderList;
+function renderDetail(){
+  const el=$("#p-detail");
+  if(selPerson){const rs=byPerson[selPerson];const places=[...new Set(rs.map(r=>r.pl))];
+    el.innerHTML=`<div class="person"><h3>${selPerson}</h3><div class="en">${[...new Set(rs.map(r=>r.en))].join(" / ")}</div>
+    <div style="font-size:12.5px;margin-top:4px">${rs.length} 项成果 · ${places.length} 个地点${places.length>1?"（地图上虚线为其足迹顺序）":""}</div></div>
+    ${rs.map(r=>recHTML(r)).join("")}`;bindRecs(el);return;}
+  if(selPlace){const all=recs.filter(r=>r.pk===selPlace);const P=all[0];const vis=lastVis.filter(r=>r.pk===selPlace);
+    el.innerHTML=`<div class="person"><h3>📍 ${P.pl}</h3><div class="en">今${P.cn} · 至 ${fmtY(pos2y(pos))} 共 ${vis.length} 项（全时段 ${all.length} 项）</div></div>
+    ${vis.slice().reverse().map(r=>recHTML(r)).join("")}
+    ${all.length>vis.length?`<div class="h"><span>之后在此地的成果</span></div>`+all.filter(r=>!vis.includes(r)).map(r=>recHTML(r,false)).join(""):""}`;bindRecs(el);return;}
+  el.innerHTML='<div class="empty">点击地图上的圆点，或列表中的条目，查看详情</div>';
+}
+function showTab(t){$$(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+t));}
+$$(".tabs button").forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+// ── 时间轴 ──
+const track=$("#track"),knob=$("#knob"),win=$("#win"),hist=$("#hist");
+const TICKS=[-600,-300,0,500,1000,1500,1600,1700,1800,1850,1900,1925,1950,1975,2000];
+TICKS.forEach(y=>{const d=document.createElement("div");d.className="tick";d.style.left=(y2pos(y)/10)+"%";d.textContent=y<0?`前${-y}`:y;track.appendChild(d);});
+function drawHist(){const w=track.clientWidth,h=30,dpr=window.devicePixelRatio||1;hist.width=w*dpr;hist.height=h*dpr;hist.style.width=w+"px";hist.style.height=h+"px";
+  const ctx=hist.getContext("2d");ctx.scale(dpr,dpr);const N=Math.max(50,Math.floor(w/5));const bins=new Array(N).fill(0),era=new Array(N).fill(0);
+  recs.forEach(r=>{const b=Math.min(N-1,Math.floor(r.pos/1000*N));bins[b]++;era[b]=r.era;});
+  const m=Math.max(...bins);const cs=getComputedStyle(document.documentElement);
+  bins.forEach((v,i)=>{if(!v)return;const bh=4+(h-6)*v/m;ctx.fillStyle=cs.getPropertyValue("--c"+era[i]).trim();ctx.globalAlpha=(i/N*1000)<=pos?.9:.3;ctx.fillRect(i*w/N+.5,h-bh,w/N-1,bh);});}
+function setPos(p){pos=Math.max(0,Math.min(1000,p));render();}
+let tdrag=false;
+function tpos(e){const R=track.getBoundingClientRect();return (e.clientX-R.left)/R.width*1000;}
+track.addEventListener("pointerdown",e=>{tdrag=true;track.setPointerCapture(e.pointerId);stop();setPos(tpos(e));});
+track.addEventListener("pointermove",e=>{if(tdrag)setPos(tpos(e));});
+track.addEventListener("pointerup",()=>tdrag=false);
+document.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT")return;if(e.key===" "){e.preventDefault();toggle();}
+  if(e.key==="ArrowRight"){stop();const n=recs.find(r=>r.pos>pos+1e-6);if(n)setPos(n.pos);}
+  if(e.key==="ArrowLeft"){stop();const p=[...recs].reverse().find(r=>r.pos<pos-1e-6);setPos(p?p.pos:0);}});
+let raf=null,lastT=0;
+function step(t){if(!playing)return;const dt=Math.min(80,t-(lastT||t));lastT=t;let np=pos+dt/1000*12*parseFloat($("#speed").value);if(np>=1000){np=1000;setPos(np);stop();return;}setPos(np);raf=requestAnimationFrame(step);}
+function start(){if(pos>=999.9)pos=0;playing=true;lastT=0;$("#play").textContent="⏸ 暂停";$("#play").classList.add("on");raf=requestAnimationFrame(step);}
+function stop(){playing=false;cancelAnimationFrame(raf);$("#play").textContent="▶ 播放";$("#play").classList.remove("on");render();}
+function toggle(){playing?stop():start();}
+$("#play").onclick=toggle;
+$$("#modeSeg button").forEach(b=>b.onclick=()=>{mode=b.dataset.m;$$("#modeSeg button").forEach(x=>x.classList.toggle("on",x===b));render();});
+$$("#grpSeg button").forEach(b=>b.onclick=()=>{grp=b.dataset.g;$$("#grpSeg button").forEach(x=>x.classList.toggle("on",x===b));render();});
+$("#themeBtn").onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;r.dataset.theme=dark?"light":"dark";render();};
+let lastStatsAt=-1;
+function render(){
+  lastVis=visible();
+  const y=pos2y(pos);
+  $("#bigyear").innerHTML=`${fmtY(y)}<small>${mode==="cum"?"累计至此":"前后约一代人的活跃成果"} · ${new Set(lastVis.map(r=>r.who)).size} 位物理学家</small>`;
+  knob.style.left=(pos/10)+"%";
+  if(mode==="win"){win.style.display="block";win.style.left=(Math.max(0,pos-WIN)/10)+"%";win.style.width=((pos-Math.max(0,pos-WIN))/10)+"%";}else win.style.display="none";
+  heat(lastVis);drawMarkers();drawHist();
+  const sig=lastVis.length+":"+mode+grp+(lastVis[0]?.i??"")+(selPerson||"")+(selPlace||"")+(selRec?.i??"");
+  if(sig!==lastStatsAt){lastStatsAt=sig;renderStats(lastVis);renderList();renderDetail();}
+}
+window.addEventListener("resize",()=>render());
+render();
+})();
+</script>
+</body>
+</html>

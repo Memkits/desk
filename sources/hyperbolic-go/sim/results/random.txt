@@ -1,0 +1,14 @@
+sq9 T1 {"moves":125.0,"caps":59.2,"branch":31.2,"log10tree":171,"blackWin":0.514,"scoreMean":1.00,"scoreStd":36.47,"capHit":0.131}
+sq11 T1 {"moves":202.2,"caps":102.9,"branch":40.0,"log10tree":326,"blackWin":0.525,"scoreMean":1.58,"scoreStd":42.44,"capHit":0.216}
+torus11 T1 {"moves":184.0,"caps":78.5,"branch":42.8,"log10tree":283,"blackWin":0.533,"scoreMean":3.56,"scoreStd":46.57,"capHit":0.166}
+hyp54 T1 {"moves":302.6,"caps":210.5,"branch":36.3,"log10tree":484,"blackWin":0.503,"scoreMean":1.07,"scoreStd":39.45,"capHit":0.594}
+hyp45 T1 {"moves":189.3,"caps":113.4,"branch":31.2,"log10tree":308,"blackWin":0.503,"scoreMean":0.85,"scoreStd":33.72,"capHit":0.330}
+layer2_8x8 T1 {"moves":178.5,"caps":66.2,"branch":45.3,"log10tree":301,"blackWin":0.528,"scoreMean":6.09,"scoreStd":56.19,"capHit":0.079}
+layer3_7x7 T1 {"moves":209.3,"caps":76.7,"branch":50.5,"log10tree":343,"blackWin":0.515,"scoreMean":1.61,"scoreStd":61.88,"capHit":0.122}
+cube5 T1 {"moves":179.5,"caps":67.4,"branch":45.2,"log10tree":284,"blackWin":0.530,"scoreMean":3.26,"scoreStd":66.20,"capHit":0.108}
+diamond_torus128 T1 {"moves":224.2,"caps":110.3,"branch":36.1,"log10tree":343,"blackWin":0.503,"scoreMean":3.50,"scoreStd":59.61,"capHit":0.287}
+diamond_open T1 {"moves":268.8,"caps":186.1,"branch":28.4,"log10tree":396,"blackWin":0.486,"scoreMean":1.34,"scoreStd":38.60,"capHit":0.712}
+sq11 T2 {"moves":172.3,"caps":67.8,"branch":49.3,"log10tree":271,"blackWin":0.516,"scoreMean":1.29,"scoreStd":56.62,"capHit":0.000}
+layer2_8x8 T2 {"moves":187.6,"caps":73.4,"branch":50.8,"log10tree":296,"blackWin":0.512,"scoreMean":4.96,"scoreStd":86.28,"capHit":0.000}
+layer3_7x7 T2 {"moves":218.2,"caps":86.2,"branch":58.8,"log10tree":350,"blackWin":0.526,"scoreMean":5.21,"scoreStd":109.97,"capHit":0.000}
+cube5 T2 {"moves":196.7,"caps":85.6,"branch":48.2,"log10tree":309,"blackWin":0.535,"scoreMean":7.15,"scoreStd":105.19,"capHit":0.000}

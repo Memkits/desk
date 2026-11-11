@@ -1,0 +1,42 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.85) 0,rgba(7,10,18,.45) 45%,rgba(7,10,18,0) 70%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.92) 0,rgba(7,10,18,.6) 42%,rgba(7,10,18,0) 65%)}
+.t{position:absolute;left:7%;top:11%;max-width:60%}
+.v .t{left:8%;right:8%;top:6%;max-width:none}
+.series{font:900 112px/1.1 "Noto Serif CJK SC",serif;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;padding:8px 22px;border-radius:12px}
+.name{font:900 120px/1.15 "Noto Serif CJK SC",serif;margin-top:22px;text-shadow:0 6px 30px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";margin-top:22px;text-shadow:0 2px 12px #000}
+.v .series{font-size:104px}.v .name{font-size:118px}.v .sub{font-size:42px}.v .ep{font-size:48px}
+.r43 .t{max-width:88%} .r43 .series{font-size:100px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="series">宇宙的琴弦<span style="font-size:.5em;margin-left:.4em;color:#FFD27A">导读</span></div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 0, W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+const E = { 0: ['三集导读', '', '相对论 · 量子力学 · 弦 · M 理论 · 1999 年以后', '#FFD27A'],
+  1: ['第一集', '两座大厦的裂缝', '狭义相对论 · 广义相对论 · 量子力学 · 量子泡沫', '#5CB4FF'],
+  2: ['第二集', '万物皆是弦', '振动 · 超对称 · 额外维度 · T 对偶', '#FFD27A'],
+  3: ['第三集', 'M 理论与之后', '对偶 · 黑洞熵 · 全息 · 1999–2026 时间线', '#C79BFF'] }[EP];
+ep.textContent = E[0]; ep.style.background = E[3]; nm.textContent = E[1]; if (!E[1]) { nm.style.display = 'none'; sub.style.fontSize = '46px'; sub.style.marginTop = '40px'; sub.style.maxWidth = V ? 'none' : '62%'; } sub.style.color = E[3];
+sub.innerHTML = E[2].split(' · ').map((x, i, a) => `<span style="white-space:nowrap">${x}${i < a.length - 1 ? ' ·' : ''}</span>`).join(' ');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const HS = (a, b = 0) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+g.fillStyle = '#05070F'; g.fillRect(0, 0, W, H);
+const neb = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); };
+const cx = W * (V ? .5 : R43 ? .82 : .74), cy = H * (V ? .68 : .5), S = Math.min(W, H);
+neb(cx, cy, S * .8, 'rgba(70,60,140,.45)'); neb(cx - S * .3, cy + S * .2, S * .5, 'rgba(40,90,150,.35)');
+for (let i = 0; i < 500; i++) { g.fillStyle = `rgba(230,235,255,${.15 + HS(i, 5) * .7})`; const r = HS(i, 6) < .95 ? 1.2 : 2.6; g.beginPath(); g.arc(HS(i, 1) * W, HS(i, 2) * H, r, 0, 7); g.fill(); }
+const loop = (x, y, r, n, amp, ph, col, lw) => { g.save(); g.strokeStyle = col; g.lineWidth = lw; g.shadowColor = col; g.shadowBlur = 30; g.beginPath(); for (let i = 0; i <= 300; i++) { const a = i / 300 * Math.PI * 2, rr = r + amp * Math.sin(n * a + ph) + amp * .35 * Math.sin((n + 2) * a - ph * 1.3); const X = x + rr * Math.cos(a), Y = y + rr * Math.sin(a); i ? g.lineTo(X, Y) : g.moveTo(X, Y); } g.closePath(); g.stroke(); g.restore(); };
+if (EP === 3) { neb(cx, cy, S * .35, 'rgba(255,170,90,.35)'); g.save(); g.translate(cx, cy); g.scale(1, .28); for (let i = 0; i < 4; i++) { g.strokeStyle = `rgba(255,178,92,${.7 - i * .15})`; g.lineWidth = S * (.03 - i * .006); g.beginPath(); g.arc(0, 0, S * (.26 + i * .03), 0, 7); g.stroke(); } g.restore(); g.fillStyle = '#000'; g.beginPath(); g.arc(cx, cy, S * .15, 0, 7); g.fill(); g.strokeStyle = '#FFB25C'; g.lineWidth = 3; g.stroke(); loop(cx, cy, S * .38, 5, S * .02, 1, '#C79BFF', 4); }
+else if (EP === 1) { // 两张网格裂开
+  for (let k = 0; k < 2; k++) { g.save(); g.translate(cx + (k ? 1 : -1) * S * .05, cy); g.rotate(k ? .06 : -.06); g.strokeStyle = k ? 'rgba(255,122,147,.6)' : 'rgba(92,180,255,.6)'; g.lineWidth = 2; for (let i = 0; i <= 10; i++) { const x0 = k ? 0 : -S * .4, x1 = k ? S * .4 : 0; const y = -S * .3 + i * S * .06; g.beginPath(); for (let j = 0; j <= 40; j++) { const x = LERP(x0, x1, j / 40); g.lineTo(x, y + (k ? Math.sin(j * 1.7 + i) * 10 * (j / 40) : (1 - j / 40) * 0 + Math.sin(j * .2) * 4)); } g.stroke(); } for (let j = 0; j <= 7; j++) { const x = (k ? 0 : -S * .4) + j * S * .4 / 7; g.beginPath(); g.moveTo(x, -S * .3); g.lineTo(x, S * .3); g.stroke(); } g.restore(); }
+  neb(cx, cy, S * .12, 'rgba(255,210,122,.6)'); g.strokeStyle = '#FFD27A'; g.lineWidth = 4; g.shadowColor = '#FFD27A'; g.shadowBlur = 20; g.beginPath(); for (let i = 0; i <= 30; i++) g.lineTo(cx + (HS(i, 4) - .5) * 30, cy - S * .32 + i * S * .64 / 30); g.stroke(); g.shadowBlur = 0; }
+else { neb(cx, cy, S * .35, 'rgba(255,210,122,.35)'); loop(cx, cy, S * .26, 5, S * .035, .8, '#FFD27A', 7); loop(cx, cy, S * .34, 3, S * .02, 2.2, 'rgba(92,180,255,.8)', 3); if (EP === 0) loop(cx, cy, S * .18, 7, S * .015, 4, 'rgba(255,122,147,.8)', 3); }
+function LERP(a, b, u) { return a + (b - a) * u; }
+document.fonts.ready.then(() => window.ready = true);
+</script></body></html>

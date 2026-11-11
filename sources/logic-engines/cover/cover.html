@@ -1,0 +1,44 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,10,18,.92) 0,rgba(7,10,18,.55) 45%,rgba(7,10,18,0) 72%)}
+.v .shade{background:linear-gradient(180deg,rgba(7,10,18,.94) 0,rgba(7,10,18,.6) 45%,rgba(7,10,18,0) 68%)}
+.t{position:absolute;left:7%;top:11%;max-width:60%}
+.v .t{left:8%;right:8%;top:6%;max-width:none}
+.series{font:900 112px/1.1 "Noto Serif CJK SC",serif;text-shadow:0 6px 30px #000}
+.ep{display:inline-block;margin-top:30px;font:700 40px "Noto Sans CJK SC";color:#0b0f18;padding:8px 22px;border-radius:12px}
+.name{font:900 120px/1.15 "Noto Serif CJK SC",serif;margin-top:22px;text-shadow:0 6px 30px #000}
+.sub{font:600 34px/1.5 "Noto Sans CJK SC";margin-top:22px;text-shadow:0 2px 12px #000}
+.v .series{font-size:104px}.v .name{font-size:118px}.v .sub{font-size:42px}.v .ep{font-size:48px}
+.r43 .t{max-width:88%} .r43 .series{font-size:100px}
+</style>
+<body><canvas id="c"></canvas><div class="shade"></div>
+<div class="t"><div class="series">逻辑的引擎<span style="font-size:.5em;margin-left:.4em;color:#FFD27A">导读</span></div><div class="ep" id="ep"></div><div class="name" id="nm"></div><div class="sub" id="sub"></div></div>
+<script>
+const q = new URLSearchParams(location.search), EP = +q.get('ep') || 0, W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+const E = { 0: ['四集导读', '', '莱布尼茨 · 布尔 · 弗雷格 · 康托尔 · 希尔伯特 · 哥德尔 · 图灵 · 2000 年以后', '#FFD27A'],
+  1: ['第一集', '莱布尼茨的梦', '通用文字 · 布尔代数 · 开关电路 · 罗素悖论', '#5CB4FF'],
+  2: ['第二集', '无穷与危机', '对角线论证 · 希尔伯特纲领 · 不完备定理', '#C79BFF'],
+  3: ['第三集', '通用机器', '图灵机 · 停机问题 · ENIAC · 存储程序', '#FFD27A'],
+  4: ['第四集', '梦想之后', '图灵测试 · 中文屋 · 机器证明 · 大模型', '#5FE0A0'] }[EP];
+ep.textContent = E[0]; ep.style.background = E[3]; nm.textContent = E[1]; if (!E[1]) { nm.style.display = 'none'; sub.style.fontSize = V ? '44px' : '42px'; sub.style.marginTop = '40px'; sub.style.maxWidth = V ? 'none' : '62%'; } sub.style.color = E[3];
+sub.innerHTML = E[2].split(' · ').map((x, i, a) => `<span style="white-space:nowrap">${x}${i < a.length - 1 ? ' ·' : ''}</span>`).join(' ');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const HS = (a, b = 0) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+g.fillStyle = '#05070F'; g.fillRect(0, 0, W, H);
+const neb = (x, y, r, c) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H); };
+const cx = W * (V ? .5 : R43 ? .8 : .73), cy = H * (V ? .7 : .52), S = Math.min(W, H), col = E[3];
+neb(cx, cy, S * .8, col + '44');
+// 背景：0 和 1
+for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(150,180,255,${.04 + HS(i, 5) * .12})`; g.font = `700 ${16 + HS(i, 6) * 30}px "DejaVu Sans Mono"`; g.fillText(HS(i, 7) > .5 ? '1' : '0', HS(i, 1) * W, HS(i, 2) * H); }
+const gear = (x, y, r, n, c, lw = 4, rot = 0) => { g.save(); g.translate(x, y); g.rotate(rot); g.strokeStyle = c; g.lineWidth = lw; g.shadowColor = c; g.shadowBlur = 20; g.beginPath(); for (let i = 0; i <= n * 4; i++) { const a = i / (n * 4) * Math.PI * 2, rr = (i % 4 < 2) ? r : r * .86; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); g.stroke(); g.beginPath(); g.arc(0, 0, r * .3, 0, 7); g.stroke(); g.restore(); };
+const big = (s, x, y, fs, c) => { g.save(); g.font = `900 ${fs}px "DejaVu Serif","Noto Serif CJK SC"`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = c; g.shadowColor = c; g.shadowBlur = 40; g.fillText(s, x, y); g.restore(); };
+if (EP === 1) { gear(cx - S * .12, cy - S * .05, S * .2, 14, '#5CB4FF', 5, .2); gear(cx + S * .17, cy + S * .18, S * .13, 10, '#FFD27A', 4, .5); big('x²=x', Math.min(cx + S * .12, W - S * .2), cy - S * .25, S * .1, '#FFD27A'); }
+else if (EP === 2) { const n = 8, d = S * .07, x0 = Math.min(cx - n * d / 2, W - n * d - 30), y0 = cy - n * d / 2; g.font = `700 ${d * .6}px "DejaVu Sans Mono"`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { const on = i === j; if (on) { g.fillStyle = 'rgba(255,122,147,.3)'; g.fillRect(x0 + j * d, y0 + i * d, d * .9, d * .9); } g.fillStyle = on ? '#FF7A93' : 'rgba(233,238,247,.5)'; g.fillText(String((i * 7 + j * 3 + i * i) % 10), x0 + j * d + d * .45, y0 + i * d + d * .45); } big('∞', Math.min(cx + S * .3, W - S * .16), cy - S * .34, S * .22, '#C79BFF'); }
+else if (EP === 3) { const n = (V || R43) ? 7 : 9, cw = Math.min(S * .1, (W - cx) * 2 * .9 / n, W * .55 / n), x0 = Math.min(cx - n * cw / 2, W - n * cw - 30), y = cy; g.font = `800 ${cw * .5}px "DejaVu Sans Mono"`; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i = 0; i < n; i++) { g.strokeStyle = i === (n - 1) / 2 ? '#FFD27A' : 'rgba(92,180,255,.6)'; g.lineWidth = 3; g.strokeRect(x0 + i * cw, y, cw * .92, cw * .92); g.fillStyle = '#E9EEF7'; g.fillText('110101100'[i + (9 - n) / 2], x0 + i * cw + cw * .46, y + cw * .46); } g.fillStyle = '#FFD27A'; g.beginPath(); g.moveTo(x0 + ((n - 1) / 2 + .46) * cw, y - 10); g.lineTo(x0 + ((n - 1) / 2 + .46) * cw - cw * .25, y - cw * .45); g.lineTo(x0 + ((n - 1) / 2 + .46) * cw + cw * .25, y - cw * .45); g.fill(); neb(x0 + ((n - 1) / 2 + .46) * cw, y - cw * .3, S * .2, 'rgba(255,210,122,.25)'); }
+else if (EP === 4) { const L = [4, 6, 6, 3]; L.forEach((n, i) => { for (let j = 0; j < n; j++) { const px = cx - S * .3 + i * S * .2, py = cy + (j - (n - 1) / 2) * S * .1; if (i < 3) for (let k = 0; k < L[i + 1]; k++) { g.strokeStyle = 'rgba(95,224,160,.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(px, py); g.lineTo(px + S * .2, cy + (k - (L[i + 1] - 1) / 2) * S * .1); g.stroke(); } g.fillStyle = '#5FE0A0'; g.beginPath(); g.arc(px, py, S * .018, 0, 7); g.fill(); } }); big('✓', Math.min(cx + S * .33, W - S * .12), cy - S * .25, S * .2, '#FFD27A'); }
+else { gear(cx - S * .1, cy, S * .22, 16, '#FFD27A', 6, .1); g.fillStyle = '#0B0E18'; g.beginPath(); g.arc(cx - S * .1, cy, S * .17, 0, 7); g.fill(); big('∀', cx - S * .17, cy, S * .12, '#FFD27A'); big('∃', cx - S * .03, cy, S * .12, '#FFD27A'); gear(cx + S * .22, cy - S * .2, S * .11, 9, '#5CB4FF', 4, .3); gear(cx + S * .2, cy + S * .23, S * .09, 8, '#C79BFF', 4, .6); }
+document.fonts.ready.then(() => window.ready = true);
+</script></body></html>

@@ -1,0 +1,34 @@
+import json, os
+TL = json.load(open('tl_e1.json')); d = TL['total']; fn = '双层围棋_新棋介绍'
+o = [f'''# 双层围棋（新棋介绍，{int(d//60)}:{int(d%60):02d}）
+
+**标题候选**
+
+1. 把两张棋盘叠起来：双层围棋
+2. 给围棋加一个维度，会发生什么？
+3. 围棋升维实验：为什么偏偏是两层
+
+**文件**：`{fn}.mp4`　字幕：`{fn}.srt`　封面：`封面_16x9.png` / `封面_4x3.png` / `封面_3x4.png`
+
+**简介**
+
+把两张大小相同的棋盘上下叠放，每个点除了同层四个邻居，还和另一层正对着的点相连：这就是双层围棋。规则只改了一条，“相邻”多了一个方向，气、提子、打劫、数子法全部照搬。本期介绍它的规则；为什么不是三维立方格子（每子 6 口气，太难吃）或双曲平面（边比面积还多，太难活）；新棋形：做眼要占住另一层，一块棋可以楼上一只眼、楼下一只眼，征子基本失效；我们自己写的模拟程序在九种棋盘上的自对弈数据，以及一盘 9×9×2 的电脑真实对局回放；最后是怎么开始下、还有哪些问题没有答案。
+
+本片由 AI 生成：文稿与画面由 Claude 制作，配音为 Gemini TTS 合成（1.25 倍速）。数据来自本片自制的模拟程序（C++ 图上围棋 + UCT 蒙特卡洛树搜索，每种棋盘 20–32 局），电脑棋手很弱，只能说明各棋盘“健不健康”，说明不了深度。征子失效、跨层做眼是基于规则的推演，尚未经过实战验证；计分示意图为构造的局面。
+
+**章节**
+
+''']
+for s in TL['scenes']:
+    t = 0 if s is TL['scenes'][0] else s['start']; o.append(f"{int(t//60):02d}:{int(t%60):02d} {s['title'].split(' ', 1)[1] if s['chapter'] else '开场'}\n")
+o.append('''
+**标签**：围棋　双层围棋　围棋变体　三维围棋　双曲几何　蒙特卡洛树搜索　棋类游戏设计　数学科普　AI 生成
+
+## 参考资料
+
+- Roice Nelson、Melinda Green 关于双曲围棋的邮件讨论（4D_Cubing 列表，2016-03-09）
+- Martin Červeň：Artificial Intelligence for Go on Non-standard Topologies（查理大学本科论文，2018）
+- Ben-Assayag & El-Yaniv：Train on Small, Play the Large（arXiv 2107.08387，2021）
+- 本片模拟代码与数据：ai-lectures/hyperbolic-go/sim/
+''')
+os.makedirs('final', exist_ok=True); open('final/标题与描述.md', 'w').write(''.join(o)); print('ok')

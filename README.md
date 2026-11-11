@@ -6,6 +6,15 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 
 | 目录 | 内容 |
 | --- | --- |
+| `site/hyperbolic-go/` | 《双层围棋》介绍视频的场景代码（`index.html?ep=1`）与可玩的网页版 `play.html`（立体/并排/单层三种视图、气数标注、电脑对手）；稿子、字幕、调研文档、模拟程序 `sim/` 与工具在 `sources/hyperbolic-go/` |
+| `site/ue-agent/` | 《AI 智能体进驻虚幻引擎》新闻解读的场景代码（`index.html?ep=1`）；稿子、字幕与工具在 `sources/ue-agent/` |
+| `site/deploy-flow/` | 《软件部署流程》四集的场景代码（`index.html?ep=1/2/3/4`）；稿子、字幕、封面与工具在 `sources/deploy-flow/` |
+| `site/emperors-new-mind/` | 《皇帝新脑·导读》四集的场景代码（`index.html?ep=1/2/3/4`）；稿子、字幕、章节对照表与工具在 `sources/emperors-new-mind/` |
+| `site/physics-map/` | 《物理的地图》五集的场景代码（`index.html?ep=1..5`）与互动地图 `explorer.html`；稿子、字幕与工具在 `sources/physics-map/`，地图数据与构建脚本在 `sources/physics-map/explorer/` |
+| `site/math-map/` | 《数学的地图》四集的场景代码（`index.html?ep=1/2/3/4`）与互动地图 `explorer.html`；稿子、字幕与工具在 `sources/math-map/`，地图数据与构建脚本在 `sources/math-map/explorer/` |
+| `site/logic-engines/` | 《逻辑的引擎·导读》四集的场景代码（`index.html?ep=1/2/3/4`）；稿子、字幕与工具在 `sources/logic-engines/` |
+| `site/shazhou/` | 《沙洲战备推演》四集的场景代码（`index.html?ep=1/2/3/4`，逐周数据 `weeks.js`）；稿子、字幕、推演文档与工具在 `sources/shazhou/` |
+| `site/elegant-universe/` | 《宇宙的琴弦·导读》三集的场景代码（`index.html?ep=1/2/3`）；稿子、字幕与工具在 `sources/elegant-universe/` |
 | `site/fiber-bundles/` | 《纤维丛》两集的场景代码（`?ep=1/2`，图片 + canvas 动画）与图解文档 `report.html`（22 张图）；稿子、字幕、绘图脚本与工具在 `sources/fiber-bundles/` |
 | `site/standing-waves/` | 《驻波》两集的场景代码（`?ep=1/2`，图片 + canvas 动画）与图库 `gallery.html`；稿子、字幕、绘图脚本、Commons 署名与工具在 `sources/standing-waves/` |
 | `site/langfuse-v4/` | 《Langfuse v4 数据链路》三集的场景代码（`index.html?ep=1/2/3`）与参考网页 `report.html`（格式转换表、六种对接、大体积关口、脱敏回调契约、环境变量、代码位置）；稿子、字幕、源码核对记录与工具在 `sources/langfuse-v4/` |
