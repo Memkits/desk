@@ -153,11 +153,11 @@ dialog .row{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap
   </ul>
   <h2>操作</h2>
   <ul>
-    <li><b>合一</b>：两层画在同一张棋盘上。下层是大子，上层是小子，叠在同一个点上，所以正对的两个点就在同一个位置，俯视时谁也挡不住谁。点棋子中心是上层，点外圈是下层；空点落在上方选中的那一层（Tab 切换）。气的编号：实心小圆是上层的气，外圈带角标的是下层的气。</li>
+    <li><b>合一</b>（默认）：两层画在同一张棋盘上。下层是大子，上层是小子，叠在同一个点上，所以正对的两个点就在同一个位置，俯视时谁也挡不住谁。点棋子中心是上层，点外圈是下层；空点落在上方选中的那一层（Tab 切换）。气的编号：实心小圆是上层的气，外圈带角标的是下层的气。</li>
     <li><b>并排</b>：两层平铺，不会互相遮挡。鼠标停在一个点上，另一层正对的点会出现同样的圆框。</li>
     <li><b>投影</b>：每层空点上的小圆点，表示另一层同位置有子；棋子中心的竖线标记表示它和另一层的同色子相连。</li>
     <li><b>单层</b>：一次放大显示一层，用上方按钮或 Tab 键切换，适合手机。</li>
-    <li><b>立体</b>（默认）：两块印着棋盘线的玻璃板架在木桌上，棋子是透镜形的实物造型，可调大小和透明度；按“⇅ 交换上下层”（或 S 键）两层会错开半格、从彼此的空隙里穿过去换位。拖动旋转，可调层间距和倾角；只在“当前层”落子，另一层半透明，点不错层。另一层的棋子也能点，用来查看它的气。</li>
+    <li><b>立体</b>：两块印着棋盘线的玻璃板架在木桌上，棋子是透镜形的实物造型，可调大小和透明度；按“⇅ 交换上下层”（或 S 键）两层会错开半格、从彼此的空隙里穿过去换位。拖动旋转，可调层间距和倾角；只在“当前层”落子，另一层半透明，点不错层。另一层的棋子也能点，用来查看它的气。</li>
     <li><b>数气</b>：每块棋上的数字是它的气数（每层各标一次，1 气红色、2 气橙色）。悬停或点一块棋，它的每口气都会编号，跨层的气也一起编进去。</li>
     <li>悬停或轻点一个空点，会预告落子后的气数和提子数；不能下的点会说明原因。悬停在棋子上会高亮整块棋和它的所有气。</li>
     <li>快捷键：Ctrl+Z 悔棋，Ctrl+Y 重做，P 停一手，Tab 切换层。</li>
@@ -280,13 +280,13 @@ function toggleDead(i){
 
 /* ---------------- Persistence ---------------- */
 const KEY="dlgo-state-v1";
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify({n:S.g.n,moves:S.moves,redo:S.redo,komi:S.komi,mode:S.mode,view:UI.view,act:UI.active,shadow:UI.shadow,atari:UI.atari,libLabels:UI.libLabels,flip:Math.round(UI.flip),vv:5,ssize:UI.ssize,salpha:UI.salpha,confirm:UI.confirm,gap:UI.gap,tilt:UI.tilt,yaw:UI.yaw})); }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify({n:S.g.n,moves:S.moves,redo:S.redo,komi:S.komi,mode:S.mode,view:UI.view,act:UI.active,shadow:UI.shadow,atari:UI.atari,libLabels:UI.libLabels,flip:Math.round(UI.flip),vv:6,myaw:UI.myaw,mtilt:UI.mtilt,ssize:UI.ssize,salpha:UI.salpha,confirm:UI.confirm,gap:UI.gap,tilt:UI.tilt,yaw:UI.yaw})); }catch(e){} }
 function load(){ try{ const d=JSON.parse(localStorage.getItem(KEY)||"null"); return d; }catch(e){ return null; } }
 
 /* ---------------- UI ---------------- */
 const $=id=>document.getElementById(id);
 const isTouch=matchMedia("(pointer:coarse)").matches;
-const UI={flip:0,libLabels:true,view:"3d",active:0,hover:-1,pending:-1,shadow:true,atari:true,confirm:isTouch,gap:0.5,tilt:55,yaw:-18,ssize:0.43,salpha:0.92,msg:null};
+const UI={myaw:0,mtilt:26,flip:0,libLabels:true,view:"merge",active:0,hover:-1,pending:-1,shadow:true,atari:true,confirm:isTouch,gap:0.5,tilt:55,yaw:-18,ssize:0.43,salpha:0.92,msg:null};
 const LETTERS="ABCDEFGHJKLMNOPQRST";
 const coordName=i=>(L(S.g,i)===0?"上":"下")+LETTERS[X(S.g,i)]+(S.g.n-Y(S.g,i));
 
@@ -308,6 +308,11 @@ function layout(){
   }
   const lab=24; // title row
   let size;
+  GL.mergeGL=false;
+  if(UI.view==="merge"&&glReady()){ GL.mergeGL=true; mkMerged(0,true);
+    const Hc=H-50, dpr=devicePixelRatio||1, wrap=document.createElement("div"); wrap.style.cssText=`position:relative;width:${W}px;height:${Hc}px;border-radius:12px;overflow:hidden`;
+    GL.r.setPixelRatio(Math.min(dpr,2)); GL.r.setSize(W,Hc); const cv=GL.r.domElement, ov=GL.ov; ov.width=Math.round(W*dpr); ov.height=Math.round(Hc*dpr); ov.style.width=W+"px"; ov.style.height=Hc+"px";
+    wrap.append(cv,ov); st.firstChild.appendChild(wrap); setup3d(cv,true); return; }
   if(UI.view==="merge"){ mkMerged(Math.min(W,H-34)); return; }
   if(UI.view==="one"){ size=Math.min(W,H-lab); mkBoard(UI.active,size,true); }
   else{
@@ -471,7 +476,7 @@ function renderStatus(){
   if(botBusy){ el.innerHTML=`<span>电脑正在思考…</span>`; return; }
   if(!info||info.kind==="none"){
     if(S.phase==="over"){ el.innerHTML=`<b>${S.result?S.result.text:"对局结束"}</b><span class="hint">悔棋可以回到对局，或开始新对局</span>`; return; }
-    el.innerHTML=`<span class="hint">${UI.confirm?"点一下预览，再点一次（或按“在此落子”）落子。":isTouch?"点一下直接落子；点棋子查看它的气。":"悬停预览，点击落子。"}${UI.view==="merge"?"大子在下层，小子在上层，叠在同一个点上。点中心是上层，点外圈是下层。":UI.view==="3d"?"拖动可以旋转；棋子上的数字是气数。":"虚线圆圈标出另一层正对的点；小圆点是另一层的投影；棋子中心的环表示上下相连。"}</span>`;
+    el.innerHTML=`<span class="hint">${UI.confirm?"点一下预览，再点一次（或按“在此落子”）落子。":isTouch?"点一下直接落子；点棋子查看它的气。":"悬停预览，点击落子。"}${UI.view==="merge"?"大子在下层，小子在上层，叠在同一个点上。点中心是上层，点外圈是下层；拖动可以旋转。":UI.view==="3d"?"拖动可以旋转；棋子上的数字是气数。":"虚线圆圈标出另一层正对的点；小圆点是另一层的投影；棋子中心的环表示上下相连。"}</span>`;
     if(S.passes===1) el.innerHTML=`<span>对方停了一手。再停一手就进入数子。</span>`;
     return;
   }
@@ -495,7 +500,7 @@ function render(){
   if(!S.g) return;
   if(S.phase==="score") S.scoreCache=scoreBoard(S.g,S.board,S.dead);
   renderHeader();
-  if(UI.view==="3d") draw3d(); else document.querySelectorAll("svg.board").forEach(v=>v.dataset.merge?renderMerged(v):renderFlat(v));
+  if(UI.view==="3d"||(UI.view==="merge"&&GL.mergeGL)) draw3d(); else document.querySelectorAll("svg.board").forEach(v=>v.dataset.merge?renderMerged(v):renderFlat(v));
   renderStatus();
 }
 function relayout(){ layout(); render(); save(); }
@@ -541,10 +546,10 @@ let cv3=null, ctx3=null, proj=[];
 function setup3d(cv,isGL){
   cv3=cv; GL.on=!!isGL; ctx3=isGL?null:cv.getContext("2d"); if(cv._wired) return; cv._wired=1;
   let drag=null, moved=false;
-  cv.addEventListener("pointerdown",e=>{ drag={x:e.clientX,y:e.clientY,yaw:UI.yaw,tilt:UI.tilt}; moved=false; cv.setPointerCapture(e.pointerId); cv.style.cursor="grabbing"; });
+  cv.addEventListener("pointerdown",e=>{ const MGk=UI.view==="merge"; drag={x:e.clientX,y:e.clientY,ky:MGk?"myaw":"yaw",kt:MGk?"mtilt":"tilt"}; drag.yaw=UI[drag.ky]; drag.tilt=UI[drag.kt]; moved=false; cv.setPointerCapture(e.pointerId); cv.style.cursor="grabbing"; });
   cv.addEventListener("pointermove",e=>{
     if(drag){ const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.hypot(dx,dy)>6) moved=true;
-      if(moved){ UI.yaw=drag.yaw+dx*0.4; UI.tilt=Math.max(0,Math.min(75,drag.tilt-dy*0.3)); $("tilt").value=UI.tilt; draw3d(); return; } }
+      if(moved){ UI[drag.ky]=drag.yaw+dx*0.4; UI[drag.kt]=Math.max(0,Math.min(75,drag.tilt-dy*0.3)); if(drag.kt==="tilt") $("tilt").value=UI.tilt; draw3d(); return; } }
     if(e.pointerType==="mouse"&&!drag) setHover(pick3d(e));
   });
   cv.addEventListener("pointerup",e=>{ cv.style.cursor="grab"; const wasDrag=moved; drag=null; if(!wasDrag) onPoint(pick3d(e),e); else save(); });
@@ -683,14 +688,15 @@ function libBadges(){ // one badge per group per layer, on the stone nearest the
 }
 
 /* ---------------- Merged view: one board, lower layer = large stones, upper layer = small stones stacked on the same point ---------------- */
-function mkMerged(size){
+function mkMerged(size,titleOnly){
   const wrap=document.createElement("div"); wrap.className="boardwrap";
   const t=document.createElement("div"); t.className="btitle"; t.style.letterSpacing="0";
   t.innerHTML=`<span style="font-weight:400">落子到</span><div class="seg"><button data-a="0" style="min-height:28px;padding:2px 10px;font-size:13px">● 上层（小子）</button><button data-a="1" style="min-height:28px;padding:2px 10px;font-size:13px">⬤ 下层（大子）</button></div>`;
   const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
   svg.setAttribute("class","board"); svg.setAttribute("width",Math.floor(size)); svg.setAttribute("height",Math.floor(size)); svg.setAttribute("viewBox","0 0 100 100"); svg.dataset.merge=1;
-  wrap.append(t,svg); $("stage").appendChild(wrap);
+  wrap.append(t); if(!titleOnly) wrap.append(svg); $("stage").appendChild(wrap);
   t.querySelectorAll("button").forEach(bt=>bt.onclick=()=>{ UI.active=+bt.dataset.a; UI.pending=-1; render(); save(); });
+  if(titleOnly) return;
   svg.addEventListener("pointermove",e=>{ if(e.pointerType==="mouse") setHover(pickMerged(svg,e)); });
   svg.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse") setHover(-1); });
   svg.addEventListener("click",e=>onPoint(pickMerged(svg,e),e));
@@ -752,15 +758,15 @@ function glReady(){
   if(GL.r) return true;
   try{ initGL(); return true; }catch(e){ GL.fail=true; console.warn("3D fallback:",e); return false; }
 }
-function woodTexture(){
+function woodTexture(base="#9c6c3c",rep=5){
   const c=document.createElement("canvas"); c.width=c.height=1024; const x=c.getContext("2d");
-  x.fillStyle="#9c6c3c"; x.fillRect(0,0,1024,1024);
+  x.fillStyle=base; x.fillRect(0,0,1024,1024);
   let seed=7; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
   for(let k=0;k<420;k++){ const y=rnd()*1024, a=0.03+rnd()*0.09, w=0.6+rnd()*2.4, ph=rnd()*6.28, amp=2+rnd()*7, f=0.004+rnd()*0.006;
     x.strokeStyle=rnd()<0.75?`rgba(92,58,24,${a})`:`rgba(236,200,140,${a})`; x.lineWidth=w; x.beginPath();
     for(let px=0;px<=1024;px+=16){ const yy=y+Math.sin(px*f+ph)*amp; px?x.lineTo(px,yy):x.moveTo(px,yy); } x.stroke(); }
   for(let k=0;k<9;k++){ const y=rnd()*1024, h=30+rnd()*90; const g=x.createLinearGradient(0,y,0,y+h); g.addColorStop(0,"rgba(80,48,18,0)"); g.addColorStop(.5,"rgba(80,48,18,.10)"); g.addColorStop(1,"rgba(80,48,18,0)"); x.fillStyle=g; x.fillRect(0,y,1024,h); }
-  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,5); return t;
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep,rep); return t;
 }
 function initGL(){
   const T=THREE, r=new T.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
@@ -792,17 +798,20 @@ function buildGL(n){
   if(!GL.tableMat) GL.tableMat=new T.MeshPhysicalMaterial({map:woodTexture(),roughness:0.62,clearcoat:0.3,clearcoatRoughness:0.4,envMapIntensity:0.45});
   GL.tableMat.map.anisotropy=GL.r.capabilities.getMaxAnisotropy();
   const table=new T.Mesh(new T.PlaneGeometry(Sz*14,Sz*14),GL.tableMat); table.rotation.x=-Math.PI/2; table.receiveShadow=true; root.add(table); GL.table=table;
-  GL.plate=[]; GL.lineMat=[];
+  GL.plate=[]; GL.lineMat=[]; GL.glass=[]; GL.lines=[]; GL.peds=[];
+  if(!GL.boardMat){ GL.boardMat=new T.MeshPhysicalMaterial({map:woodTexture("#d2a55e",1.3),roughness:0.55,clearcoat:0.25,clearcoatRoughness:0.5,envMapIntensity:0.5});
+    GL.pedMat=new T.MeshPhysicalMaterial({color:0xe8f6f1,transparent:true,opacity:0.38,roughness:0.05,envMapIntensity:1.6,depthWrite:false}); }
+  GL.board=new T.Mesh(new T.BoxGeometry(Sz,0.5,Sz),GL.boardMat); GL.board.position.y=-0.25; GL.board.castShadow=GL.board.receiveShadow=true; root.add(GL.board);
   for(const l of [0,1]){
     const p=new T.Group();
     const face=new T.MeshPhysicalMaterial({color:0xeef8f4,transparent:true,opacity:0.13,roughness:0.03,envMapIntensity:1.8,depthWrite:false});
     const edge=new T.MeshPhysicalMaterial({color:0x5fbf9f,transparent:true,opacity:0.55,roughness:0.12,envMapIntensity:1.4,depthWrite:false});
-    const glass=new T.Mesh(new T.BoxGeometry(Sz,GL.thick,Sz),[edge,edge,face,face,edge,edge]); glass.position.y=-GL.thick/2; glass.renderOrder=1; p.add(glass);
+    const glass=new T.Mesh(new T.BoxGeometry(Sz,GL.thick,Sz),[edge,edge,face,face,edge,edge]); glass.position.y=-GL.thick/2; glass.renderOrder=1; p.add(glass); GL.glass[l]=glass; const lg=new T.Group(); p.add(lg); GL.lines[l]=lg;
     const lm=new T.MeshBasicMaterial({color:0x14110d,transparent:true,opacity:0.8,depthWrite:false}); GL.lineMat[l]=lm;
     for(let k=0;k<n;k++){ const w=(k===0||k===n-1)?0.05:0.028;
-      const a=new T.Mesh(new T.BoxGeometry(n-1+w,0.004,w),lm); a.position.set(0,0.003,k-half); const b2=new T.Mesh(new T.BoxGeometry(w,0.004,n-1+w),lm); b2.position.set(k-half,0.003,0); a.renderOrder=b2.renderOrder=2; p.add(a,b2); }
+      const a=new T.Mesh(new T.BoxGeometry(n-1+w,0.004,w),lm); a.position.set(0,0.003,k-half); const b2=new T.Mesh(new T.BoxGeometry(w,0.004,n-1+w),lm); b2.position.set(k-half,0.003,0); a.renderOrder=b2.renderOrder=2; lg.add(a,b2); }
     const stars=n===13?[3,6,9]:n===9?[2,4,6]:n===7?[3]:[];
-    for(const a of stars) for(const c of stars){ if(n===9&&(a===4)!==(c===4)) continue; const d=new T.Mesh(new T.CircleGeometry(0.09,20),lm); d.rotation.x=-Math.PI/2; d.position.set(a-half,0.006,c-half); d.renderOrder=2; p.add(d); }
+    for(const a of stars) for(const c of stars){ if(n===9&&(a===4)!==(c===4)) continue; const d=new T.Mesh(new T.CircleGeometry(0.09,20),lm); d.rotation.x=-Math.PI/2; d.position.set(a-half,0.006,c-half); d.renderOrder=2; lg.add(d); }
     root.add(p); GL.plate[l]=p;
   }
   const steel=new T.MeshStandardMaterial({color:0xd9dde2,metalness:1,roughness:0.18,transparent:true}); GL.pegMat=steel; GL.pegs=[];
@@ -815,28 +824,35 @@ function drawGL(){
   const dpr=devicePixelRatio||1, W=cv3.clientWidth||1, H=cv3.clientHeight||1, half=(n-1)/2, Sz=GL.Sz;
   const cs=getComputedStyle(document.documentElement), tok=k=>cs.getPropertyValue(k).trim();
   const bg=new T.Color(tok("--bg")); GL.scene.background=bg;
-  const G=UI.gap*4, ph=UI.flip*Math.PI, mid=Math.sin(ph), R=UI.ssize, HY=R*0.42;
+  const MG=UI.view==="merge", G=UI.gap*4, ph=MG?0:UI.flip*Math.PI, mid=Math.sin(ph), R=UI.ssize, HY=R*0.42, RL=MG?[MR.small,MR.big]:[R,R], HL=[RL[0]*0.42,RL[1]*0.42];
   const info=hoverInfo(), atari=UI.atari&&S.phase==="play"?atariSet():new Set(), showDead=S.phase==="score"||S.phase==="over";
   for(const l of [0,1]){ const sg=l?-1:1; GL.ly[l]=sg*G/2*Math.cos(ph); GL.sh[l]=sg*0.25*mid; GL.plate[l].position.set(GL.sh[l],GL.ly[l],GL.sh[l]); GL.lineMat[l].opacity=l===UI.active?0.82:0.4; }
   GL.table.position.y=-G/2-GL.foot;
-  GL.pegMat.opacity=Math.max(0,1-mid*8); for(const m of GL.pegs){ const u=m.userData, h=u.s?G-GL.thick:GL.foot-GL.thick, y0=u.s?-G/2:-G/2-GL.foot; m.visible=GL.pegMat.opacity>0.01; m.scale.set(1,h,1); m.position.set(u.x,y0+h/2,u.z); }
+  if(MG){ GL.ly[1]=0; GL.ly[0]=HL[1]*2; GL.sh[0]=GL.sh[1]=0; for(const l of [0,1]) GL.plate[l].position.set(0,GL.ly[l],0); GL.lineMat[1].opacity=0.85; GL.table.position.y=-0.5; }
+  for(const l of [0,1]){ GL.glass[l].visible=!MG; GL.lines[l].visible=!MG||l===1; } GL.board.visible=MG;
+  document.querySelectorAll("#stage .btitle button[data-a]").forEach(bt=>bt.setAttribute("aria-pressed",+bt.dataset.a===UI.active));
+  GL.pegMat.opacity=Math.max(0,1-mid*8); for(const m of GL.pegs){ const u=m.userData, h=u.s?G-GL.thick:GL.foot-GL.thick, y0=u.s?-G/2:-G/2-GL.foot; m.visible=!MG&&GL.pegMat.opacity>0.01; m.scale.set(1,h,1); m.position.set(u.x,y0+h/2,u.z); }
   for(const k in GL.mats){ const m=GL.mats[k]; m.opacity=k.endsWith("f")?0.3:k.endsWith("g")?(UI.pending>=0?0.8:0.5):UI.salpha; }
   for(const c of [BLACK,WHITE]) GL.mats[c+"h"].emissive.set(tok("--accent")).multiplyScalar(c===BLACK?0.3:0.16);
   for(let i=0;i<g.N;i++){ const c=b[i]; let m=GL.st[i];
     if(!c){ if(m) m.visible=false; continue; }
     if(!m){ m=GL.st[i]=new T.Mesh(GL.stoneGeo,GL.mats[c]); m.castShadow=m.receiveShadow=true; m.renderOrder=3; GL.plate[L(g,i)].add(m); }
     const faded=(info&&info.kind==="preview"&&info.cap.has(i))||(showDead&&S.dead.has(i)), hi=info&&info.kind==="group"&&info.group.has(i);
-    m.material=GL.mats[c+(faded?"f":"")]; m.userData.hi=hi; m.castShadow=!faded; m.visible=true; m.scale.set(R,HY,R); m.position.set(X(g,i)-half,HY,Y(g,i)-half); }
+    m.material=GL.mats[c+(faded?"f":"")]; m.userData.hi=hi; m.castShadow=!faded; m.visible=true; { const l2=L(g,i); m.scale.set(RL[l2],HL[l2],RL[l2]); m.position.set(X(g,i)-half,HL[l2],Y(g,i)-half); } }
   const gh=GL.ghost; gh.visible=!!(info&&info.kind==="preview");
-  if(gh.visible){ const i=info.i,l=L(g,i); gh.material=GL.mats[S.turn+"g"]; gh.scale.set(R,HY,R); gh.position.set(X(g,i)-half+GL.sh[l],GL.ly[l]+HY,Y(g,i)-half+GL.sh[l]); }
+  if(gh.visible){ const i=info.i,l=L(g,i); gh.material=GL.mats[S.turn+"g"]; gh.scale.set(RL[l],HL[l],RL[l]); gh.position.set(X(g,i)-half+GL.sh[l],GL.ly[l]+HL[l],Y(g,i)-half+GL.sh[l]); }
   // thin pins joining same-coloured stones stacked on both layers (they share liberties)
-  let ri=0; if(mid<0.05) for(let k=0;k<nn;k++){ const a=b[k]; if(!a||a!==b[k+nn]) continue; let m=GL.rods[ri]; if(!m){ m=GL.rods[ri]=new T.Mesh(new T.CylinderGeometry(0.045,0.045,1,12),GL.rodMat[a]); GL.root.add(m); } ri++;
+  let ri=0; if(mid<0.05&&!MG) for(let k=0;k<nn;k++){ const a=b[k]; if(!a||a!==b[k+nn]) continue; let m=GL.rods[ri]; if(!m){ m=GL.rods[ri]=new T.Mesh(new T.CylinderGeometry(0.045,0.045,1,12),GL.rodMat[a]); GL.root.add(m); } ri++;
     m.material=GL.rodMat[a]; m.visible=true; m.scale.set(1,G-HY*2-GL.thick,1); m.position.set(k%n-half,(HY*2-GL.thick)/2,Math.floor(k/n)-half); }
   for(;ri<GL.rods.length;ri++) GL.rods[ri].visible=false;
+  // merged view: an upper stone with nothing under it stands on a small clear pedestal
+  let pi=0; if(MG) for(let k=0;k<nn;k++){ const gi=info&&info.kind==="preview"&&info.i===k; if((!b[k]&&!gi)||b[k+nn]) continue; let m=GL.peds[pi]; if(!m){ m=GL.peds[pi]=new T.Mesh(new T.CylinderGeometry(0.12,0.16,1,20),GL.pedMat); m.renderOrder=2; GL.root.add(m); } pi++;
+    m.visible=true; m.scale.set(1,GL.ly[0],1); m.position.set(k%n-half,GL.ly[0]/2,Math.floor(k/n)-half); }
+  for(;pi<GL.peds.length;pi++) GL.peds[pi].visible=false;
   // camera: orbit around the centre, distance fitted to the canvas
-  const cam=GL.cam, az=UI.yaw*Math.PI/180, pol=Math.max(2,UI.tilt)*Math.PI/180; cam.aspect=W/H;
+  const cam=GL.cam, az=(MG?UI.myaw:UI.yaw)*Math.PI/180, pol=Math.max(2,MG?UI.mtilt:UI.tilt)*Math.PI/180; cam.aspect=W/H;
   const dir=new T.Vector3(Math.sin(pol)*Math.sin(az),Math.cos(pol),Math.sin(pol)*Math.cos(az)); let D=Sz*3;
-  const cn=[]; for(const y of [G/2+HY*2,-G/2-GL.foot]) for(const [x,z] of [[1,1],[1,-1],[-1,1],[-1,-1]]) cn.push(new T.Vector3(x*Sz/2,y,z*Sz/2));
+  const cn=[]; for(const y of MG?[0.7,-0.5]:[G/2+HY*2,-G/2-GL.foot]) for(const [x,z] of [[1,1],[1,-1],[-1,1],[-1,-1]]) cn.push(new T.Vector3(x*Sz/2,y,z*Sz/2));
   for(let it=0;it<4;it++){ cam.position.copy(dir).multiplyScalar(D); cam.lookAt(0,-GL.foot*0.4,0); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
     let mx=0; for(const v of cn){ const q=v.clone().project(cam); mx=Math.max(mx,Math.abs(q.x),Math.abs(q.y)); } D*=mx/0.93; }
   cam.position.copy(dir).multiplyScalar(D); cam.lookAt(0,-GL.foot*0.4,0); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
@@ -846,23 +862,23 @@ function drawGL(){
   // screen positions of every point, for the 2D overlay and for picking helpers
   const ow=GL.ov.width, oh=GL.ov.height, right=new T.Vector3().setFromMatrixColumn(cam.matrixWorld,0), v=new T.Vector3(), v2=new T.Vector3();
   proj=new Array(g.N);
-  for(let i=0;i<g.N;i++){ const l=L(g,i); v.set(X(g,i)-half+GL.sh[l],GL.ly[l]+HY,Y(g,i)-half+GL.sh[l]); v2.copy(v).add(right); v.project(cam); v2.project(cam);
-    proj[i]={x:(v.x*.5+.5)*ow,y:(-v.y*.5+.5)*oh,s:Math.abs(v2.x-v.x)*.5*ow}; }
+  for(let i=0;i<g.N;i++){ const l=L(g,i); v.set(X(g,i)-half+GL.sh[l],GL.ly[l]+HL[l],Y(g,i)-half+GL.sh[l]); v2.copy(v).add(right); v.project(cam); v2.project(cam);
+    proj[i]={x:(v.x*.5+.5)*ow,y:(-v.y*.5+.5)*oh,s:Math.abs(v2.x-v.x)*.5*ow,r:RL[l]}; }
   drawOverlayGL(info,atari,tok,dpr);
 }
 function drawOverlayGL(info,atari,tok,dpr){
   const ctx=GL.ov.getContext("2d"), g=S.g, n=g.n, nn=n*n, b=S.board; ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,GL.ov.width,GL.ov.height);
-  const ryK=Math.max(0.3,Math.cos(UI.tilt*Math.PI/180)), ell=(p,k)=>{ const r=p.s*UI.ssize*k; ctx.beginPath(); ctx.ellipse(p.x,p.y,r,Math.max(r*ryK,r*0.42),0,0,7); };
+  const MG=UI.view==="merge", ryK=Math.max(0.3,Math.cos((MG?UI.mtilt:UI.tilt)*Math.PI/180)), ell=(p,k)=>{ const r=p.s*p.r*k; ctx.beginPath(); ctx.ellipse(p.x,p.y,r,Math.max(r*ryK,r*0.42),0,0,7); };
   ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.lineCap="round";
   if(UI.atari&&S.phase==="play") for(const i of atari){ ctx.strokeStyle=tok("--danger"); ctx.lineWidth=2*dpr; ell(proj[i],1.12); ctx.stroke(); }
   if(info&&info.kind==="group") for(const i of info.group){ ctx.strokeStyle=tok("--accent"); ctx.lineWidth=2*dpr; ell(proj[i],1.08); ctx.stroke(); }
-  if(S.last>=0&&b[S.last]){ const p=proj[S.last]; ctx.fillStyle=b[S.last]===BLACK?"#fff":"#111"; ctx.globalAlpha=.9; ctx.beginPath(); ctx.arc(p.x+p.s*UI.ssize*0.55,p.y-p.s*UI.ssize*0.3,Math.max(2.2*dpr,p.s*0.055),0,7); ctx.fill(); ctx.globalAlpha=1; }
-  if(UI.libLabels&&S.phase==="play") for(const bd of libBadges()){ const p=proj[bd.i], r=p.s*UI.ssize;
-    ctx.font=`600 ${Math.max(9*dpr,r*0.8)}px ${tok("--f-num")}`; ctx.fillStyle=bd.libs===1?tok("--danger"):bd.libs===2?"#e08a1e":(bd.c===BLACK?"rgba(255,255,255,.82)":"rgba(20,20,20,.78)"); ctx.fillText(bd.libs,p.x,p.y); }
-  if(info){ const k=info.i%nn, p=proj[k], q=proj[k+nn]; ctx.strokeStyle=tok("--accent"); ctx.globalAlpha=.75; ctx.lineWidth=1.3*dpr; ctx.setLineDash([4*dpr,4*dpr]); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke(); ctx.setLineDash([]);
+  if(S.last>=0&&b[S.last]){ const p=proj[S.last]; ctx.fillStyle=b[S.last]===BLACK?"#fff":"#111"; ctx.globalAlpha=.9; ctx.beginPath(); ctx.arc(p.x+p.s*p.r*0.62,p.y-p.s*p.r*0.5,Math.max(2.2*dpr,p.s*0.055),0,7); ctx.fill(); ctx.globalAlpha=1; }
+  if(UI.libLabels&&S.phase==="play") for(const bd of libBadges()){ const p=proj[bd.i], cov=MG&&bd.i>=nn&&b[bd.i-nn], r=p.s*p.r*(cov?0.5:1);
+    ctx.font=`600 ${Math.max(8*dpr,r*0.8)}px ${tok("--f-num")}`; ctx.fillStyle=bd.libs===1?tok("--danger"):bd.libs===2?"#e08a1e":(bd.c===BLACK?"rgba(255,255,255,.82)":"rgba(20,20,20,.78)"); ctx.fillText(bd.libs,p.x,p.y+(cov?p.s*(MR.big+MR.small)/2*ryK:0)); }
+  if(info&&!MG){ const k=info.i%nn, p=proj[k], q=proj[k+nn]; ctx.strokeStyle=tok("--accent"); ctx.globalAlpha=.75; ctx.lineWidth=1.3*dpr; ctx.setLineDash([4*dpr,4*dpr]); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(q.x,q.y); ctx.stroke(); ctx.setLineDash([]);
     const o=proj[other(g,info.i)]; ell(o,1.25); ctx.stroke(); ctx.globalAlpha=1; }
   if(info&&(info.kind==="group"||info.kind==="preview")){ const col=info.libs.size===1?tok("--danger"):tok("--ok");
-    sortLibs(info.libs).forEach((j,k)=>{ const p=proj[j], r=Math.max(7.5*dpr,p.s*0.2); ctx.globalAlpha=.94; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,7); ctx.fill(); ctx.fillStyle="#fff"; ctx.font=`700 ${r*1.15}px ${tok("--f-num")}`; ctx.fillText(k+1,p.x,p.y+dpr*.5); }); ctx.globalAlpha=1; }
+    sortLibs(info.libs).forEach((j,k)=>{ let p=proj[j]; const r=Math.max(7.5*dpr,p.s*0.2); if(MG&&j>=nn){ ctx.globalAlpha=.9; ctx.strokeStyle=col; ctx.lineWidth=2*dpr; ell(p,0.97); ctx.stroke(); p={x:p.x+p.s*0.36,y:p.y+p.s*0.36*ryK}; } ctx.globalAlpha=.94; ctx.fillStyle=col; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,7); ctx.fill(); ctx.fillStyle="#fff"; ctx.font=`700 ${r*1.15}px ${tok("--f-num")}`; ctx.fillText(k+1,p.x,p.y+dpr*.5); }); ctx.globalAlpha=1; }
   const cross=(i,w)=>{ const p=proj[i], r=p.s*0.26; ctx.strokeStyle=tok("--danger"); ctx.lineWidth=w*dpr; ctx.beginPath(); ctx.moveTo(p.x-r,p.y-r*ryK); ctx.lineTo(p.x+r,p.y+r*ryK); ctx.moveTo(p.x+r,p.y-r*ryK); ctx.lineTo(p.x-r,p.y+r*ryK); ctx.stroke(); };
   if(info&&info.kind==="illegal") cross(info.i,3);
   if(S.phase==="score"||S.phase==="over") for(const d of S.dead) cross(d,2.5);
@@ -870,6 +886,11 @@ function drawOverlayGL(info,atari,tok,dpr){
 function pickGL(e){
   if(!GL.plate) return -1; const T=THREE, r=cv3.getBoundingClientRect(), g=S.g, n=g.n, nn=n*n, half=(n-1)/2;
   GL.ray.setFromCamera(new T.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1)),GL.cam);
+  if(UI.view==="merge"){ const h=new T.Vector3(), b=S.board, on=yy=>{ if(!GL.ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-yy),h)) return null; const fx=h.x+half, fy=h.z+half, x=Math.round(fx), y=Math.round(fy); return x<0||y<0||x>=n||y>=n?null:{p:y*n+x,d:Math.hypot(fx-x,fy-y)}; };
+    const u=on(GL.ly[0]+MR.small*0.42); if(u&&u.d<MR.small+0.03&&b[u.p]) return u.p;
+    const q=on(MR.big*0.42); if(!q||q.d>0.62) return -1; const p2=q.p, inSmall=q.d<MR.small+0.04;
+    if(!inSmall&&b[nn+p2]) return nn+p2; if(inSmall&&b[p2]) return p2;
+    const a=UI.active*nn+p2; if(!b[a]) return a; return b[p2]&&!b[nn+p2]?nn+p2:(!b[p2]?p2:a); }
   const hit=new T.Vector3(), at=(l,lim,needStone)=>{ const yy=GL.ly[l]+(needStone?UI.ssize*0.42:0);
     if(!GL.ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),-yy),hit)) return -1;
     const fx=hit.x-GL.sh[l]+half, fy=hit.z-GL.sh[l]+half, x=Math.round(fx), y=Math.round(fy);
@@ -976,7 +997,7 @@ let rzT=0; addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(relay
 
 (function boot(){
   const d=load();
-  if(d&&d.n){ Object.assign(UI,{libLabels:d.libLabels!==false,flip:d.flip||0,view:d.vv>=3?(d.view||"3d"):"3d",active:d.act||0,shadow:d.shadow!==false,atari:d.atari!==false,confirm:d.confirm??isTouch,gap:d.vv>=4?(d.gap||0.5):0.5,tilt:d.vv>=4?(d.tilt??55):55,yaw:d.yaw??-18,ssize:d.vv>=5?(d.ssize||0.43):0.43,salpha:d.vv>=5?(d.salpha||0.92):0.92});
+  if(d&&d.n){ Object.assign(UI,{libLabels:d.libLabels!==false,flip:d.flip||0,myaw:d.myaw||0,mtilt:d.mtilt??26,view:d.vv>=6?(d.view||"merge"):"merge",active:d.act||0,shadow:d.shadow!==false,atari:d.atari!==false,confirm:d.confirm??isTouch,gap:d.vv>=4?(d.gap||0.5):0.5,tilt:d.vv>=4?(d.tilt??55):55,yaw:d.yaw??-18,ssize:d.vv>=5?(d.ssize||0.43):0.43,salpha:d.vv>=5?(d.salpha||0.92):0.92});
     S.g=makeGeom(d.n); S.moves=d.moves||[]; S.redo=d.redo||[]; S.komi=d.komi??7.5; S.mode=d.mode||"hh"; replay();
   } else {
     S.g=makeGeom(9); S.komi=7.5; S.mode="hh";
