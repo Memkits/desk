@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<link rel="stylesheet" href="../fonts/noto.css">
+<style>
+html,body{margin:0;background:radial-gradient(ellipse at 60% 50%,#14203a 0,#070A12 70%);overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.t{position:absolute;left:5.5%;top:11%;max-width:52%}
+.v .t{left:7%;right:7%;top:5%;max-width:none}
+.k{display:inline-block;font:700 38px "Noto Sans CJK SC";color:#0b0f18;background:#FFD27A;padding:8px 22px;border-radius:12px}
+.name{font:800 128px/1.16 "Noto Sans CJK SC";margin-top:28px;text-shadow:0 6px 30px #000}
+.name span{color:#FFD27A}
+.sub{font:600 36px/1.6 "Noto Sans CJK SC";margin-top:26px;color:#C9D4EA;text-shadow:0 2px 12px #000}
+.v .name{font-size:124px}.v .sub{font-size:36px}.v .k{font-size:42px}
+.r43 .t{left:5%;max-width:50%}.r43 .name{font-size:100px}.r43 .sub{font-size:30px}.r43 .k{font-size:32px}
+</style>
+<body><canvas id="c"></canvas>
+<div class="t"><div class="k">游戏设计 · 程序自对弈</div><div class="name">棋盘之外<br><span>六个新游戏</span></div><div class="sub" id="sub"></div></div>
+<script src="../tl_e1.js"></script><script src="../data.js"></script><script src="../lib.js"></script><script src="../an_base.js"></script><script src="../an_life.js"></script><script src="../an_cont.js"></script><script src="../an_sky.js"></script><script>
+const W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+sub.innerHTML = V ? '<div>生命游戏里放细胞 · 网络上自动蔓延</div><div>搭积木抢楼顶 · 三个成立，三个失败</div>' : ['生命游戏里放细胞', '网络上自动蔓延', '搭积木抢楼顶', '三个成立，三个失败'].map(x => `<div>${x}</div>`).join('');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+function go() {
+  const bg = g.createRadialGradient(W * .62, H * .5, 0, W * .62, H * .5, Math.max(W, H) * .75); bg.addColorStop(0, '#16233f'); bg.addColorStop(1, '#070A12'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const L = V ? { life: [60, 760, 72], net: [706, 780, 62, 15], wall: [700, 1130, 44] } : R43 ? { life: [890, 60, 62], net: [1222, 655, 38, 10], wall: [905, 640, 40] } : { life: [1180, 60, 80], net: [1580, 750, 52, 13], wall: [1195, 735, 42] };
+  drawLife(g, L.life[0], L.life[1], L.life[2], 8, GD.life.st.map(lifeParse)[34], null, 0);
+  const P = [], [sx, sy, sp, r] = L.net; for (let i = 0; i < 36; i++) P.push([sx + (i % 6) * sp, sy + Math.floor(i / 6) * sp]); drawNet(g, P, CG.E, GD.cont.st.map(lifeParse)[10], null, 0, { r });
+  const c = skyMk([]); GD.sky.mv.slice(0, 19).forEach(([v, x, y]) => c[x][y] = v); drawWall(g, L.wall[0], L.wall[1], L.wall[2], c, { noLab: 1 });
+}
+Promise.all([700, 800, 600, 500].map(w => document.fonts.load(w + ' 40px "Noto Sans CJK SC"', document.body.innerText + '第列0123456789'))).then(() => { go(); requestAnimationFrame(() => setTimeout(() => window.ready = true, 300)); });
+</script></body></html>

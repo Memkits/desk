@@ -1,0 +1,41 @@
+contagion:ba 400 100: contagion:ba 400-100 games 20 A 14 draw 1 first 15 len 17.4 flips 0.50 t 0.9
+contagion:ba 1600 400: contagion:ba 1600-400 games 20 A 10 draw 0 first 20 len 16.4 flips 0.00 t 3.2
+contagion:ba 800 800: contagion:ba 800-800 games 20 A 10 draw 0 first 20 len 18.0 flips 0.00 t 2.2
+contagion:grid 400 100: contagion:grid 400-100 games 20 A 18 draw 1 first 11 len 18.6 flips 0.80 t 1.1
+contagion:grid 1600 400: contagion:grid 1600-400 games 20 A 12 draw 2 first 16 len 18.8 flips 0.30 t 3.0
+contagion:grid 800 800: contagion:grid 800-800 games 20 A 9 draw 4 first 16 len 17.1 flips 0.00 t 2.3
+contagion:sw 400 100: contagion:sw 400-100 games 20 A 15 draw 2 first 13 len 14.5 flips 1.20 t 0.6
+contagion:sw 1600 400: contagion:sw 1600-400 games 20 A 13 draw 1 first 16 len 14.6 flips 0.25 t 2.6
+contagion:sw 800 800: contagion:sw 800-800 games 20 A 9 draw 0 first 19 len 13.8 flips 0.15 t 1.7
+life 400 100: life 400-100 games 20 A 18 draw 1 first 8 len 40.0 flips 12.10 t 9.3
+life 1600 400: life 1600-400 games 20 A 19 draw 1 first 9 len 40.0 flips 5.15 t 27.2
+life 800 800: life 800-800 games 20 A 10 draw 1 first 10 len 40.0 flips 6.35 t 22.7
+sand 400 100: sand 400-100 games 20 A 12 draw 3 first 3 len 50.0 flips 25.00 t 2.2
+sand 1600 400: sand 1600-400 games 20 A 12 draw 5 first 5 len 50.0 flips 20.15 t 5.4
+sand 800 800: sand 800-800 games 20 A 10 draw 3 first 5 len 50.0 flips 17.70 t 3.6
+seesaw 400 100: seesaw 400-100 games 20 A 14 draw 0 first 4 len 8.2 flips 0.50 t 0.0
+seesaw 1600 400: seesaw 1600-400 games 20 A 13 draw 0 first 3 len 9.4 flips 0.15 t 0.2
+seesaw 800 800: seesaw 800-800 games 20 A 10 draw 0 first 0 len 9.5 flips 0.25 t 0.1
+skyline 400 100: skyline 400-100 games 20 A 16 draw 0 first 10 len 42.0 flips 6.90 t 1.3
+skyline 1600 400: skyline 1600-400 games 20 A 15 draw 0 first 5 len 42.0 flips 0.95 t 3.7
+skyline 800 800: skyline 800-800 games 20 A 12 draw 0 first 2 len 42.0 flips 0.10 t 2.5
+switch 400 100: switch 400-100 games 20 A 12 draw 0 first 12 len 19.6 flips 2.55 t 0.1
+switch 1600 400: switch 1600-400 games 20 A 12 draw 0 first 12 len 20.8 flips 1.40 t 0.7
+switch 800 800: switch 800-800 games 20 A 10 draw 0 first 12 len 18.7 flips 1.65 t 0.4
+contagion:ba2 400-100 games 20 A 13 draw 2 first 11 len 17.9 flips 0.40 t 1.0
+contagion:ba2 1600-400 games 20 A 8 draw 5 first 9 len 18.1 flips 0.30 t 3.2
+contagion:ba2 800-800 games 20 A 6 draw 2 first 12 len 17.8 flips 0.45 t 1.6
+contagion:grid2 400-100 games 20 A 18 draw 2 first 9 len 17.1 flips 1.45 t 0.6
+contagion:grid2 1600-400 games 20 A 18 draw 1 first 11 len 16.3 flips 0.65 t 2.3
+contagion:grid2 800-800 games 20 A 5 draw 8 first 2 len 15.9 flips 1.80 t 1.6
+contagion:sw2 400-100 games 20 A 17 draw 1 first 7 len 15.0 flips 1.15 t 0.6
+contagion:sw2 1600-400 games 20 A 10 draw 6 first 5 len 12.4 flips 1.00 t 2.2
+contagion:sw2 800-800 games 20 A 10 draw 2 first 7 len 12.8 flips 1.20 t 1.1
+skyline29 400-100 games 20 A 16 draw 0 first 10 len 29.0 flips 3.20 t 0.6
+skyline29 1600-400 games 20 A 14 draw 1 first 9 len 29.0 flips 0.85 t 2.1
+skyline29 800-800 games 20 A 14 draw 0 first 12 len 29.0 flips 0.70 t 1.4
+skyline30 400-100 games 20 A 17 draw 0 first 7 len 30.0 flips 3.30 t 0.7
+skyline30 1600-400 games 20 A 16 draw 0 first 10 len 30.0 flips 0.60 t 2.0
+skyline30 800-800 games 20 A 12 draw 0 first 6 len 30.0 flips 0.80 t 1.7
+life 6400-1600 games 12 A 10 draw 0 first 8 len 40.0 flips 1.75 t 75.5
+skyline 6400-1600 games 12 A 7 draw 0 first 1 len 42.0 flips 0.08 t 5.8
