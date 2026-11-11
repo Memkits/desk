@@ -114,8 +114,9 @@ dialog .row{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap
     <span>当前层：</span>
     <div class="seg"><button id="act0" aria-pressed="true">上层</button><button id="act1" aria-pressed="false">下层</button></div>
     <button id="btnSwap" title="上下两层交换位置（快捷键 S）">⇅ 交换上下层</button>
-    <label>层间距 <input type="range" id="gap" min="0.15" max="2.4" step="0.01" value="1.2"></label>
-    <label>倾角 <input type="range" id="tilt" min="0" max="75" step="1" value="58"></label>
+    <label>层间距 <input type="range" id="gap" min="0.1" max="1.6" step="0.01" value="0.5"></label>
+    <label>倾角 <input type="range" id="tilt" min="0" max="75" step="1" value="55"></label>
+    <label>棋子 <input type="range" id="ssize" min="0.24" max="0.48" step="0.01" value="0.36"></label>
   </div>
   <div id="status"></div>
 </div>
@@ -275,13 +276,13 @@ function toggleDead(i){
 
 /* ---------------- Persistence ---------------- */
 const KEY="dlgo-state-v1";
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify({n:S.g.n,moves:S.moves,redo:S.redo,komi:S.komi,mode:S.mode,view:UI.view,act:UI.active,shadow:UI.shadow,atari:UI.atari,libLabels:UI.libLabels,flip:Math.round(UI.flip),vv:3,confirm:UI.confirm,gap:UI.gap,tilt:UI.tilt,yaw:UI.yaw})); }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify({n:S.g.n,moves:S.moves,redo:S.redo,komi:S.komi,mode:S.mode,view:UI.view,act:UI.active,shadow:UI.shadow,atari:UI.atari,libLabels:UI.libLabels,flip:Math.round(UI.flip),vv:4,ssize:UI.ssize,confirm:UI.confirm,gap:UI.gap,tilt:UI.tilt,yaw:UI.yaw})); }catch(e){} }
 function load(){ try{ const d=JSON.parse(localStorage.getItem(KEY)||"null"); return d; }catch(e){ return null; } }
 
 /* ---------------- UI ---------------- */
 const $=id=>document.getElementById(id);
 const isTouch=matchMedia("(pointer:coarse)").matches;
-const UI={flip:0,libLabels:true,view:"3d",active:0,hover:-1,pending:-1,shadow:true,atari:true,confirm:isTouch,gap:1.2,tilt:58,yaw:-18,msg:null};
+const UI={flip:0,libLabels:true,view:"3d",active:0,hover:-1,pending:-1,shadow:true,atari:true,confirm:isTouch,gap:0.5,tilt:55,yaw:-18,ssize:0.36,msg:null};
 const LETTERS="ABCDEFGHJKLMNOPQRST";
 const coordName=i=>(L(S.g,i)===0?"上":"下")+LETTERS[X(S.g,i)]+(S.g.n-Y(S.g,i));
 
@@ -570,8 +571,8 @@ function draw3d(){
     const c4=[[-ext,-ext],[n-1+ext,-ext],[n-1+ext,n-1+ext],[-ext,n-1+ext]].map(([x,y])=>S2(P3(l,x,y)));
     ctx.globalAlpha=act?0.07:0.03; ctx.fillStyle=tok(l?"--tagB":"--tagA");
     ctx.beginPath(); c4.forEach((p,k)=>k?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath(); ctx.fill();
-    ctx.globalAlpha=act?1:0.5; ctx.strokeStyle=tok(l?"--tagB":"--tagA"); ctx.lineWidth=(act?2.5:1.2)*dpr; ctx.stroke();
-    ctx.globalAlpha=act?0.85:0.45; ctx.strokeStyle=tok(l?"--tagB":"--tagA"); ctx.lineWidth=(act?1.3:1)*dpr;
+    ctx.globalAlpha=act?0.7:0.3; ctx.strokeStyle=tok(l?"--tagB":"--tagA"); ctx.lineWidth=(act?1.6:1)*dpr; ctx.stroke();
+    ctx.globalAlpha=act?0.38:0.2; ctx.strokeStyle=tok(l?"--tagB":"--tagA"); ctx.lineWidth=0.9*dpr;
     for(let k=0;k<n;k++){ let a=proj[l*nn+k*n], c=proj[l*nn+k*n+n-1]; ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(c.x,c.y);ctx.stroke();
       a=proj[l*nn+k]; c=proj[l*nn+(n-1)*n+k]; ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(c.x,c.y);ctx.stroke(); }
     labels.push({l,act,p:c4[0]});
@@ -579,7 +580,7 @@ function draw3d(){
 
     // stones
     for(let y=0;y<n;y++)for(let x=0;x<n;x++){
-      const i=l*nn+y*n+x, c=b[i], p=proj[i], r=stepPx*0.45*p.s;
+      const i=l*nn+y*n+x, c=b[i], p=proj[i], r=stepPx*UI.ssize*p.s;
       if(!c) continue;
       const capNow=info&&info.kind==="preview"&&info.cap.has(i);
       ctx.globalAlpha=(act?1:0.78)*(capNow?0.4:1);
@@ -598,13 +599,20 @@ function draw3d(){
     if(a&&a===c){ const p=proj[k],q=proj[k+nn]; ctx.globalAlpha=0.7; ctx.strokeStyle=a===BLACK?"#222":"#a9b0ba"; ctx.lineWidth=3*dpr; ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke(); }
   }
   if(info){ const k=info.i%nn, p=proj[k], q=proj[k+nn]; ctx.globalAlpha=0.9; ctx.setLineDash([5*dpr,4*dpr]); ctx.strokeStyle=tok("--accent"); ctx.lineWidth=1.5*dpr; ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke(); ctx.setLineDash([]);
-    for(const pp of [p,q]){ ctx.beginPath(); ctx.arc(pp.x,pp.y,stepPx*0.55*pp.s,0,7); ctx.stroke(); } }
+    for(const pp of [p,q]){ ctx.beginPath(); ctx.arc(pp.x,pp.y,stepPx*(UI.ssize+0.1)*pp.s,0,7); ctx.stroke(); } }
   ctx.globalAlpha=1;
   drawLayer(zl[1].l,true);
+  { const bl=zl[0].l, fl=zl[1].l, ry=Math.max(0.35,Math.cos(UI.tilt*Math.PI/180));
+    for(let k=0;k<nn;k++){ const i=bl*nn+k; if(!b[i]) continue; const p=proj[i], r=stepPx*UI.ssize*p.s;
+      let hid=false; for(let m=0;m<nn&&!hid;m++){ const j=fl*nn+m; if(!b[j]) continue; const q=proj[j]; if(Math.hypot(q.x-p.x,(q.y-p.y)/ry)<r*1.9) hid=true; }
+      if(!hid) continue;
+      ctx.globalAlpha=0.9; ctx.setLineDash([3*dpr,2.5*dpr]); ctx.lineWidth=1.6*dpr; ctx.strokeStyle=b[i]===BLACK?"#111":"#fff";
+      ctx.beginPath(); ctx.ellipse(p.x,p.y,r,r*ry,0,0,7); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.globalAlpha=1; }
   for(const lb of labels){ ctx.globalAlpha=lb.act?1:0.7; ctx.fillStyle=tok(lb.l?"--tagB":"--tagA"); ctx.font=`600 ${13*dpr}px ${tok("--f-body")}`; ctx.fillText((lb.l?"下层":"上层")+(Math.round(UI.flip)?(lb.l?" · 已换到上面":" · 已换到下面"):"")+(lb.act?"（当前，可落子）":""), lb.p.x+4*dpr, lb.p.y-6*dpr); }
   ctx.globalAlpha=1;
   // per-group liberty badges
-  if(UI.libLabels&&S.phase==="play"){ for(const bd of libBadges()){ const p=proj[bd.i], r=stepPx*0.45*p.s;
+  if(UI.libLabels&&S.phase==="play"){ for(const bd of libBadges()){ const p=proj[bd.i], r=stepPx*UI.ssize*p.s;
     ctx.font=`700 ${Math.max(10*dpr,r*0.95)}px ${tok("--f-num")}`; ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillStyle=bd.libs===1?tok("--danger"):bd.libs===2?"#e08a1e":(bd.c===BLACK?"#f2f2f2":"#222"); ctx.fillText(bd.libs,p.x,p.y+dpr); } }
   // numbered liberties of hovered group, drawn on top so none is hidden
@@ -616,7 +624,7 @@ function draw3d(){
     ctx.globalAlpha=1; }
   ctx.textAlign="start"; ctx.textBaseline="alphabetic";
   // ghost
-  if(info&&info.kind==="preview"){ const p=proj[info.i], r=stepPx*0.45*p.s; ctx.globalAlpha=UI.pending===info.i?0.85:0.5; glassStone(ctx,p.x,p.y,r,r*Math.max(0.35,Math.cos(UI.tilt*Math.PI/180)),S.turn); ctx.globalAlpha=1; }
+  if(info&&info.kind==="preview"){ const p=proj[info.i], r=stepPx*UI.ssize*p.s; ctx.globalAlpha=UI.pending===info.i?0.85:0.5; glassStone(ctx,p.x,p.y,r,r*Math.max(0.35,Math.cos(UI.tilt*Math.PI/180)),S.turn); ctx.globalAlpha=1; }
   if(info&&info.kind==="illegal"){ const p=proj[info.i], r=stepPx*0.3*p.s; ctx.strokeStyle=tok("--danger"); ctx.lineWidth=3*dpr; ctx.beginPath(); ctx.moveTo(p.x-r,p.y-r);ctx.lineTo(p.x+r,p.y+r);ctx.moveTo(p.x+r,p.y-r);ctx.lineTo(p.x-r,p.y+r);ctx.stroke(); }
   if(S.phase==="score"||S.phase==="over"&&S.dead.size) for(const d of S.dead){ const p=proj[d], r=stepPx*0.3*p.s; ctx.strokeStyle=tok("--danger"); ctx.lineWidth=2.5*dpr; ctx.beginPath(); ctx.moveTo(p.x-r,p.y-r);ctx.lineTo(p.x+r,p.y+r);ctx.moveTo(p.x+r,p.y-r);ctx.lineTo(p.x-r,p.y+r);ctx.stroke(); }
 }
@@ -728,6 +736,8 @@ $("act0").onclick=()=>{UI.active=0;render();save();};
 $("act1").onclick=()=>{UI.active=1;render();save();};
 $("gap").oninput=e=>{UI.gap=+e.target.value;draw3d();};
 $("tilt").oninput=e=>{UI.tilt=+e.target.value;draw3d();};
+$("ssize").oninput=e=>{UI.ssize=+e.target.value;draw3d();};
+$("ssize").onchange=save;
 $("gap").onchange=$("tilt").onchange=save;
 $("optShadow").onchange=e=>{UI.shadow=e.target.checked;render();save();};
 $("optAtari").onchange=e=>{UI.atari=e.target.checked;render();save();};
@@ -753,15 +763,15 @@ let rzT=0; addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(relay
 
 (function boot(){
   const d=load();
-  if(d&&d.n){ Object.assign(UI,{libLabels:d.libLabels!==false,flip:d.flip||0,view:d.vv===3?(d.view||"3d"):"3d",active:d.act||0,shadow:d.shadow!==false,atari:d.atari!==false,confirm:d.confirm??isTouch,gap:d.gap||1.2,tilt:d.tilt??58,yaw:d.yaw??-18});
+  if(d&&d.n){ Object.assign(UI,{libLabels:d.libLabels!==false,flip:d.flip||0,view:d.vv>=3?(d.view||"3d"):"3d",active:d.act||0,shadow:d.shadow!==false,atari:d.atari!==false,confirm:d.confirm??isTouch,gap:d.vv>=4?(d.gap||0.5):0.5,tilt:d.vv>=4?(d.tilt??55):55,yaw:d.yaw??-18,ssize:d.ssize||0.36});
     S.g=makeGeom(d.n); S.moves=d.moves||[]; S.redo=d.redo||[]; S.komi=d.komi??7.5; S.mode=d.mode||"hh"; replay();
   } else {
     S.g=makeGeom(9); S.komi=7.5; S.mode="hh";
     S.moves=[]; replay();
-    if(innerWidth<640){ UI.yaw=0; UI.tilt=50; UI.gap=1.4; }
+    if(innerWidth<640){ UI.yaw=0; UI.tilt=52; UI.gap=0.55; }
   }
   $("optShadow").checked=UI.shadow; $("optAtari").checked=UI.atari; $("optLibs").checked=UI.libLabels; $("optConfirm").checked=UI.confirm;
-  $("gap").value=UI.gap; $("tilt").value=UI.tilt;
+  $("gap").value=UI.gap; $("ssize").value=UI.ssize; $("tilt").value=UI.tilt;
   requestAnimationFrame(()=>{relayout(); if(S.phase==="score") render(); maybeBot();});
 })();
 </script>
