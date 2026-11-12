@@ -1,0 +1,29 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<link rel="stylesheet" href="../fonts/noto.css">
+<style>
+html,body{margin:0;background:radial-gradient(ellipse at 60% 50%,#14203a 0,#070A12 70%);overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.t{position:absolute;left:5.5%;top:11%;max-width:52%}
+.v .t{left:7%;right:7%;top:5%;max-width:none}
+.k{display:inline-block;font:700 38px "Noto Sans CJK SC";color:#0b0f18;background:#FFD27A;padding:8px 22px;border-radius:12px}
+.name{font:800 128px/1.16 "Noto Sans CJK SC";margin-top:28px;text-shadow:0 6px 30px #000}
+.name span{color:#FFD27A}
+.sub{font:600 36px/1.6 "Noto Sans CJK SC";margin-top:26px;color:#C9D4EA;text-shadow:0 2px 12px #000}
+.v .name{font-size:124px}.v .sub{font-size:36px}.v .k{font-size:42px}
+.r43 .t{left:5%;max-width:50%}.r43 .name{font-size:100px}.r43 .sub{font-size:30px}.r43 .k{font-size:32px}
+</style>
+<body><canvas id="c"></canvas>
+<div class="t"><div class="k">游戏设计 · 程序自对弈</div><div class="name">走进<br><span>棋盘</span></div><div class="sub" id="sub"></div></div>
+<script src="../tl_e1.js"></script><script src="../data.js"></script><script src="../lib.js"></script><script src="../an_base.js"></script><script src="../an_3d.js"></script><script>
+const W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+sub.innerHTML = V ? '<div>借助 VR 才下得了的智力博弈</div><div>新游戏“线与膜”：三维里的六贯棋</div>' : ['借助 VR 才下得了的智力博弈', '三维里，线挡不住人', '新游戏“线与膜”', '一方连线，一方织膜'].map(x => `<div>${x}</div>`).join('');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+function go() {
+  const bg = g.createRadialGradient(W * .62, H * .5, 0, W * .62, H * .5, Math.max(W, H) * .75); bg.addColorStop(0, '#16233f'); bg.addColorStop(1, '#070A12'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const L = V ? [540, 1000, 104] : R43 ? [1010, 600, 84] : [1380, 560, 104];
+  const b = LM.B[54], fl = lmFlood(b, v => v !== 2), mem = new Set(); fl.q.forEach(c => NB6[c].forEach(n => { if (b[n] === 2) mem.add(n); }));
+  lmDraw(g, L[0], L[1], L[2], 1.05, b, { last: -1 });
+}
+Promise.all([700, 800, 600, 500].map(w => document.fonts.load(w + ' 40px "Noto Sans CJK SC"', document.body.innerText + '0123456789'))).then(() => { go(); requestAnimationFrame(() => setTimeout(() => window.ready = true, 300)); });
+</script></body></html>
