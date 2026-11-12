@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>新游戏实验室 · 八个规则简单的双人游戏</title>
+<style>
+:root{--bg:#f2f3f0;--card:#fff;--ink:#1c2026;--ink2:#5a616b;--rule:#d8dbd4;--acc:#1f5fa8;--board:#fafaf7;--grid:#c9cdc4;--p1:#2f86de;--p2:#f0932b;--ok:#2e9e5b;--bad:#d64545}
+@media (prefers-color-scheme:dark){:root{--bg:#14171b;--card:#1c2026;--ink:#e7e9ec;--ink2:#a2aab4;--rule:#2f353d;--acc:#7fb0ef;--board:#12151a;--grid:#353c46;--p1:#5cb4ff;--p2:#ffb25c;--ok:#5fd39a;--bad:#ff6b6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Noto Sans SC","PingFang SC",system-ui,sans-serif;padding:28px max(16px,env(safe-area-inset-left,0px)) 60px}
+.wrap{max-width:1120px;margin:0 auto}
+h1{font:900 clamp(26px,4vw,38px)/1.2 "Noto Serif SC","Songti SC",serif;margin:0 0 4px}
+.lead{color:var(--ink2);margin:0 0 18px;max-width:70ch}
+.lead a{color:var(--acc)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.tabs button{font:inherit;font-weight:600;padding:6px 14px;border-radius:999px;border:1px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button .bad{color:var(--bad);font-weight:500;font-size:13px;margin-left:4px}
+.tabs button.on .bad{color:inherit;opacity:.7}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.stage{background:var(--card);border:1px solid var(--rule);padding:10px}
+canvas{display:block;width:100%;max-width:calc(100vh - 230px);min-width:min(100%,360px);margin:0 auto;height:auto;touch-action:manipulation;cursor:pointer}
+.side{background:var(--card);border:1px solid var(--rule);padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.side h2{margin:0;font:700 22px "Noto Serif SC",serif}
+.status{font-weight:700;min-height:1.65em}
+.score{display:flex;gap:18px;font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.score span i{display:inline-block;width:14px;height:14px;border-radius:4px;margin-right:6px;vertical-align:-1px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row label{font-size:14px;color:var(--ink2)}
+select,.btn{font:inherit;font-size:15px;padding:5px 10px;border-radius:8px;border:1px solid var(--rule);background:var(--bg);color:var(--ink);cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.rules{font-size:15px;color:var(--ink2);border-top:1px solid var(--rule);padding-top:10px}
+.rules p{margin:0 0 6px}.rules b{color:var(--ink)}
+.verdict{font-size:14px;padding:8px 10px;border-left:4px solid var(--acc);background:var(--bg)}
+.foot{margin-top:28px;font-size:14px;color:var(--ink2)}
+</style>
+<div class="wrap">
+<h1>新游戏实验室</h1>
+<p class="lead">八个规则很短的双人游戏原型，都来自“<a href="beyond/index.html?ep=1">棋盘之外</a>”和上一轮新棋类的探索。蓝方先行。可以和电脑下，也可以两个人轮流下。电脑用的是不带任何游戏知识的蒙特卡洛搜索，水平有限。标了“不成立”的三个游戏有明显缺陷，放在这里是为了让你亲手验证。</p>
+<div class="tabs" id="tabs"></div>
+<div class="main">
+<div class="stage"><canvas id="cv" width="1440" height="1440"></canvas></div>
+<div class="side">
+<h2 id="gname"></h2>
+<div class="status" id="status"></div>
+<div class="score" id="score"></div>
+<div class="row"><label>对手</label><select id="mode"><option value="2">我执蓝（先手），电脑执橙</option><option value="1">我执橙（后手），电脑执蓝</option><option value="0">两个人轮流下</option><option value="3">电脑对电脑</option></select></div>
+<div class="row"><label>电脑</label><select id="lvl"><option value="250">快（约 0.25 秒）</option><option value="900" selected>中（约 1 秒）</option><option value="3000">强（约 3 秒）</option></select><span id="opt"></span></div>
+<div class="row"><button class="btn" id="new">新的一局</button><button class="btn" id="undo">悔棋</button><button class="btn" id="pass" hidden>停一手</button></div>
+<div class="verdict" id="verdict"></div>
+<div class="rules" id="rules"></div>
+</div>
+</div>
+<p class="foot">页面由 AI（Claude）生成。规则与测试数据见探索报告和视频；模拟器源码在仓库 sources/hyperbolic-go/sim/。</p>
+</div>
+<script>
+'use strict';
+// ---------- 公共 ----------
+const $ = id => document.getElementById(id), cv = $('cv'), g = cv.getContext('2d'), L = 720; g.scale(2, 2);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let COL = {}; const loadCol = () => { COL = { board: css('--board'), grid: css('--grid'), ink: css('--ink'), ink2: css('--ink2'), p: [null, css('--p1'), css('--p2')], ok: css('--ok'), bad: css('--bad'), card: css('--card') }; }; loadCol();
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change', () => { loadCol(); render(); });
+const rnd = n => Math.floor(Math.random() * n), PN = [null, '蓝方', '橙方'];
+function rr(x, y, w, h, r, fill, stroke, lw = 2) { g.beginPath(); g.roundRect(x, y, w, h, r); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); } }
+function dot(x, y, r, fill, stroke, lw = 2) { g.beginPath(); g.arc(x, y, r, 0, 7); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); } }
+function ln(x0, y0, x1, y1, col, lw = 2, dash) { g.save(); if (dash) g.setLineDash(dash); g.strokeStyle = col; g.lineWidth = lw; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore(); }
+function tx(s, x, y, col, size = 20, al = 'center', w = 600) { g.fillStyle = col; g.font = `${w} ${size}px "Noto Sans SC","PingFang SC",system-ui,sans-serif`; g.textAlign = al; g.textBaseline = 'middle'; g.fillText(s, x, y); }
+function arrow(x0, y0, x1, y1, col, lw, head) { ln(x0, y0, x1, y1, col, lw); if (!head) return; const a = Math.atan2(y1 - y0, x1 - x0); g.fillStyle = col; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x1 - head * Math.cos(a - .45), y1 - head * Math.sin(a - .45)); g.lineTo(x1 - head * Math.cos(a + .45), y1 - head * Math.sin(a + .45)); g.fill(); }
+const bg = () => { g.clearRect(0, 0, L, L); rr(0, 0, L, L, 10, COL.board); };
+const cnt = (a, v) => { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] === v) n++; return n; };
+const sgn = x => x > 0 ? 1 : x < 0 ? -1 : 0;
+
+// ---------- 游戏定义 ----------
+// 接口：init(opt) clone(s) legal(s) play(s,m,rec) over(s) result(s)[蓝方视角 1/-1/0] score(s)→[蓝,橙,单位] draw(s,ui) hit(x,y,s,ui)→着法|null
+const G = {};
+
+// 生命对决
+G.life = { name: '生命对决', S: 8,
+  verdict: '测试里表现最好：多想四倍的一方 20 局赢 18 到 19 局，先后手各半。',
+  rules: ['8×8 格子，四边连通（从一边出去就从对边回来）。开局对称地撒 10 对细胞。', '轮到你：在空格放一个自己的细胞，然后全盘演化一代。', '<b>存活</b>：活细胞周围八格里有 2 或 3 个活细胞。<b>出生</b>：空格周围恰有 3 个活细胞，颜色随多数。', '各下 20 手后，活细胞多者胜。'],
+  init() { const c = new Int8Array(64); for (let k = 0; k < 10;) { const i = rnd(64); if (c[i] || c[63 - i]) continue; c[i] = 1; c[63 - i] = 2; k++; } return { c, tm: 1, moves: 0 }; },
+  clone: s => ({ c: s.c.slice(), tm: s.tm, moves: s.moves }),
+  legal(s) { const m = []; for (let i = 0; i < 64; i++) if (!s.c[i]) m.push(i); return m.length ? m : [-1]; },
+  step(c) { const d = new Int8Array(64); for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { let a = 0, b = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) { const v = c[((y + dy + 8) & 7) * 8 + ((x + dx + 8) & 7)]; if (v === 1) a++; else if (v === 2) b++; } const i = y * 8 + x, n = a + b; d[i] = c[i] ? (n === 2 || n === 3 ? c[i] : 0) : (n === 3 ? (a > b ? 1 : 2) : 0); } return d; },
+  play(s, m, rec) { if (m >= 0) s.c[m] = s.tm; if (rec) rec.push({ ...this.clone(s), last: m }); s.c = this.step(s.c); s.tm = 3 - s.tm; s.moves++; },
+  over: s => s.moves >= 40,
+  result: s => sgn(cnt(s.c, 1) - cnt(s.c, 2)),
+  score: s => [cnt(s.c, 1), cnt(s.c, 2), '个细胞', `第 ${Math.min(40, s.moves + 1)} / 40 手`],
+  draw(s, ui) { bg(); const cs = 84, o = 24; for (let i = 0; i <= 8; i++) { ln(o + i * cs, o, o + i * cs, o + 8 * cs, COL.grid, 1.5); ln(o, o + i * cs, o + 8 * cs, o + i * cs, COL.grid, 1.5); }
+    for (let i = 0; i < 64; i++) { const x = o + (i % 8) * cs, y = o + (i >> 3) * cs; if (s.c[i]) rr(x + 8, y + 8, cs - 16, cs - 16, 14, COL.p[s.c[i]]); if (s.last === i) rr(x + 4, y + 4, cs - 8, cs - 8, 16, null, COL.ink, 3); if (ui.hover === i && !s.c[i]) rr(x + 8, y + 8, cs - 16, cs - 16, 14, null, COL.p[s.tm], 3); } },
+  hit(x, y, s) { const cx = Math.floor((x - 24) / 84), cy = Math.floor((y - 24) / 84); if (cx < 0 || cy < 0 || cx > 7 || cy > 7) return null; const i = cy * 8 + cx; return s.c[i] ? null : i; } };
+
+// 蔓延
+G.cont = { name: '蔓延',
+  verdict: '多想四倍 20 局赢 18 局，有技巧；但强手之间在 6×6 上容易下成 18 比 18 平局。随机网络上更浅。',
+  rules: ['一张网络。蓝方第一回合下一手，之后双方每回合连下两手。', '每一手：占一个无主的节点，然后全网扩散一步。', '<b>占领</b>：无主节点若有至少 2 个邻居属于同一方，且多于对方的邻居，就归这一方。', '<b>倒戈</b>：有主节点若对方的邻居超过它邻居总数的一半，就改归对方。', '所有节点有主时，节点多者胜。'],
+  opts: [['grid6', '方格 6×6'], ['grid8', '方格 8×8'], ['ba', '无标度网络 40 点']],
+  init(opt = 'grid6') { let n, E = [], P = [];
+    if (opt !== 'ba') { const S = opt === 'grid8' ? 8 : 6; n = S * S; const sp = 640 / (S - 1); for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const i = y * S + x; P.push([40 + x * sp, 40 + y * sp]); if (x < S - 1) E.push([i, i + 1]); if (y < S - 1) E.push([i, i + S]); } }
+    else { n = 40; E = [[0, 1], [1, 2], [0, 2]]; const ends = [0, 1, 1, 2, 2, 0]; for (let i = 3; i < n; i++) { const a = ends[rnd(ends.length)]; let b; do b = ends[rnd(ends.length)]; while (b === a); E.push([i, a], [i, b]); ends.push(i, a, i, b); }
+      P = Array.from({ length: n }, (_, i) => [Math.cos(i * 2.4) * (40 + i * 5), Math.sin(i * 2.4) * (40 + i * 5)]);
+      for (let it = 0; it < 400; it++) { const F = P.map(() => [0, 0]); for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const dx = P[i][0] - P[j][0], dy = P[i][1] - P[j][1], r2 = dx * dx + dy * dy + 1, r = Math.sqrt(r2), f = 9000 / r2; F[i][0] += dx * f / r; F[i][1] += dy * f / r; F[j][0] -= dx * f / r; F[j][1] -= dy * f / r; }
+        E.forEach(([a, b]) => { const dx = P[b][0] - P[a][0], dy = P[b][1] - P[a][1], r = Math.hypot(dx, dy) + .1, f = (r - 70) * .05; F[a][0] += dx / r * f; F[a][1] += dy / r * f; F[b][0] -= dx / r * f; F[b][1] -= dy / r * f; });
+        P.forEach((p, i) => { p[0] += Math.max(-8, Math.min(8, F[i][0])) - p[0] * .012; p[1] += Math.max(-8, Math.min(8, F[i][1])) - p[1] * .012; }); }
+      const xs = P.map(p => p[0]), ys = P.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys); P = P.map(([x, y]) => [40 + (x - x0) / (x1 - x0) * 640, 40 + (y - y0) / (y1 - y0) * 640]); }
+    const adj = Array.from({ length: n }, () => []); E.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a); });
+    return { n, E, P, adj, r: opt === 'grid8' ? 22 : opt === 'ba' ? 17 : 28, c: new Int8Array(n), tm: 1, moves: 0 }; },
+  clone: s => ({ ...s, c: s.c.slice() }),
+  legal(s) { const m = []; for (let i = 0; i < s.n; i++) if (!s.c[i]) m.push(i); return m; },
+  play(s, m, rec) { s.c[m] = s.tm; if (rec) rec.push({ ...this.clone(s), last: m }); const c = s.c, d = c.slice(); for (let i = 0; i < s.n; i++) { let a = 0, b = 0; const A = s.adj[i]; for (let k = 0; k < A.length; k++) { const v = c[A[k]]; if (v === 1) a++; else if (v === 2) b++; } if (!c[i]) { if (a >= 2 && a > b) d[i] = 1; else if (b >= 2 && b > a) d[i] = 2; } else { const e = c[i] === 1 ? b : a; if (2 * e > A.length) d[i] = 3 - c[i]; } }
+    s.c = d; if (s.moves % 2 === 0) s.tm = 3 - s.tm; s.moves++; },
+  over(s) { if (s.moves >= 4 * s.n) return true; for (let i = 0; i < s.n; i++) if (!s.c[i]) return false; return true; },
+  result: s => sgn(cnt(s.c, 1) - cnt(s.c, 2)),
+  score: s => [cnt(s.c, 1), cnt(s.c, 2), '个节点', s.moves === 0 ? '蓝方第一回合只下一手' : (s.moves % 2 === 1 ? '本回合第 1 手' : '本回合第 2 手')],
+  draw(s, ui) { bg(); s.E.forEach(([a, b]) => { const same = s.c[a] && s.c[a] === s.c[b]; ln(s.P[a][0], s.P[a][1], s.P[b][0], s.P[b][1], same ? COL.p[s.c[a]] : COL.grid, same ? 5 : 2.5); });
+    s.P.forEach(([x, y], i) => { dot(x, y, s.r, s.c[i] ? COL.p[s.c[i]] : COL.board, s.c[i] ? null : COL.ink2, 2); if (s.last === i) dot(x, y, s.r + 6, null, COL.ink, 3); if (ui.hover === i && !s.c[i]) dot(x, y, s.r - 5, null, COL.p[s.tm], 4); }); },
+  hit(x, y, s) { let best = -1, bd = 1e9; s.P.forEach(([px, py], i) => { const d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = i; } }); return bd < s.r + 14 && !s.c[best] ? best : null; } };
+
+// 天际线
+G.sky = { name: '天际线', W: 7, H: 6,
+  verdict: '多想四倍 20 局赢 16 到 17 局，有技巧；后手略占优（先手 20 局赢 6 局）。',
+  rules: ['正面看是一面墙：7 列，最高 6 层。每人 15 块积木，轮流放一块。', '<b>有支撑</b>：放在地面上，或任何一块积木的正上方。', '<b>悬挑</b>：紧贴自己一块积木的侧面悬空放，条件是那块积木的正下方是实的（地面或积木）。', '放完后，每列最上面一块是谁的，这一列归谁；列多者胜。可落子的位置用虚线框标出。'],
+  init() { return { c: new Int8Array(42), tm: 1, moves: 0 }; },
+  clone: s => ({ c: s.c.slice(), tm: s.tm, moves: s.moves }),
+  sup: (c, x, y) => y === 0 || c[x * 6 + y - 1] !== 0,
+  ok(c, x, y, col) { if (c[x * 6 + y]) return false; if (this.sup(c, x, y)) return true; if (x > 0 && c[(x - 1) * 6 + y] === col && this.sup(c, x - 1, y)) return true; if (x < 6 && c[(x + 1) * 6 + y] === col && this.sup(c, x + 1, y)) return true; return false; },
+  legal(s) { const m = []; for (let x = 0; x < 7; x++) for (let y = 0; y < 6; y++) if (this.ok(s.c, x, y, s.tm)) m.push(x * 6 + y); return m.length ? m : [-1]; },
+  play(s, m) { if (m >= 0) s.c[m] = s.tm; s.tm = 3 - s.tm; s.moves++; },
+  over(s) { if (s.moves >= 30) return true; for (let col = 1; col <= 2; col++) for (let x = 0; x < 7; x++) for (let y = 0; y < 6; y++) if (this.ok(s.c, x, y, col)) return false; return true; },
+  tops(s) { const t = []; for (let x = 0; x < 7; x++) { let v = 0; for (let y = 5; y >= 0; y--) if (s.c[x * 6 + y]) { v = s.c[x * 6 + y]; break; } t.push(v); } return t; },
+  result(s) { const t = this.tops(s); return sgn(cnt(t, 1) - cnt(t, 2)); },
+  score(s) { const t = this.tops(s), u1 = Math.ceil(s.moves / 2), u2 = Math.floor(s.moves / 2); return [cnt(t, 1), cnt(t, 2), '列', `剩余积木 蓝 ${15 - u1} · 橙 ${15 - u2}`]; },
+  draw(s, ui) { bg(); const bs = 92, ox = 38, oy = 60, cy = y => oy + (5 - y) * bs; for (let i = 0; i <= 7; i++) ln(ox + i * bs, oy, ox + i * bs, oy + 6 * bs, COL.grid, 1, [3, 7]); for (let j = 0; j < 6; j++) ln(ox, oy + j * bs, ox + 7 * bs, oy + j * bs, COL.grid, 1, [3, 7]); rr(ox - 14, oy + 6 * bs, 7 * bs + 28, 10, 5, COL.ink2);
+    const leg = ui.human ? this.legal(s) : [], t = this.tops(s);
+    for (let x = 0; x < 7; x++) { for (let y = 0; y < 6; y++) { const i = x * 6 + y, X = ox + x * bs, Y = cy(y); if (s.c[i]) { rr(X + 4, Y + 4, bs - 8, bs - 8, 12, COL.p[s.c[i]]); if (y > 0 && !s.c[i - 1]) tx('悬', X + bs / 2, Y + bs / 2, 'rgba(0,0,0,.45)', 28, 'center', 800); if (s.last === i) rr(X + 2, Y + 2, bs - 4, bs - 4, 13, null, COL.ink, 3); } else if (leg.includes(i)) { g.save(); g.setLineDash([7, 6]); rr(X + 8, Y + 8, bs - 16, bs - 16, 10, ui.hover === i ? COL.p[s.tm] : null, COL.p[s.tm], 2); g.restore(); } }
+      if (t[x]) rr(ox + x * bs + 16, oy + 6 * bs + 24, bs - 32, 18, 9, COL.p[t[x]]); tx(`第 ${x + 1} 列`, ox + x * bs + bs / 2, oy + 6 * bs + 64, COL.ink2, 16); } },
+  hit(x, y, s) { const cx = Math.floor((x - 38) / 92), cyy = 5 - Math.floor((y - 60) / 92); if (cx < 0 || cx > 6 || cyy < 0 || cyy > 5) return null; return this.ok(s.c, cx, cyy, s.tm) ? cx * 6 + cyy : null; } };
+
+// 道岔
+G.sw = { name: '道岔', bad: 1,
+  verdict: '不成立：多想四倍只赢 12/20，胜负主要取决于随机生成的线路。',
+  rules: ['16 个节点的单向网络。每个节点有两条出路，粗线是当前道岔的方向。黄色方块是包裹。', '轮到你：点一个节点扳它的道岔（不能扳对方刚扳过的那个），然后包裹自动走两步。', '包裹走进谁的终点（带颜色的节点），谁得 1 分，包裹回到起点。', '先得 4 分者胜；80 手内未分出胜负则比分数。'],
+  init() { const out = []; for (let i = 0; i < 16; i++) { let b; do b = rnd(16); while (b === i || b === (i + 1) % 16); out.push([(i + 1) % 16, b]); } const sw = new Int8Array(16); for (let i = 0; i < 16; i++) sw[i] = rnd(2); const home = new Int8Array(16); home[4] = home[11] = 1; home[6] = home[13] = 2; return { out, home, sw, pos: 0, lastSw: -1, sc: [0, 0, 0], tm: 1, moves: 0 }; },
+  clone: s => ({ ...s, sw: s.sw.slice(), sc: s.sc.slice() }),
+  legal(s) { const m = []; for (let i = 0; i < 16; i++) if (i !== s.lastSw) m.push(i); return m; },
+  play(s, m, rec) { s.sw[m] ^= 1; s.lastSw = m; if (rec) rec.push({ ...this.clone(s), last: m }); for (let k = 0; k < 2; k++) { s.pos = s.out[s.pos][s.sw[s.pos]]; if (rec) rec.push({ ...this.clone(s), last: m }); if (s.home[s.pos]) { s.sc[s.home[s.pos]]++; s.pos = 0; break; } } s.tm = 3 - s.tm; s.moves++; },
+  over: s => s.sc[1] >= 4 || s.sc[2] >= 4 || s.moves >= 80,
+  result: s => sgn(s.sc[1] - s.sc[2]),
+  score: s => [s.sc[1], s.sc[2], '分', `第 ${s.moves + 1} 手`],
+  P(i) { const a = -Math.PI / 2 + i / 16 * 2 * Math.PI; return [360 + 300 * Math.cos(a), 360 + 300 * Math.sin(a)]; },
+  draw(s, ui) { bg(); const edge = (a, b, on) => { const [x0, y0] = this.P(a), [x1, y1] = this.P(b), D = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / D, uy = (y1 - y0) / D; arrow(x0 + ux * 28, y0 + uy * 28, x1 - ux * 32, y1 - uy * 32, on ? COL.ink : COL.grid, on ? 3.5 : 1.5, on ? 13 : 7); };
+    for (let i = 0; i < 16; i++) edge(i, s.out[i][1 - s.sw[i]], false); for (let i = 0; i < 16; i++) edge(i, s.out[i][s.sw[i]], true);
+    for (let i = 0; i < 16; i++) { const [x, y] = this.P(i), h = s.home[i]; dot(x, y, 25, h ? COL.p[h] : COL.board, i === s.lastSw ? COL.bad : COL.ink2, i === s.lastSw ? 4 : 2); if (ui.hover === i && i !== s.lastSw) dot(x, y, 31, null, COL.p[s.tm], 4); tx(h ? '终' : i === 0 ? '起' : '', x, y + 1, h ? '#111' : COL.ink2, 20, 'center', 800); }
+    const [px, py] = this.P(s.pos); rr(px - 15, py - 15, 30, 30, 7, '#ffd23f', '#111', 2.5); },
+  hit(x, y, s) { for (let i = 0; i < 16; i++) { const [px, py] = this.P(i); if (Math.hypot(px - x, py - y) < 34) return i === s.lastSw ? null : i; } return null; } };
+
+// 沙堆
+G.sand = { name: '沙堆', bad: 1,
+  verdict: '不成立：太混乱，领先的一方平均每局换手 20 次，多想四倍只赢 12/20。是“连锁反应”（Chain Reaction）的近亲。',
+  rules: ['6×6 格子。轮到你：往一个空格或自己的格子里加一粒沙。', '任何格子满 4 粒就崩塌：4 粒分给上下左右（掉出边界的消失），并把这四格染成崩塌者的颜色。', '邻居因此满 4 粒会接着崩，形成连锁。', '各下 25 手后，占格多者胜。'],
+  init() { return { g: new Int8Array(36), o: new Int8Array(36), tm: 1, moves: 0 }; },
+  clone: s => ({ g: s.g.slice(), o: s.o.slice(), tm: s.tm, moves: s.moves }),
+  legal(s) { const m = []; for (let i = 0; i < 36; i++) if (!s.o[i] || s.o[i] === s.tm) m.push(i); return m.length ? m : [-1]; },
+  play(s, m, rec) { if (m >= 0) { const gr = s.g, ow = s.o; gr[m]++; ow[m] = s.tm; if (rec) rec.push({ ...this.clone(s), last: m }); let ch = true, guard = 0; while (ch && guard++ < 500) { ch = false; for (let i = 0; i < 36; i++) if (gr[i] >= 4) { ch = true; gr[i] -= 4; const own = ow[i]; if (!gr[i]) ow[i] = 0; const x = i % 6, y = (i / 6) | 0; if (x > 0) { gr[i - 1]++; ow[i - 1] = own; } if (x < 5) { gr[i + 1]++; ow[i + 1] = own; } if (y > 0) { gr[i - 6]++; ow[i - 6] = own; } if (y < 5) { gr[i + 6]++; ow[i + 6] = own; } } if (rec && ch) rec.push({ ...this.clone(s), last: m }); } } s.tm = 3 - s.tm; s.moves++; },
+  over: s => s.moves >= 50,
+  result: s => sgn(cnt(s.o, 1) - cnt(s.o, 2)),
+  score: s => [cnt(s.o, 1), cnt(s.o, 2), '格', `第 ${Math.min(50, s.moves + 1)} / 50 手`],
+  draw(s, ui) { bg(); const cs = 112, o = 24; for (let i = 0; i < 36; i++) { const x = o + (i % 6) * cs, y = o + ((i / 6) | 0) * cs, v = s.o[i], n = s.g[i]; g.save(); g.globalAlpha = v ? .22 : 1; rr(x + 4, y + 4, cs - 8, cs - 8, 12, v ? COL.p[v] : null); g.restore(); rr(x + 4, y + 4, cs - 8, cs - 8, 12, null, v ? COL.p[v] : COL.grid, v ? 2.5 : 1.5);
+      const pos = [[.5, .5], [.3, .5, .7, .5], [.3, .35, .7, .35, .5, .68], [.3, .3, .7, .3, .3, .7, .7, .7]][Math.min(4, n) - 1] || []; for (let q = 0; q < pos.length; q += 2) dot(x + pos[q] * cs, y + pos[q + 1] * cs, 11, v ? COL.p[v] : COL.ink2); if (n > 4) tx(String(n), x + cs / 2, y + cs / 2, COL.ink, 26, 'center', 800);
+      if (s.last === i) rr(x + 1, y + 1, cs - 2, cs - 2, 14, null, COL.ink, 3); if (ui.hover === i && (!v || v === s.tm)) rr(x + 8, y + 8, cs - 16, cs - 16, 10, null, COL.p[s.tm], 3); } },
+  hit(x, y, s) { const cx = Math.floor((x - 24) / 112), cy = Math.floor((y - 24) / 112); if (cx < 0 || cy < 0 || cx > 5 || cy > 5) return null; const i = cy * 6 + cx; return !s.o[i] || s.o[i] === s.tm ? i : null; } };
+
+// 跷跷板
+G.seesaw = { name: '跷跷板', bad: 1,
+  verdict: '不成立：后手每次在对称位置放同样重的砝码，横梁永远平衡，后手必胜。试试执橙照镜子。',
+  rules: ['横梁有 −5 到 +5 共 10 个位置。每人有重量 1 到 5 的砝码各一个。', '轮到你：先点下方自己的一个砝码，再点横梁上的一个空位。', '力矩 = 重量 × 位置。全部力矩加起来的绝对值超过 8，横梁翻倒，放的人输。', '无处可放（砝码用完或位置放满）也算输。'],
+  init() { return { w: new Int8Array(11), own: new Int8Array(11), used: [0, 0, 0], tq: 0, loser: 0, tm: 1, moves: 0 }; },
+  clone: s => ({ w: s.w.slice(), own: s.own.slice(), used: s.used.slice(), tq: s.tq, loser: s.loser, tm: s.tm, moves: s.moves }),
+  legal(s) { const m = []; for (let p = 0; p < 11; p++) if (p !== 5 && !s.w[p]) for (let w = 1; w <= 5; w++) if (!(s.used[s.tm] >> w & 1)) m.push(p * 8 + w); return m.length ? m : [-1]; },
+  play(s, m) { if (m < 0) s.loser = s.tm; else { const p = m >> 3, w = m & 7; s.w[p] = w; s.own[p] = s.tm; s.used[s.tm] |= 1 << w; s.tq += w * (p - 5); if (Math.abs(s.tq) > 8) s.loser = s.tm; } s.tm = 3 - s.tm; s.moves++; },
+  over: s => s.loser !== 0,
+  result: s => s.loser === 1 ? -1 : 1,
+  score: s => [null, null, '', `力矩合计 ${s.tq > 0 ? '+' : ''}${s.tq}（限度 ±8）`],
+  draw(s, ui) { bg(); const cx = 360, cy = 330, sp = 62, ang = Math.abs(s.tq) > 8 ? Math.sign(s.tq) * .3 : s.tq / 8 * .05;
+    g.fillStyle = COL.ink2; g.beginPath(); g.moveTo(cx, cy + 8); g.lineTo(cx - 44, cy + 100); g.lineTo(cx + 44, cy + 100); g.fill(); rr(40, cy + 100, 640, 8, 4, COL.grid);
+    g.save(); g.translate(cx, cy); g.rotate(ang); rr(-5.5 * sp, -9, 11 * sp, 18, 8, COL.ink2);
+    for (let p = 0; p < 11; p++) { if (p === 5) continue; const x = (p - 5) * sp; tx((p > 5 ? '+' : '') + (p - 5), x, 30, COL.ink2, 16); if (s.w[p]) { const sz = 34 + s.w[p] * 5; rr(x - sz / 2, -9 - sz, sz, sz, 8, COL.p[s.own[p]]); tx(String(s.w[p]), x, -9 - sz / 2, '#111', 22, 'center', 800); } else if (ui.sel && ui.human) { g.save(); g.setLineDash([6, 5]); rr(x - 22, -9 - 44, 44, 44, 8, ui.hover === p ? COL.p[s.tm] : null, COL.p[s.tm], 2); g.restore(); } }
+    g.restore();
+    tx(`力矩合计 ${s.tq > 0 ? '+' : ''}${s.tq}`, cx, 80, Math.abs(s.tq) > 8 ? COL.bad : COL.ink, 30, 'center', 800); tx('限度 ±8', cx, 118, COL.ink2, 18);
+    [1, 2].forEach(v => { const y = v === 1 ? 520 : 630; tx(PN[v] + '的砝码', 60, y, COL.p[v], 20, 'left', 700); for (let w = 1; w <= 5; w++) { const x = 220 + (w - 1) * 90, used = s.used[v] >> w & 1, sz = 34 + w * 5; g.save(); g.globalAlpha = used ? .18 : 1; rr(x - sz / 2, y - sz / 2, sz, sz, 8, COL.p[v]); tx(String(w), x, y, '#111', 22, 'center', 800); g.restore(); if (!used && v === s.tm && ui.sel === w) rr(x - sz / 2 - 5, y - sz / 2 - 5, sz + 10, sz + 10, 11, null, COL.ink, 3); } }); },
+  hit(x, y, s, ui) { const ty = s.tm === 1 ? 520 : 630; if (Math.abs(y - ty) < 40) { const w = Math.round((x - 220) / 90) + 1; if (w >= 1 && w <= 5 && !(s.used[s.tm] >> w & 1)) { ui.sel = w; return 'sel'; } return null; }
+    if (y > 230 && y < 380 && ui.sel) { const p = Math.round((x - 360) / 62) + 5; if (p >= 0 && p <= 10 && p !== 5 && !s.w[p]) return p * 8 + ui.sel; } return null; },
+  hoverId(x, y) { return y > 230 && y < 380 ? Math.round((x - 360) / 62) + 5 : -1; } };
+
+// 交叉点棋盘（过半棋、藤棋共用）
+const BRD = { geo(S) { const sp = 600 / (S - 1); return { sp, o: 60 }; },
+  nb(S) { const A = []; for (let i = 0; i < S * S; i++) { const x = i % S, y = (i / S) | 0, a = []; if (x > 0) a.push(i - 1); if (x < S - 1) a.push(i + 1); if (y > 0) a.push(i - S); if (y < S - 1) a.push(i + S); A.push(a); } return A; },
+  draw(s, ui, legalFn) { bg(); const S = s.S, { sp, o } = BRD.geo(S); for (let i = 0; i < S; i++) { ln(o + i * sp, o, o + i * sp, o + 600, COL.grid, 2); ln(o, o + i * sp, o + 600, o + i * sp, COL.grid, 2); }
+    for (let i = 0; i < S * S; i++) { const x = o + (i % S) * sp, y = o + ((i / S) | 0) * sp; if (s.c[i]) dot(x, y, sp * .42, COL.p[s.c[i]]); else if (s.terr && s.terr[i]) rr(x - 9, y - 9, 18, 18, 4, COL.p[s.terr[i]]); else if (ui.human && legalFn && !legalFn(i)) { ln(x - 7, y - 7, x + 7, y + 7, COL.ink2, 2); ln(x + 7, y - 7, x - 7, y + 7, COL.ink2, 2); } if (s.last === i) dot(x, y, sp * .16, '#111'); if (ui.hover === i && !s.c[i] && (!legalFn || legalFn(i))) dot(x, y, sp * .42, null, COL.p[s.tm], 4); } },
+  hit(x, y, s) { const { sp, o } = BRD.geo(s.S), cx = Math.round((x - o) / sp), cy = Math.round((y - o) / sp); if (cx < 0 || cy < 0 || cx >= s.S || cy >= s.S) return null; return cy * s.S + cx; } };
+
+// 过半棋
+G.half = { name: '过半棋', pass: 1,
+  verdict: '第一轮新棋类搜索的候选：多想四倍 20 局赢 16 局，7×7 上先手胜率约 55%。',
+  rules: ['在交叉点上轮流落子，落下后不移动。', '<b>吃子</b>：落子后，与它相邻的对方棋子里，哪一颗的邻点有超过一半是你的棋子，就被吃掉。（角上 2 个邻点要全占，边上 3 个占 2 个，中间 4 个占 3 个。）', '不能下在落下后自己立刻“过半”被围的点（先结算吃子），也不能让局面回到自己上一手之后的样子。打叉的点不能下。', '双方连续停一手则终局：数自己的棋子，加上只被自己围住的空点，多者胜。'],
+  opts: [['7', '7×7'], ['9', '9×9']],
+  init(opt = '7') { const S = +opt; return { S, nb: BRD.nb(S), c: new Int8Array(S * S), prev: new Int8Array(S * S), tm: 1, passes: 0, moves: 0 }; },
+  clone: s => ({ ...s, c: s.c.slice(), prev: s.prev }),
+  tryPlay(s, p) { const c = s.c, col = s.tm, opp = 3 - col, nb = s.nb; if (c[p]) return false; const save = c.slice(); c[p] = col; let cap = 0;
+    for (const r of nb[p]) { if (c[r] !== opp) continue; let e = 0; for (const q of nb[r]) if (c[q] === col) e++; if (2 * e > nb[r].length) { c[r] = 0; cap++; } }
+    let e = 0; for (const r of nb[p]) if (c[r] === opp) e++; if (2 * e > nb[p].length) { s.c = save; return false; }
+    if (cap) { let same = true; for (let i = 0; i < c.length; i++) if (c[i] !== s.prev[i]) { same = false; break; } if (same) { s.c = save; return false; } }
+    s.prev = save; s.passes = 0; s.tm = opp; s.moves++; return true; },
+  isLegal(s, p) { if (s.c[p]) return false; const t = this.clone(s); return this.tryPlay(t, p); },
+  legal(s) { const m = []; for (let i = 0; i < s.c.length; i++) if (!s.c[i] && this.isLegal(s, i)) m.push(i); return m.length ? m : [-1]; },
+  rand(s) { const e = []; for (let i = 0; i < s.c.length; i++) if (!s.c[i]) e.push(i); while (e.length) { const j = rnd(e.length), p = e[j]; e[j] = e[e.length - 1]; e.pop(); if (this.tryPlay(s, p)) return; } this.play(s, -1); },
+  play(s, m) { if (m < 0) { s.prev = s.c.slice(); s.passes++; s.tm = 3 - s.tm; s.moves++; } else this.tryPlay(s, m); },
+  over: s => s.passes >= 2 || s.moves >= 3 * s.c.length,
+  area(s) { const N = s.c.length, seen = new Int8Array(N), terr = new Int8Array(N); let a = 0, b = 0; for (let i = 0; i < N; i++) { if (s.c[i] === 1) a++; else if (s.c[i] === 2) b++; else if (!seen[i]) { const st = [i], grp = []; seen[i] = 1; let bd = 0; while (st.length) { const x = st.pop(); grp.push(x); for (const r of s.nb[x]) { if (!s.c[r]) { if (!seen[r]) { seen[r] = 1; st.push(r); } } else bd |= s.c[r]; } } if (bd === 1) { a += grp.length; grp.forEach(q => terr[q] = 1); } else if (bd === 2) { b += grp.length; grp.forEach(q => terr[q] = 2); } } } return [a, b, terr]; },
+  result(s) { const [a, b] = this.area(s); return sgn(a - b); },
+  score(s) { const [a, b] = this.area(s); return [a, b, '点（子 + 围住的空点）', s.passes ? '对方刚停了一手' : '']; },
+  draw(s, ui) { const t = { ...s, terr: this.area(s)[2] }; BRD.draw(t, ui, p => this.isLegal(s, p)); },
+  hit(x, y, s) { const p = BRD.hit(x, y, s); return p !== null && this.isLegal(s, p) ? p : null; },
+  aiPass(s) { const [a, b] = this.area(s); return s.passes === 1 && (s.tm === 1 ? a > b : b > a); } };
+
+// 藤棋
+G.vine = { name: '藤棋',
+  verdict: '第一轮新棋类搜索的候选：多想四倍 20 局赢 19 局。注意：没有中心点的棋盘上，后手照镜子必胜，所以这里用奇数路棋盘。',
+  rules: ['在交叉点上轮流落子，没有吃子。', '唯一的限制：新落的子最多只能挨着<b>一颗</b>自己的棋子（上下左右）。所以自己的棋只能像藤蔓一样伸展，不能连成片。', '轮到谁无处可下，谁就输。打叉的点是你现在不能下的点。'],
+  opts: [['7', '7×7'], ['9', '9×9'], ['5', '5×5']],
+  init(opt = '7') { const S = +opt; return { S, nb: BRD.nb(S), c: new Int8Array(S * S), tm: 1, loser: 0, moves: 0 }; },
+  clone: s => ({ ...s, c: s.c.slice() }),
+  isLegal(s, p) { if (s.c[p]) return false; let own = 0; for (const r of s.nb[p]) if (s.c[r] === s.tm) own++; return own <= 1; },
+  legal(s) { const m = []; for (let i = 0; i < s.c.length; i++) if (this.isLegal(s, i)) m.push(i); return m.length ? m : [-1]; },
+  play(s, m) { if (m < 0) s.loser = s.tm; else s.c[m] = s.tm; s.tm = 3 - s.tm; s.moves++; },
+  over: s => s.loser !== 0,
+  result: s => s.loser === 1 ? -1 : 1,
+  score(s) { const n = v => { let k = 0; const t = { ...s, tm: v }; for (let i = 0; i < s.c.length; i++) if (this.isLegal(t, i)) k++; return k; }; return [n(1), n(2), '个可下的点', '']; },
+  draw(s, ui) { BRD.draw(s, ui, p => this.isLegal(s, p)); },
+  hit(x, y, s) { const p = BRD.hit(x, y, s); return p !== null && this.isLegal(s, p) ? p : null; } };
+
+// ---------- 电脑：通用蒙特卡洛树搜索，按时间预算分片运行 ----------
+function think(game, root, ms, done) { const nodes = [{ m: null, v: 0, w: 0, kids: null }], t0 = performance.now(); let iters = 0, stop = false;
+  function once() { const s = game.clone(root); let cur = nodes[0]; const path = [cur], who = [];
+    while (!game.over(s)) { if (!cur.kids) cur.kids = game.legal(s).map(m => ({ m, v: 0, w: 0, kids: null })); let best = null, bv = -1e18; const lg = Math.log(cur.v + 1); for (const k of cur.kids) { const val = k.v === 0 ? 1e9 + Math.random() : k.w / k.v + .7 * Math.sqrt(lg / k.v); if (val > bv) { bv = val; best = k; } }
+      who.push(s.tm); game.play(s, best.m); const fresh = best.v === 0; cur = best; path.push(cur); if (fresh) break; }
+    while (!game.over(s)) { if (game.rand) game.rand(s); else { const mv = game.legal(s); game.play(s, mv[rnd(mv.length)]); } }
+    const r = game.result(s); for (let i = 1; i < path.length; i++) { path[i].v++; path[i].w += r === 0 ? .5 : ((r > 0) === (who[i - 1] === 1) ? 1 : 0); } nodes[0].v++; iters++; }
+  function chunk() { if (stop) return; const t1 = performance.now(); while (performance.now() - t1 < 14) once(); if (performance.now() - t0 < ms) return void (handle = setTimeout(chunk, 0)); let best = nodes[0].kids[0]; for (const k of nodes[0].kids) if (k.v > best.v) best = k; done(best.m, best.w / Math.max(1, best.v), iters); }
+  let handle = setTimeout(chunk, 0); return () => { stop = true; clearTimeout(handle); }; }
+
+// ---------- 界面 ----------
+const ORDER = ['life', 'cont', 'sky', 'half', 'vine', 'sw', 'sand', 'seesaw'];
+let key = 'life', game = G.life, st, shown, hist = [], ui = { hover: -1, sel: 0, human: true }, busy = false, cancel = null, opt = {}, token = 0;
+const tabs = $('tabs'); ORDER.forEach(k => { const b = document.createElement('button'); b.innerHTML = G[k].name + (G[k].bad ? '<span class="bad">不成立</span>' : ''); b.onclick = () => choose(k); b.id = 'tab_' + k; tabs.appendChild(b); });
+function choose(k) { key = k; game = G[k]; ORDER.forEach(q => $('tab_' + q).classList.toggle('on', q === k)); $('gname').textContent = game.name; $('verdict').textContent = game.verdict; $('rules').innerHTML = game.rules.map(r => `<p>${r}</p>`).join(''); $('pass').hidden = !game.pass;
+  $('opt').innerHTML = game.opts ? `<select id="optsel">${game.opts.map(([v, n]) => `<option value="${v}"${opt[k] === v ? ' selected' : ''}>${n}</option>`).join('')}</select>` : ''; if (game.opts) $('optsel').onchange = e => { opt[k] = e.target.value; fresh(); };
+  history.replaceState(null, '', '#' + k); fresh(); }
+function fresh() { if (cancel) cancel(); token++; busy = false; st = game.init(opt[key]); shown = st; hist = []; ui.sel = 0; ui.hover = -1; next(); }
+const mode = () => +$('mode').value, isHuman = tm => mode() === 0 || mode() === (tm === 1 ? 2 : 1);
+function render() { ui.human = !busy && !game.over(st) && isHuman(st.tm); game.draw(shown, ui);
+  const sc = game.score(shown); $('score').innerHTML = sc[0] === null ? '' : `<span><i style="background:${COL.p[1]}"></i>${sc[0]}</span><span><i style="background:${COL.p[2]}"></i>${sc[1]}</span><span style="font-weight:500;font-size:15px;color:var(--ink2);align-self:center">${sc[2]}</span>`;
+  let s; if (game.over(st) && shown === st) { const r = game.result(st); s = r === 0 ? '终局：平局' : `终局：${PN[r > 0 ? 1 : 2]}获胜`; } else if (busy && !isHuman(st.tm)) s = `${PN[st.tm]}（电脑）思考中…`; else s = `轮到${PN[st.tm]}${isHuman(st.tm) ? '' : '（电脑）'}`;
+  $('status').innerHTML = `<span style="color:${game.over(st) ? 'inherit' : COL.p[st.tm]}">${s}</span>` + (sc[3] ? `<span style="font-weight:500;color:var(--ink2);font-size:14px">　${sc[3]}</span>` : '');
+  $('undo').disabled = !hist.length || busy; $('pass').disabled = !ui.human; }
+// 落子：先依次显示中间状态，再落定
+function commit(m, after) { const my = token, rec = [], t = game.clone(st); t.last = undefined; game.play(t, m, rec); if (m >= 0 || m === -1) t.last = rec.length ? rec[0].last : m; hist.push(st); st = t; ui.sel = 0; busy = true;
+  const seqs = rec.concat([t]); let i = 0; const step = () => { if (my !== token) return; shown = seqs[i++]; render(); if (i < seqs.length) setTimeout(step, key === 'sw' ? 420 : 300); else { busy = false; after(); } }; step(); }
+function next() { shown = st; render(); if (game.over(st) || isHuman(st.tm)) return; busy = true; render(); const my = token;
+  if (game.aiPass && game.aiPass(st)) return void setTimeout(() => { if (my === token) { busy = false; commit(-1, next); } }, 300);
+  const legal = game.legal(st); if (legal.length === 1) return void setTimeout(() => { if (my === token) { busy = false; commit(legal[0], next); } }, 350);
+  cancel = think(game, st, +$('lvl').value, m => { if (my !== token) return; cancel = null; busy = false; commit(m, next); }); }
+function pt(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * L, (e.clientY - r.top) / r.height * L]; }
+cv.addEventListener('click', e => { if (busy || game.over(st) || !isHuman(st.tm)) return; const [x, y] = pt(e), m = game.hit(x, y, st, ui); if (m === null) return; if (m === 'sel') return render(); commit(m, next); });
+cv.addEventListener('mousemove', e => { if (busy || game.over(st) || !isHuman(st.tm)) return; const [x, y] = pt(e); let h; if (game.hoverId) h = game.hoverId(x, y); else { const save = ui.sel, m = game.hit(x, y, st, { sel: 0 }); ui.sel = save; h = typeof m === 'number' ? m : -1; } if (h !== ui.hover) { ui.hover = h; render(); } });
+cv.addEventListener('mouseleave', () => { if (ui.hover !== -1) { ui.hover = -1; if (!busy) render(); } });
+$('new').onclick = fresh;
+$('undo').onclick = () => { if (busy || !hist.length) return; token++; do st = hist.pop(); while (hist.length && !isHuman(st.tm)); next(); };
+$('pass').onclick = () => { if (ui.human) commit(-1, next); };
+$('mode').onchange = () => { if (cancel) cancel(); token++; busy = false; next(); };
+choose(ORDER.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'life');
+</script>
+</html>

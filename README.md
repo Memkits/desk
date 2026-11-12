@@ -6,7 +6,7 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 
 | 目录 | 内容 |
 | --- | --- |
-| `site/hyperbolic-go/` | 《双层围棋》介绍视频的场景代码（`index.html?ep=1`）与可玩的网页版 `play.html`（立体/并排/单层三种视图、气数标注、电脑对手）；对局解说视频的场景代码在 `game/`（`game/index.html?ep=1`，three.js 3D 棋盘 `board3d.js`）；稿子、字幕、调研文档、模拟程序 `sim/`（含自对弈引擎 `go2.cpp`）与工具在 `sources/hyperbolic-go/`，对局解说的在 `sources/hyperbolic-go/game/`；《棋盘之外：六个新的双人游戏》的场景代码在 `beyond/`（`beyond/index.html?ep=1`），模拟器 `sim/uni.cpp` |
+| `site/hyperbolic-go/` | 《双层围棋》介绍视频的场景代码（`index.html?ep=1`）与可玩的网页版 `play.html`（立体/并排/单层三种视图、气数标注、电脑对手）；对局解说视频的场景代码在 `game/`（`game/index.html?ep=1`，three.js 3D 棋盘 `board3d.js`）；稿子、字幕、调研文档、模拟程序 `sim/`（含自对弈引擎 `go2.cpp`）与工具在 `sources/hyperbolic-go/`，对局解说的在 `sources/hyperbolic-go/game/`；《棋盘之外：六个新的双人游戏》的场景代码在 `beyond/`（`beyond/index.html?ep=1`），模拟器 `sim/uni.cpp`；`games.html` 是八个新游戏原型的可玩网页（生命对决、蔓延、天际线、过半棋、藤棋、道岔、沙堆、跷跷板，带蒙特卡洛电脑对手） |
 | `site/ue-agent/` | 《AI 智能体进驻虚幻引擎》新闻解读的场景代码（`index.html?ep=1`）；稿子、字幕与工具在 `sources/ue-agent/` |
 | `site/deploy-flow/` | 《软件部署流程》四集的场景代码（`index.html?ep=1/2/3/4`）；稿子、字幕、封面与工具在 `sources/deploy-flow/` |
 | `site/emperors-new-mind/` | 《皇帝新脑·导读》四集的场景代码（`index.html?ep=1/2/3/4`）；稿子、字幕、章节对照表与工具在 `sources/emperors-new-mind/` |
