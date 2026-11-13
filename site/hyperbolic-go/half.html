@@ -1,0 +1,520 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>双层围棋 · 半圆子</title>
+<style>
+:root{
+  --bg:#e9e6df; --panel:#f6f4ef; --fg:#24221e; --muted:#6c675d; --line:#d4cfc4;
+  --accent:#2f4b8a; --accent-fg:#fff; --guide:#2a78d6;
+  --wood:#e3c48c; --wood2:#d8b574; --grid:#4a3a22;
+  --danger:#c0392b; --ok:#2f7d4f;
+  --f-body:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --f-num:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1c1d1f; --panel:#26282b; --fg:#ece8e0; --muted:#a29d93; --line:#3a3c40;
+  --accent:#9db4ff; --accent-fg:#1c1d1f; --guide:#6aa8f0;
+  --wood:#c9a868; --wood2:#b9975a; --danger:#ff6b5b; --ok:#6fcf97; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1c1d1f; --panel:#26282b; --fg:#ece8e0; --muted:#a29d93; --line:#3a3c40;
+  --accent:#9db4ff; --accent-fg:#1c1d1f; --guide:#6aa8f0;
+  --wood:#c9a868; --wood2:#b9975a; --danger:#ff6b5b; --ok:#6fcf97; color-scheme:dark}
+html,body{height:100%}
+body{margin:0;font-size:14px;background:var(--bg);color:var(--fg);font-family:var(--f-body);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+#app{display:flex;flex-direction:column;gap:8px;height:100%;max-width:1100px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:20px;margin:0;letter-spacing:.06em;white-space:nowrap}
+h1 small{font-size:13px;font-weight:400;color:var(--muted);letter-spacing:0;margin-left:6px}
+.turn{display:flex;align-items:center;gap:8px;font-size:15px}
+.stone-ico{width:18px;height:18px;border-radius:50%;display:inline-block;flex:none}
+.stone-ico.b{background:radial-gradient(circle at 35% 30%,#666,#111 60%)}
+.stone-ico.w{background:radial-gradient(circle at 35% 30%,#fff,#d6d6d6 70%);box-shadow:inset 0 0 0 1px #9993}
+.caps{font-family:var(--f-num);font-size:13px;color:var(--muted)}
+.spacer{flex:1}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+button,select{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:6px 11px;cursor:pointer;min-height:34px}
+button:hover:not(:disabled){border-color:var(--muted)}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+a{color:var(--accent)}
+.guide{border:2px solid var(--guide);border-radius:10px;padding:8px 12px;font-size:14.5px;line-height:1.55}
+.guide div{margin:1px 0}.guide b{display:inline-block;min-width:3.2em;margin-right:.4em;color:var(--guide)}
+.guide .now{font-weight:600}
+#stage{flex:1;min-height:220px;position:relative}
+#stage svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+svg.board{display:block;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#status{min-height:40px;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#status .bad{color:var(--danger)} #status .good{color:var(--ok)}
+.hint{color:var(--muted);font-size:12.5px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);max-width:min(560px,92vw);padding:18px 20px}
+dialog::backdrop{background:#0006}
+dialog h2{margin:0 0 8px;font-size:18px}
+dialog p,dialog li{line-height:1.65;font-size:14px}
+dialog .row{display:flex;gap:10px;align-items:center;margin:8px 0;flex-wrap:wrap}
+.score-table{font-family:var(--f-num);border-collapse:collapse;margin:6px 0}.score-table td{padding:2px 10px}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+.pulse{animation:pulse 1.1s ease-in-out infinite}
+@media (max-width:640px){h1{font-size:18px}button,select{padding:6px 8px;font-size:13.5px}.guide{font-size:13.5px}#status{min-height:62px}.hide-sm{display:none}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none;opacity:.8}}
+</style></head><body>
+<div id="app">
+  <header>
+    <h1>双层围棋<small>半圆子 · 一张棋盘</small></h1>
+    <div class="turn" id="turn"></div>
+    <div class="caps" id="caps"></div>
+    <div class="spacer"></div>
+    <div class="bar">
+      <button id="btnHelp">规则</button>
+      <button id="btnNew" class="primary">新对局</button>
+    </div>
+  </header>
+  <div class="guide" id="guide"></div>
+  <div class="bar">
+    <button id="btnHint">帮我走一步</button>
+    <button id="btnUndo">↶ 悔棋</button>
+    <button id="btnRedo">↷ 重做</button>
+    <button id="btnPass">停一手</button>
+    <button id="btnScore">数子</button>
+    <button id="btnResign">认输</button>
+    <span class="spacer"></span>
+    <label class="hint"><input type="checkbox" id="optLibs" checked> 气数标签</label>
+    <label class="hint"><input type="checkbox" id="optAtari" checked> 叫吃提示</label>
+    <label class="hint"><input type="checkbox" id="optConfirm"> 点两下才落子</label>
+    <a class="hint hide-sm" href="play.html">旧版（立体 / 并排）</a>
+  </div>
+  <div id="stage"><svg class="board" id="board" viewBox="0 0 100 100"></svg></div>
+  <div id="status"></div>
+</div>
+
+<dialog id="dlgNew">
+  <h2>新对局</h2>
+  <div class="row"><label for="selSize">棋盘</label>
+    <select id="selSize">
+      <option value="7">7 × 7 × 2（98 个落点，快棋）</option>
+      <option value="9" selected>9 × 9 × 2（162 个落点）</option>
+      <option value="13">13 × 13 × 2（338 个落点）</option>
+    </select></div>
+  <div class="row"><label for="selMode">对手</label>
+    <select id="selMode">
+      <option value="hb">我执黑，电脑执白</option>
+      <option value="bh">电脑执黑，我执白</option>
+      <option value="hh">两人同屏对弈</option>
+    </select></div>
+  <div class="row"><label for="inKomi">贴目（黑贴白）</label>
+    <input id="inKomi" type="number" step="0.5" value="7.5" style="width:80px;font:inherit;padding:4px 6px"></div>
+  <p class="hint">电脑用蒙特卡洛模拟落子，水平较弱，适合熟悉跨层手筋。</p>
+  <div class="row"><button id="newOk" class="primary">开始</button><button id="newCancel">取消</button></div>
+</dialog>
+
+<dialog id="dlgHelp">
+  <h2>规则</h2>
+  <ul>
+    <li>双层围棋有上下两层同样大小的棋盘。每个点除了本层前后左右，还和另一层<b>正对的点</b>相邻：中间的点 5 口气，边上 4 口，角上 3 口。</li>
+    <li>上下正对的同色棋子连成一块，共享所有的气。要提掉一块棋，两层的气都要堵上。</li>
+    <li>禁止自杀；打劫用“不许重复全局局面”的超级劫规则。双方连续停一手后数子：棋子 + 围住的空，黑贴目。</li>
+  </ul>
+  <h2>这张棋盘怎么看</h2>
+  <ul>
+    <li>两层画在<b>同一张棋盘</b>上。每个交叉点切成两半：<b>左上半</b>是上层，<b>右下半</b>是下层（分界线斜一点，好分辨）。</li>
+    <li>一个点上下两层都有子，就拼成一个整圆；同色的整圆就是上下相连的子。</li>
+    <li>“相邻”在这里就是：同一个半边的前后左右，加上同一个点的另一半。数气时只看一张盘。</li>
+    <li>点交叉点的左上半落到上层，右下半落到下层。悬停会预览落子后的气数；停在棋子上会给这块棋的每口气编号。</li>
+    <li>快捷键：Ctrl+Z 悔棋，Ctrl+Y 重做，P 停一手，H 帮我走一步。</li>
+  </ul>
+  <div class="row"><button id="helpOk" class="primary">知道了</button></div>
+</dialog>
+
+<dialog id="dlgEnd">
+  <h2 id="endTitle">数子</h2>
+  <div id="endBody"></div>
+  <div class="row" id="endBtns"></div>
+</dialog>
+
+<script>
+"use strict";
+/* ---------------- Engine (same rules as play.html) ---------------- */
+const EMPTY=0,BLACK=1,WHITE=2, opp=c=>3-c;
+function makeGeom(n){
+  const N=2*n*n, nb=[];
+  for(let l=0;l<2;l++)for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    const a=[];
+    if(x>0)a.push(l*n*n+y*n+x-1); if(x<n-1)a.push(l*n*n+y*n+x+1);
+    if(y>0)a.push(l*n*n+(y-1)*n+x); if(y<n-1)a.push(l*n*n+(y+1)*n+x);
+    a.push((1-l)*n*n+y*n+x);
+    nb.push(a);
+  }
+  return {n,N,nb};
+}
+const L=(g,i)=>Math.floor(i/(g.n*g.n)), X=(g,i)=>i%g.n, Y=(g,i)=>Math.floor(i/g.n)%g.n;
+const other=(g,i)=>(i+g.n*g.n)%g.N;
+function groupAt(g,b,i){
+  const c=b[i], stones=[i], seen=new Uint8Array(g.N), libs=new Set(); seen[i]=1;
+  for(let k=0;k<stones.length;k++) for(const j of g.nb[stones[k]]){
+    if(b[j]===EMPTY) libs.add(j);
+    else if(b[j]===c && !seen[j]){seen[j]=1;stones.push(j);}
+  }
+  return {stones,libs};
+}
+// Try a move; returns {ok, reason, board, captured:[idx]}
+function tryMove(g,b,i,c,seen){
+  if(b[i]!==EMPTY) return {ok:false,reason:"这里已经有子"};
+  const nb=b.slice(); nb[i]=c; const captured=[];
+  for(const j of g.nb[i]) if(nb[j]===opp(c)){
+    const gr=groupAt(g,nb,j); if(gr.libs.size===0) for(const s of gr.stones){ if(nb[s]){nb[s]=EMPTY;captured.push(s);} }
+  }
+  const mine=groupAt(g,nb,i);
+  if(mine.libs.size===0) return {ok:false,reason:"自杀：落下后自己没有气"};
+  if(seen && seen.has(nb.join(""))) return {ok:false,reason:"打劫：会重复之前的局面，先在别处下一手"};
+  return {ok:true,board:nb,captured,libs:mine.libs.size,size:mine.stones.length};
+}
+function scoreBoard(g,b,dead){
+  const bb=b.slice(); for(const d of dead) bb[d]=EMPTY;
+  const own=new Int8Array(g.N); // territory owner 1/2, 3 = dame
+  const seen=new Uint8Array(g.N);
+  let s=[0,0,0], terr=[0,0,0], stones=[0,0,0];
+  for(let i=0;i<g.N;i++) if(bb[i]) {stones[bb[i]]++;}
+  for(let i=0;i<g.N;i++) if(!bb[i]&&!seen[i]){
+    const reg=[i]; seen[i]=1; let touch=0;
+    for(let k=0;k<reg.length;k++) for(const j of g.nb[reg[k]]){
+      if(bb[j]) touch|=bb[j]; else if(!seen[j]){seen[j]=1;reg.push(j);}
+    }
+    const o=(touch===1||touch===2)?touch:3;
+    for(const r of reg) own[r]=o;
+    if(o<3) terr[o]+=reg.length;
+  }
+  for(const d of dead) if(own[d]===3) own[d]=3;
+  return {own,stones,terr,black:stones[1]+terr[1],white:stones[2]+terr[2]};
+}
+
+
+
+/* ---------------- Half-disc geometry ----------------
+   Each intersection is split by a slightly tilted line: upper layer = upper-left half, lower layer = lower-right half. */
+const TILT=-22*Math.PI/180;                         // dividing line rises to the right
+const NU=[Math.sin(TILT),-Math.cos(TILT)];          // unit normal pointing into the upper-layer half
+const GAP=0.035;                                     // half-gap between the two halves, in stone radii
+const side=(dx,dy)=>dx*NU[0]+dy*NU[1];              // >0 = upper half
+function halfPoly(up,g){ // polygon in objectBoundingBox units (circle bbox = 0..1)
+  const s=up?1:-1, n=[NU[0]*s,NU[1]*s], d=[Math.cos(TILT),Math.sin(TILT)], c=[.5+n[0]*g,.5+n[1]*g];
+  const p=(a,b)=>`${(c[0]+d[0]*a+n[0]*b).toFixed(4)},${(c[1]+d[1]*a+n[1]*b).toFixed(4)}`;
+  return `${p(-2,0)} ${p(2,0)} ${p(2,2)} ${p(-2,2)}`;
+}
+const DEFS=`<defs>
+<radialGradient id="gb" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#6a6a6a"/><stop offset=".55" stop-color="#1a1a1a"/><stop offset="1" stop-color="#050505"/></radialGradient>
+<radialGradient id="gw" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#ebe9e4"/><stop offset="1" stop-color="#c4c1ba"/></radialGradient>
+<clipPath id="cu" clipPathUnits="objectBoundingBox"><polygon points="${halfPoly(true,GAP/2)}"/></clipPath>
+<clipPath id="cl" clipPathUnits="objectBoundingBox"><polygon points="${halfPoly(false,GAP/2)}"/></clipPath>
+<clipPath id="cu0" clipPathUnits="objectBoundingBox"><polygon points="${halfPoly(true,0)}"/></clipPath>
+<clipPath id="cl0" clipPathUnits="objectBoundingBox"><polygon points="${halfPoly(false,0)}"/></clipPath>
+</defs>`;
+
+/* ---------------- Game state ---------------- */
+const S={g:null,moves:[],redo:[],komi:7.5,mode:"hb",board:null,turn:BLACK,caps:[0,0,0],seen:new Set(),last:-1,passes:0,phase:"play",dead:new Set(),result:null,lastCap:[]};
+function replay(){
+  const g=S.g; let b=new Int8Array(g.N); S.caps=[0,0,0]; S.seen=new Set([b.join("")]); S.turn=BLACK; S.last=-1; S.passes=0; S.lastCap=[]; S.phase="play"; S.result=null;
+  for(const m of S.moves){
+    if(m.t==="pass"){S.passes++; S.last=-1; S.lastCap=[];}
+    else if(m.t==="resign"){S.phase="over"; S.result={text:(m.c===BLACK?"白":"黑")+"中盘胜（"+(m.c===BLACK?"黑":"白")+"认输）"}; break;}
+    else { const r=tryMove(g,b,m.i,S.turn,S.seen); if(!r.ok) break; b=r.board; S.caps[S.turn]+=r.captured.length; S.seen.add(b.join("")); S.last=m.i; S.passes=0; S.lastCap=r.captured; }
+    S.turn=opp(S.turn);
+  }
+  S.board=b;
+  if(S.phase==="play"&&S.passes>=2){ S.phase="score"; S.dead=guessDead(); }
+}
+function newGame(n,komi,mode){ S.g=makeGeom(n); S.moves=[]; S.redo=[]; S.komi=komi; S.mode=mode; S.dead=new Set(); replay(); save(); afterChange(); }
+function botColor(){ return S.mode==="hb"?WHITE:S.mode==="bh"?BLACK:0; }
+function humanCanMove(){ return S.phase==="play"&&S.turn!==botColor()&&!botBusy; }
+function play(i){ const r=tryMove(S.g,S.board,i,S.turn,S.seen); if(!r.ok) return r; S.moves.push({t:"move",i}); S.redo=[]; replay(); save(); afterChange(); return r; }
+function pass(){ if(S.phase!=="play")return; S.moves.push({t:"pass"}); S.redo=[]; replay(); save(); afterChange(); }
+function undo(){ if(!S.moves.length) return; const bc=botColor(); cancelBot(); do{ S.redo.push(S.moves.pop()); replay(); } while(bc&&S.moves.length&&S.turn===bc); save(); afterChange(false); }
+function redoMove(){ if(!S.redo.length)return; cancelBot(); S.moves.push(S.redo.pop()); replay(); save(); afterChange(false); }
+function resign(){ if(S.phase!=="play")return; S.moves.push({t:"resign",c:S.turn}); S.redo=[]; replay(); save(); afterChange(); }
+function guessDead(){ const g=S.g,b=S.board,dead=new Set(),done=new Uint8Array(g.N);
+  for(let i=0;i<g.N;i++) if(b[i]&&!done[i]){ const gr=groupAt(g,b,i); gr.stones.forEach(s=>done[s]=1); if(gr.libs.size<=1) gr.stones.forEach(s=>dead.add(s)); } return dead; }
+function toggleDead(i){ if(!S.board[i]) return; const gr=groupAt(S.g,S.board,i), d=S.dead.has(i); gr.stones.forEach(s=>d?S.dead.delete(s):S.dead.add(s)); render(); }
+
+const KEY="dlgo-half-v1";
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify({n:S.g.n,moves:S.moves,redo:S.redo,komi:S.komi,mode:S.mode,atari:UI.atari,libLabels:UI.libLabels,confirm:UI.confirm})); }catch(e){} }
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){ return null; } }
+
+/* ---------------- UI ---------------- */
+const $=id=>document.getElementById(id);
+const isTouch=matchMedia("(pointer:coarse)").matches;
+const UI={libLabels:true,atari:true,confirm:isTouch,hover:-1,pending:-1,msg:null,hint:-1};
+const LETTERS="ABCDEFGHJKLMNOPQRST";
+const coordName=i=>(L(S.g,i)===0?"上层 ":"下层 ")+LETTERS[X(S.g,i)]+(S.g.n-Y(S.g,i));
+function geom(){ const n=S.g.n, m=7, step=(100-2*m)/(n-1); return {n,m,step,R:step*0.47}; }
+
+function layout(){
+  const st=$("stage"), r=st.getBoundingClientRect(), size=Math.max(220,Math.floor(Math.min(r.width,r.height)));
+  const svg=$("board"); svg.setAttribute("width",size); svg.setAttribute("height",size);
+}
+function pick(e){
+  const svg=$("board"), r=svg.getBoundingClientRect(), {n,m,step}=geom(), nn=n*n;
+  const px=(e.clientX-r.left)/r.width*100, py=(e.clientY-r.top)/r.height*100;
+  const x=Math.round((px-m)/step), y=Math.round((py-m)/step);
+  if(x<0||y<0||x>=n||y>=n) return -1;
+  const dx=px-(m+x*step), dy=py-(m+y*step);
+  if(Math.hypot(dx,dy)>step*0.62) return -1;
+  const p=y*n+x;
+  return side(dx,dy)>=0?p:nn+p;
+}
+function setHover(i){ if(i===UI.hover)return; UI.hover=i; render(); }
+function onPoint(i){
+  if(i<0) return;
+  if(S.phase==="score"){ toggleDead(i); return; }
+  if(!humanCanMove()){ if(S.phase==="play") flash("电脑正在思考…"); return; }
+  if(S.board[i]!==EMPTY){ UI.hover=i; UI.pending=-1; render(); return; }
+  if(UI.confirm&&UI.pending!==i){ UI.pending=i; UI.hover=i; render(); return; }
+  const r=play(i);
+  if(!r.ok){ UI.hover=i; flash(r.reason,true); } else { UI.pending=-1; if(isTouch) UI.hover=-1; }
+}
+let flashT=0;
+function flash(text,bad){ UI.msg={text,bad}; clearTimeout(flashT); flashT=setTimeout(()=>{UI.msg=null;renderStatus();},2600); renderStatus(); }
+
+function hoverInfo(){
+  const i=UI.pending>=0?UI.pending:UI.hover; if(i<0||!S.g) return null;
+  const b=S.board; if(S.phase!=="play") return {i,kind:"none"};
+  if(b[i]===EMPTY){
+    if(!humanCanMove()) return {i,kind:"none"};
+    const r=tryMove(S.g,b,i,S.turn,S.seen); if(!r.ok) return {i,kind:"illegal",reason:r.reason};
+    let atari=0; const sg=new Set();
+    for(const j of S.g.nb[i]) if(r.board[j]===opp(S.turn)&&!sg.has(j)){ const gr=groupAt(S.g,r.board,j); gr.stones.forEach(s=>sg.add(s)); if(gr.libs.size===1) atari++; }
+    const gr=groupAt(S.g,r.board,i);
+    return {i,kind:"preview",cap:new Set(r.captured),libs:gr.libs,size:gr.stones.length,group:new Set(gr.stones),atari,cross:new Set(gr.stones.map(s=>L(S.g,s))).size>1};
+  }
+  const gr=groupAt(S.g,b,i);
+  return {i,kind:"group",color:b[i],group:new Set(gr.stones),libs:gr.libs,size:gr.stones.length,cross:new Set(gr.stones.map(s=>L(S.g,s))).size>1};
+}
+function atariSet(){ const g=S.g,b=S.board,res=new Set(),done=new Uint8Array(g.N);
+  for(let i=0;i<g.N;i++) if(b[i]&&!done[i]){ const gr=groupAt(g,b,i); gr.stones.forEach(s=>done[s]=1); if(gr.libs.size===1) gr.stones.forEach(s=>res.add(s)); } return res; }
+function libBadges(){ // one number per group: on its first stone in reading order
+  const g=S.g,b=S.board,done=new Uint8Array(g.N),out={};
+  for(let i=0;i<g.N;i++) if(b[i]&&!done[i]){ const gr=groupAt(g,b,i); gr.stones.forEach(s=>done[s]=1);
+    const pick=gr.stones.reduce((a,s)=>(s%(g.n*g.n))<(a%(g.n*g.n))||((s%(g.n*g.n))===(a%(g.n*g.n))&&s<a)?s:a); out[pick]=gr.libs.size; }
+  return out;
+}
+// suggested points for the first few moves: star points, alternating layers, away from other stones
+function suggestion(){
+  if(S.phase!=="play"||!humanCanMove()||S.moves.length>=6) return -1;
+  const g=S.g,n=g.n,nn=n*n,b=S.board, a=n>=13?3:2, c=(n-1)>>1, z=n-1-a;
+  const cand=[[a,a,0],[z,z,1],[z,a,0],[a,z,1],[c,c,1],[c,c,0],[a,z,0],[z,a,1]];
+  for(const [x,y,l] of cand){ const p=y*n+x, i=l*nn+p; if(b[i]) continue;
+    let near=false; for(let yy=Math.max(0,y-1);yy<=Math.min(n-1,y+1);yy++) for(let xx=Math.max(0,x-1);xx<=Math.min(n-1,x+1);xx++) if(b[yy*n+xx]||b[nn+yy*n+xx]) near=true;
+    if(!near&&tryMove(g,b,i,S.turn,S.seen).ok) return i; }
+  return -1;
+}
+
+/* drawing helpers: a half stone is a full circle clipped to one side (gradient stays centred) */
+const halfC=(i,nn)=>i<nn?"cu":"cl";
+function centroid(cx,cy,R,up,k=0.45){ const s=up?1:-1; return [cx+NU[0]*s*R*k, cy+NU[1]*s*R*k]; }
+function halfStone(cx,cy,R,c,up,op=1,joined=false){
+  const cp=up?(joined?"cu0":"cu"):(joined?"cl0":"cl"), fill=c===BLACK?"url(#gb)":"url(#gw)";
+  return `<circle cx="${cx+R*0.04}" cy="${cy+R*0.1}" r="${R}" fill="#000" opacity="${0.28*op}" clip-path="url(#${cp})"/>`+
+    `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${fill}" opacity="${op}" clip-path="url(#${cp})" ${c===WHITE?'stroke="#7776" stroke-width="0.2"':''}/>`;
+}
+function halfOutline(cx,cy,R,up,stroke,w,dash=""){
+  const cp=up?"cu":"cl"; return `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${stroke}" stroke-width="${w}" clip-path="url(#${cp})" ${dash?`stroke-dasharray="${dash}"`:""} pointer-events="none"/>`+
+    // the straight edge of the half
+    (()=>{ const s=up?1:-1, o=GAP/2*R*2, d=[Math.cos(TILT),Math.sin(TILT)], bx=cx+NU[0]*s*o, by=cy+NU[1]*s*o, h=Math.sqrt(Math.max(0,R*R-o*o));
+      return `<line x1="${bx-d[0]*h}" y1="${by-d[1]*h}" x2="${bx+d[0]*h}" y2="${by+d[1]*h}" stroke="${stroke}" stroke-width="${w}" ${dash?`stroke-dasharray="${dash}"`:""} pointer-events="none"/>`; })();
+}
+const txt=(x,y,sz,fill,t,extra="")=>`<text x="${x}" y="${y}" font-size="${sz}" text-anchor="middle" dominant-baseline="central" font-weight="700" font-family="var(--f-num)" pointer-events="none" fill="${fill}" ${extra}>${t}</text>`;
+
+function renderBoard(){
+  const svg=$("board"), {n,m,step,R}=geom(), g=S.g, b=S.board, nn=n*n, P=k=>m+k*step, gc="var(--grid)", fs=Math.min(3.2,step*0.42);
+  const info=hoverInfo(), atari=UI.atari&&S.phase==="play"?atariSet():new Set(), fin=S.phase==="score"||S.phase==="over";
+  const own=fin&&S.scoreCache?S.scoreCache.own:null, badges=UI.libLabels&&S.phase==="play"?libBadges():{};
+  let s=DEFS+`<rect width="100" height="100" rx="1.5" fill="var(--wood)"/><rect width="100" height="100" rx="1.5" fill="none" stroke="var(--wood2)" stroke-width="1.2"/>`;
+  for(let k=0;k<n;k++){ const w=k===0||k===n-1?0.35:0.18;
+    s+=`<line x1="${P(0)}" y1="${P(k)}" x2="${P(n-1)}" y2="${P(k)}" stroke="${gc}" stroke-width="${w}"/><line x1="${P(k)}" y1="${P(0)}" x2="${P(k)}" y2="${P(n-1)}" stroke="${gc}" stroke-width="${w}"/>`;
+    s+=`<text x="${P(k)}" y="${m*0.5}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle" fill="${gc}" opacity=".6" font-family="var(--f-num)">${LETTERS[k]}</text><text x="${m*0.42}" y="${P(k)}" font-size="${fs}" text-anchor="middle" dominant-baseline="middle" fill="${gc}" opacity=".6" font-family="var(--f-num)">${n-k}</text>`; }
+  const stars=n===13?[3,6,9]:n===9?[2,4,6]:n===7?[3]:[];
+  for(const a of stars)for(const c of stars){ if(n===9&&(a===4)!==(c===4)) continue; s+=`<circle cx="${P(a)}" cy="${P(c)}" r="0.7" fill="${gc}"/>`; }
+  // a faint tilted tick on every empty intersection reminds which half is which
+  const d=[Math.cos(TILT),Math.sin(TILT)];
+  for(let p=0;p<nn;p++) if(!b[p]&&!b[nn+p]){ const cx=P(p%n), cy=P(Math.floor(p/n)), h=R*0.32; s+=`<line x1="${cx-d[0]*h}" y1="${cy-d[1]*h}" x2="${cx+d[0]*h}" y2="${cy+d[1]*h}" stroke="${gc}" stroke-width="0.22" opacity=".45"/>`; }
+  const fade=i=>(info&&info.kind==="preview"&&info.cap.has(i))||(fin&&S.dead.has(i));
+  for(let p=0;p<nn;p++){
+    const cx=P(p%n), cy=P(Math.floor(p/n)), cu=b[p], cl=b[nn+p], joined=cu&&cu===cl&&!fade(p)&&!fade(nn+p);
+    for(const i of [p,nn+p]){ const up=i<nn, c=b[i];
+      if(own&&!c&&own[i]<3){ const [qx,qy]=centroid(cx,cy,R,up,0.42), q=R*0.2; s+=`<rect x="${qx-q}" y="${qy-q}" width="${2*q}" height="${2*q}" fill="${own[i]===1?"#111":"#fff"}" opacity=".85"/>`; }
+      if(!c) continue;
+      const f=fade(i); s+=halfStone(cx,cy,R,c,up,f?0.3:1,joined);
+    }
+    if(joined) { const h=R*0.98; s+=`<line x1="${cx-d[0]*h}" y1="${cy-d[1]*h}" x2="${cx+d[0]*h}" y2="${cy+d[1]*h}" stroke="${cu===BLACK?"#ffffff":"#000000"}" stroke-width="0.16" opacity=".28"/>`; }
+    for(const i of [p,nn+p]){ const up=i<nn, c=b[i]; if(!c) continue; const [qx,qy]=centroid(cx,cy,R,up);
+      if(atari.has(i)) s+=halfOutline(cx,cy,R*1.0,up,"var(--danger)",0.55);
+      if(info&&info.kind==="group"&&info.group.has(i)) s+=halfOutline(cx,cy,R*1.0,up,"var(--accent)",0.6);
+      if(fin&&S.dead.has(i)){ const q=R*0.22; s+=`<path d="M${qx-q} ${qy-q}L${qx+q} ${qy+q}M${qx+q} ${qy-q}L${qx-q} ${qy+q}" stroke="var(--danger)" stroke-width="0.55"/>`; }
+      if(badges[i]!=null){ const v=badges[i]; s+=txt(qx,qy,R*0.62,v===1?"#ff5a4a":v===2?"#f0962a":(c===BLACK?"#f2f2f2":"#222"),v); }
+      else if(S.last===i){ s+=`<circle cx="${qx}" cy="${qy}" r="${R*0.15}" fill="var(--accent)"/>`; }
+      if(S.last===i&&badges[i]!=null){ const [ox,oy]=centroid(cx,cy,R,up,0.98); s+=`<circle cx="${ox}" cy="${oy}" r="${R*0.15}" fill="var(--accent)"/>`; }
+    }
+    for(const i of S.lastCap) if(i%nn===p&&!b[i]) s+=halfOutline(cx,cy,R*0.9,i<nn,"var(--muted)",0.3,"0.8 0.6");
+  }
+  // liberties of the hovered group / previewed move, numbered
+  if(info&&(info.kind==="group"||info.kind==="preview")){ const col=info.libs.size===1?"var(--danger)":"var(--ok)";
+    [...info.libs].sort((a,b)=>(a%nn)-(b%nn)||a-b).forEach((j,k)=>{ const p=j%nn, [qx,qy]=centroid(P(p%n),P(Math.floor(p/n)),R,j<nn,0.44);
+      s+=`<g pointer-events="none"><circle cx="${qx}" cy="${qy}" r="${R*0.3}" fill="${col}"/>${txt(qx,qy,R*0.38,"#fff",k+1)}</g>`; }); }
+  // hint / suggestion
+  const hint=UI.hint>=0?UI.hint:suggestion();
+  if(hint>=0&&b[hint]===EMPTY&&!(info&&info.i===hint)){ const p=hint%nn; s+=`<g class="pulse" pointer-events="none">${halfOutline(P(p%n),P(Math.floor(p/n)),R*0.98,hint<nn,"var(--ok)",0.75)}</g>`; }
+  // preview ghost + hovered slot outline
+  if(info&&info.i>=0){ const i=info.i,p=i%nn,cx=P(p%n),cy=P(Math.floor(p/n)),up=i<nn;
+    if(info.kind==="preview") s+=halfStone(cx,cy,R,S.turn,up,UI.pending===i?0.85:0.55);
+    if(info.kind==="illegal"){ const [qx,qy]=centroid(cx,cy,R,up), q=R*0.24; s+=`<path d="M${qx-q} ${qy-q}L${qx+q} ${qy+q}M${qx+q} ${qy-q}L${qx-q} ${qy+q}" stroke="var(--danger)" stroke-width="0.7"/>`; }
+    if(!b[i]) s+=halfOutline(cx,cy,R*1.06,up,"var(--accent)",0.35,"1 0.7");
+  }
+  svg.innerHTML=s;
+}
+
+function renderHeader(){
+  const stoneN=c=>`<span class="stone-ico ${c===BLACK?"b":"w"}"></span>`, bc=botColor();
+  $("turn").innerHTML=S.phase==="play"?`${stoneN(S.turn)}<span>第 ${S.moves.filter(m=>m.t!=="resign").length+1} 手 · ${S.turn===BLACK?"黑":"白"}方${S.turn===bc?"（电脑）":""}</span>`:S.phase==="score"?`<span>数子中：点击棋块标记死子</span>`:`<span>${S.result?S.result.text:"对局结束"}</span>`;
+  $("caps").textContent=`提子 黑 ${S.caps[1]} · 白 ${S.caps[2]} · 贴目 ${S.komi}`;
+  $("btnUndo").disabled=!S.moves.length; $("btnRedo").disabled=!S.redo.length;
+  $("btnPass").disabled=$("btnResign").disabled=$("btnHint").disabled=!humanCanMove();
+  $("btnScore").textContent=S.phase==="score"?"完成数子":"数子";
+}
+function renderGuide(){
+  const me=S.turn===BLACK?"黑":"白", bc=botColor();
+  let now;
+  if(S.phase==="score") now="双方都停了一手，进入数子：点一块棋可以标成死子，然后按“完成数子”。";
+  else if(S.phase==="over") now="这一局结束了。按“新对局”再来一盘，或者悔棋回去接着下。";
+  else if(botBusy) now="电脑正在想，稍等一下。";
+  else { const sg=UI.hint>=0?UI.hint:suggestion();
+    now=(bc?"现在该你下（"+me+"）：":"现在该"+me+"方下：")+"点一个交叉点的<b style='min-width:0;margin:0;color:inherit'>左上半</b>落在上层，点<b style='min-width:0;margin:0;color:inherit'>右下半</b>落在下层"+(sg>=0?`，比如绿框闪动的${coordName(sg)}。`:"。不知道下哪里，可以按“帮我走一步”。"); }
+  $("guide").innerHTML=`<div><b>目标</b>和普通围棋一样围地、吃子。不同的是有上下两层棋盘，正对的两个点也算相邻。</div>
+<div><b>看法</b>每个交叉点切成两半：左上半是上层，右下半是下层。两半都有子就拼成一个整圆，同色整圆就是上下连着的子。</div>
+<div class="now"><b>现在</b>${now}</div>`;
+}
+function renderStatus(){
+  const el=$("status");
+  if(UI.msg){ el.innerHTML=`<span class="${UI.msg.bad?"bad":""}">${UI.msg.text}</span>`; return; }
+  const info=hoverInfo();
+  if(S.phase==="score"){ const sc=S.scoreCache; el.innerHTML=`点击棋块切换死活（打叉 = 死子）。当前：黑 <b>${sc.black}</b> · 白 <b>${sc.white}</b> + 贴目 ${S.komi} = <b>${sc.white+S.komi}</b>`; return; }
+  if(botBusy){ el.innerHTML=`<span>电脑正在思考…</span>`; return; }
+  if(!info||info.kind==="none"){
+    el.innerHTML=S.phase==="over"?`<b>${S.result?S.result.text:"对局结束"}</b>`:S.passes===1?`<span>对方停了一手。再停一手就进入数子。</span>`:
+      `<span class="hint">${isTouch?(UI.confirm?"点一下预览，再点一次落子。":"点一下落子；点棋子查看它的气。"):"悬停预览，点击落子；停在棋子上可以看到这块棋的每一口气。"}棋子上的数字是整块棋的气数（1 气红色，2 气橙色）。</span>`;
+    return; }
+  const where=`<b>${coordName(info.i)}</b>`;
+  if(info.kind==="illegal"){ el.innerHTML=`${where}<span class="bad">不能下：${info.reason}</span>`; return; }
+  if(info.kind==="preview"){
+    const parts=[`落子后这块棋 ${info.size} 子 · <b>${info.libs.size}</b> 气`];
+    if(info.cap.size) parts.push(`<span class="good">提掉 ${info.cap.size} 子</span>`);
+    if(info.atari) parts.push(`<span class="good">叫吃 ${info.atari} 块</span>`);
+    if(info.libs.size===1) parts.push(`<span class="bad">落下后自己只剩 1 气</span>`);
+    if(info.cross) parts.push("上下两层连在一起");
+    el.innerHTML=`${where}<span>${parts.join(" · ")}</span>`+(UI.pending===info.i?`<button id="confirmBtn" class="primary">在此落子</button>`:"");
+    if(UI.pending===info.i) $("confirmBtn").onclick=()=>{ const r=play(info.i); if(r.ok){UI.pending=-1;UI.hover=-1;render();} else flash(r.reason,true); };
+    return; }
+  const libs=info.libs.size;
+  el.innerHTML=`${where}<span>${info.color===BLACK?"黑":"白"}棋 ${info.size} 子${info.cross?"（跨两层）":""} · <b class="${libs===1?"bad":""}">${libs}</b> 气${libs===1?"，被叫吃":""}</span><span class="hint">编号的小圆点就是它的气，落在哪个半边就是哪一层</span>`;
+}
+function render(){ if(!S.g) return; if(S.phase==="score") S.scoreCache=scoreBoard(S.g,S.board,S.dead); renderHeader(); renderGuide(); renderStatus(); layout(); renderBoard(); }
+function afterChange(runBot=true){ UI.hover=-1; UI.pending=-1; UI.hint=-1; render(); if(S.phase==="over"&&S.result) showResult(); if(runBot) maybeBot(); }
+
+function finishScore(){ const sc=scoreBoard(S.g,S.board,S.dead), w=sc.white+S.komi, b=sc.black; S.phase="over"; S.scoreCache=sc;
+  S.result={own:true,text:b>w?`黑胜 ${Math.abs(b-w)} 子`:w>b?`白胜 ${Math.abs(b-w)} 子`:"和棋",sc}; render(); showResult(); }
+function showResult(){ const r=S.result; $("endTitle").textContent=r.text;
+  $("endBody").innerHTML=r.sc?`<table class="score-table"><tr><td></td><td>棋子</td><td>围空</td><td>贴目</td><td>合计</td></tr><tr><td>黑</td><td>${r.sc.stones[1]}</td><td>${r.sc.terr[1]}</td><td>—</td><td><b>${r.sc.black}</b></td></tr><tr><td>白</td><td>${r.sc.stones[2]}</td><td>${r.sc.terr[2]}</td><td>${S.komi}</td><td><b>${r.sc.white+S.komi}</b></td></tr></table><p class="hint">棋盘上的小方块标出各自的地（落在哪个半边就是哪一层）。</p>`:"";
+  $("endBtns").innerHTML=`<button class="primary" id="eNew">新对局</button><button id="eUndo">悔棋继续</button><button id="eClose">看棋盘</button>`;
+  $("eNew").onclick=()=>{$("dlgEnd").close();openNew();}; $("eUndo").onclick=()=>{$("dlgEnd").close();undo();}; $("eClose").onclick=()=>$("dlgEnd").close();
+  if(!$("dlgEnd").open) $("dlgEnd").showModal(); }
+
+/* ---------------- Bot (flat Monte Carlo in a worker, same as play.html) ---------------- */
+const workerSrc=`
+const EMPTY=0;
+let nb,N;
+function setup(n){N=2*n*n;nb=[];for(let l=0;l<2;l++)for(let y=0;y<n;y++)for(let x=0;x<n;x++){const a=[];
+ if(x>0)a.push(l*n*n+y*n+x-1);if(x<n-1)a.push(l*n*n+y*n+x+1);if(y>0)a.push(l*n*n+(y-1)*n+x);if(y<n-1)a.push(l*n*n+(y+1)*n+x);a.push((1-l)*n*n+y*n+x);nb.push(a);}}
+const st=new Int32Array(4096),mark=new Int32Array(4096);let stamp=1;
+function libsOf(b,i,lim){stamp++;const c=b[i];let sp=0,top=0,libs=0;st[sp++]=i;mark[i]=stamp;
+ while(top<sp){const s=st[top++];for(const j of nb[s]){if(mark[j]===stamp)continue;if(b[j]===EMPTY){mark[j]=stamp;libs++;if(libs>=lim)return libs;}else if(b[j]===c){mark[j]=stamp;st[sp++]=j;}}}return libs;}
+function removeGroup(b,i){const c=b[i];const q=[i];b[i]=0;let n=1;while(q.length){const s=q.pop();for(const j of nb[s])if(b[j]===c){b[j]=0;n++;q.push(j);}}return n;}
+function play(b,i,c){ // returns -1 illegal, else captures
+ if(b[i])return -1;b[i]=c;let cap=0;const o=3-c;
+ for(const j of nb[i])if(b[j]===o&&libsOf(b,j,1)===0)cap+=removeGroup(b,j);
+ if(libsOf(b,i,1)===0){b[i]=0;return -1;}return cap;}
+function isEye(b,i,c){for(const j of nb[i])if(b[j]!==c)return false;return true;}
+function playout(b,c,maxM){let passes=0;const empt=[];
+ for(let m=0;m<maxM&&passes<2;m++){empt.length=0;for(let i=0;i<N;i++)if(!b[i]&&!isEye(b,i,c))empt.push(i);
+  let ok=false;while(empt.length){const k=(Math.random()*empt.length)|0;const i=empt[k];empt[k]=empt[empt.length-1];empt.pop();
+   // prefer capture/atari-escape lightly: plain random
+   if(play(b,i,c)>=0){ok=true;break;}}
+  passes=ok?0:passes+1;c=3-c;}
+ // area score from black
+ let s=0;for(let i=0;i<N;i++){if(b[i]===1)s++;else if(b[i]===2)s--;else{let bl=0,wh=0;for(const j of nb[i]){if(b[j]===1)bl=1;else if(b[j]===2)wh=1;}if(bl&&!wh)s++;else if(wh&&!bl)s--;}}
+ return s;}
+onmessage=e=>{const {n,board,color,komi,banned,budget}=e.data;setup(n);
+ const base=Int8Array.from(board);const cands=[];
+ for(let i=0;i<N;i++){if(base[i]||isEye(base,i,color)||banned.includes(i))continue;const t=base.slice();if(play(t,i,color)>=0)cands.push(i);}
+ if(!cands.length){postMessage({move:-1});return;}
+ const w=new Float64Array(cands.length),v=new Float64Array(cands.length);let total=0;const t0=performance.now();
+ const maxM=N*2;
+ while(performance.now()-t0<budget){
+  let bi=0,bs=-1e9;for(let k=0;k<cands.length;k++){const s=v[k]===0?1e9:w[k]/v[k]+0.9*Math.sqrt(Math.log(total+1)/v[k]);if(s>bs){bs=s;bi=k;}}
+  const b=base.slice();play(b,cands[bi],color);const sc=playout(b,3-color,maxM)-komi;
+  const win=(color===1?sc>0:sc<0)?1:0;w[bi]+=win;v[bi]++;total++;}
+ let best=0;for(let k=1;k<cands.length;k++)if(v[k]>v[best])best=k;
+ const rate=w[best]/Math.max(1,v[best]);
+ postMessage({move:rate<0.06&&total>200?-1:cands[best],rate,total});};
+`;
+
+let worker=null, botBusy=false, botToken=0;
+function getWorker(){ if(!worker){ try{ worker=new Worker(URL.createObjectURL(new Blob([workerSrc],{type:"text/javascript"}))); }catch(e){ worker=null; } } return worker; }
+function cancelBot(){ if(botBusy){ botToken++; botBusy=false; if(worker){worker.terminate();worker=null;} } }
+function think(color,cb){
+  const w=getWorker(); if(!w){ flash("浏览器不支持后台计算，电脑对手不可用",true); return; }
+  botBusy=true; const tok=++botToken; render();
+  const banned=[]; for(let i=0;i<S.g.N;i++) if(!S.board[i]){ const r=tryMove(S.g,S.board,i,color,S.seen); if(!r.ok&&r.reason.startsWith("打劫")) banned.push(i); }
+  w.onmessage=e=>{ if(tok!==botToken) return; botBusy=false; cb(e.data.move); };
+  const budget=S.g.n>=13?2200:S.g.n>=9?1500:1000;
+  setTimeout(()=>{ if(tok===botToken) w.postMessage({n:S.g.n,board:Array.from(S.board),color,komi:S.komi,banned,budget}); },60);
+}
+function maybeBot(){ const bc=botColor(); if(!bc||S.phase!=="play"||S.turn!==bc||botBusy) return;
+  think(bc,m=>{ if(m<0) pass(); else { const r=play(m); if(!r.ok) pass(); } }); }
+function hintMove(){ if(!humanCanMove()) return;
+  think(S.turn,m=>{ if(m<0){ render(); flash("电脑觉得这时停一手就好"); return; } UI.hint=m; UI.hover=m; UI.pending=UI.confirm?m:-1; render(); }); }
+
+/* ---------------- Wiring ---------------- */
+const svgB=$("board");
+svgB.addEventListener("pointermove",e=>{ if(e.pointerType==="mouse") setHover(pick(e)); });
+svgB.addEventListener("pointerleave",e=>{ if(e.pointerType==="mouse") setHover(-1); });
+svgB.addEventListener("click",e=>onPoint(pick(e)));
+$("optAtari").onchange=e=>{UI.atari=e.target.checked;render();save();};
+$("optLibs").onchange=e=>{UI.libLabels=e.target.checked;render();save();};
+$("optConfirm").onchange=e=>{UI.confirm=e.target.checked;UI.pending=-1;render();save();};
+$("btnHint").onclick=hintMove;
+$("btnUndo").onclick=undo; $("btnRedo").onclick=redoMove; $("btnPass").onclick=pass;
+$("btnResign").onclick=()=>{ const b=$("btnResign"); if(b.dataset.arm){ delete b.dataset.arm; b.textContent="认输"; resign(); } else { b.dataset.arm=1; b.textContent="确认认输？"; setTimeout(()=>{delete b.dataset.arm;b.textContent="认输";},3000); } };
+$("btnScore").onclick=()=>{ if(S.phase==="score") finishScore(); else if(S.phase==="play"){ cancelBot(); S.phase="score"; S.dead=guessDead(); render(); } };
+function openNew(){ $("selSize").value=S.g.n; $("selMode").value=S.mode; $("inKomi").value=S.komi; $("dlgNew").showModal(); }
+$("btnNew").onclick=openNew;
+$("newOk").onclick=()=>{ $("dlgNew").close(); cancelBot(); newGame(+$("selSize").value,+$("inKomi").value||0,$("selMode").value); layout(); render(); };
+$("newCancel").onclick=()=>$("dlgNew").close();
+$("btnHelp").onclick=()=>$("dlgHelp").showModal(); $("helpOk").onclick=()=>$("dlgHelp").close();
+document.addEventListener("keydown",e=>{
+  if(document.querySelector("dialog[open]")) return;
+  const k=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&k==="z"){e.preventDefault(); e.shiftKey?redoMove():undo();}
+  else if((e.ctrlKey||e.metaKey)&&k==="y"){e.preventDefault(); redoMove();}
+  else if(k==="p"&&!e.ctrlKey&&!e.metaKey){ if(humanCanMove()) pass(); }
+  else if(k==="h"&&!e.ctrlKey&&!e.metaKey){ hintMove(); }
+  else if(e.key==="Escape"){ UI.pending=-1; UI.hover=-1; render(); }
+});
+let rzT=0; addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>{layout();render();},80);});
+
+(function boot(){
+  const d=load(), q=new URLSearchParams(location.search);
+  if(d&&d.n&&!q.has("new")){ Object.assign(UI,{libLabels:d.libLabels!==false,atari:d.atari!==false,confirm:d.confirm??isTouch});
+    S.g=makeGeom(d.n); S.moves=d.moves||[]; S.redo=d.redo||[]; S.komi=d.komi??7.5; S.mode=d.mode||"hb"; replay(); }
+  else { S.g=makeGeom(+(q.get("n")||9)); S.komi=7.5; S.mode=q.get("mode")||"hb"; S.moves=[]; replay(); }
+  $("optAtari").checked=UI.atari; $("optLibs").checked=UI.libLabels; $("optConfirm").checked=UI.confirm;
+  requestAnimationFrame(()=>{ layout(); render(); maybeBot(); });
+})();
+</script>
+</body></html>
