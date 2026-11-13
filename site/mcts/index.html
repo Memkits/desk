@@ -1,0 +1,15 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<link rel="stylesheet" href="video.css">
+<link rel="stylesheet" href="fe.css">
+<body>
+<div id="stage"></div>
+<div class="top" id="top"></div>
+<div class="sub" id="sub"></div>
+<div id="veil"></div>
+<script>
+const EP = +(new URLSearchParams(location.search).get('ep') || 1);
+(async () => {
+  for (const f of [`tl_e${EP}.js`, 'data.js', 'mcts.js', 'lib.js', 'an_base.js', 'det.js', 'an_3d.js', 'dm.js', 'an_a.js', 'an_b.js', 'an_c.js', 'fonts.js', 'engine.js', '../_shared/player.js']) await new Promise((res, rej) => { const s = document.createElement('script'); s.src = f; s.onload = res; s.onerror = rej; document.body.appendChild(s); });
+})();
+</script>
+</body></html>

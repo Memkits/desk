@@ -1,0 +1,54 @@
+import json, os
+TL = json.load(open('tl_e1.json')); d = TL['total']; fn = '蒙特卡洛树搜索_边下边长的一棵树'
+o = [f'''# 蒙特卡洛树搜索：边下边长的一棵树（{int(d//60)}:{int(d%60):02d}）
+
+**标题候选**
+
+1. 蒙特卡洛树搜索：边下边长的一棵树（井字棋、老虎机、迷宫、AlphaGo）
+2. 不会打分，就随便下到底：从老虎机到 AlphaGo 讲清蒙特卡洛树搜索
+3. 选择、扩展、模拟、回溯：用真实运行的动画看懂蒙特卡洛树搜索
+
+**文件**：`{fn}.mp4`　字幕：`{fn}.srt`　封面：`封面_16x9.png` / `封面_4x3.png` / `封面_3x4.png`
+
+**简介**
+
+下棋的程序每一步都要回答：现在走哪里最好？从 AlphaGo 到 AlphaZero，再到我们用来检验新棋的对弈程序，背后都有同一个算法——蒙特卡洛树搜索。这一期从“树太大、搜不完”讲起：随机模拟怎样代替打分，又为什么会被骗；老虎机问题里的 UCB 怎样平衡“试新的”和“用熟的”；把老虎机放进树的每个节点，就得到选择、扩展、模拟、回溯的四步循环。然后看四个案例：井字棋里树怎样纠正随机模拟的错误，机器人怎样在迷宫里绕开墙，围棋程序从 MoGo 到 AlphaGo、AlphaZero、MuZero 的变化，以及用它当量尺测新棋“线与膜”时，量尺精度怎样改变结果。最后讲陷阱这类弱点、常见变体，和它在语言模型推理上的新用途。
+
+本片由 AI 生成：文稿与画面由 Claude 制作，配音为 Gemini TTS 合成（1.25 倍速）。井字棋、老虎机和迷宫的画面数据由程序实际运行得到（固定随机种子，可复现）；AlphaGo 的 PUCT 柱状图、陷阱示意和语言模型推理树是示意，数字不是真实数据。“线与膜”的胜负数据来自本系列之前的自对弈测试（每组 30 局）。
+
+**可以直接玩的网页**：https://repo.tiye.me/Memkits/desk/mcts/explorer.html （和蒙特卡洛树搜索下井字棋、一轮一轮看树长出来；老虎机三种策略对比；可以自己改墙的迷宫）
+
+**片中用到的事实**
+
+- 井字棋所有可能的对局：255,168 盘（程序枚举）；国际象棋博弈树约 10¹²⁰（香农的估计），围棋博弈树约 10³⁶⁰
+- 蒙特卡洛方法：乌拉姆 1946 年的设想，名字由梅特罗波利斯所起，1948 年在 ENIAC 上首次运行
+- UCB1：Auer、Cesa-Bianchi、Fischer，2002
+- 2006 年 Coulom 在 Crazy Stone 中提出“蒙特卡洛树搜索”这个名字；同年 Kocsis 与 Szepesvári 提出 UCT；2008 年 MoGo 在九路棋盘达到业余段位；2012 年 Zen 在十九路 3:1 胜业余二段
+- AlphaGo：2015 年 10 月 5:0 胜樊麾，2016 年 3 月 4:1 胜李世石；第四局李世石第 78 手
+- AlphaGo Zero（2017）每步 1,600 次模拟；MuZero（2020，《自然》）棋类每步 800 次、Atari 每步 50 次
+- 化学合成路线规划：Segler 等，2018 年《自然》；《全面战争：罗马 2》战役 AI 使用蒙特卡洛树搜索
+- rStar-Math：微软研究院，2025 年 1 月
+
+**片中的实验设置**
+
+- 老虎机：四台中奖率 20%、50%、35%、70%；贪心、每十次随机试一次（ε=0.1）、UCB1，各拉 10,000 次，100 次实验取平均。拉到约 3,300 次之前，ε-贪心的平均损失比 UCB1 小；拉到 10,000 次时三者的平均损失约为 1,192、277、136
+- 井字棋“随机模拟会骗人”的局面：蓝叉在中间一行左格，橙圈在右下角；每格随机下 1,000 盘，中间平均分最高（约 68%），而极小化极大的答案是左下角必胜。树搜索（UCT，c=√2）100 轮仍推荐中间，1,000 轮转向左下角，10,000 轮九成以上盘数在左下角
+- 迷宫：13×10 格，每步前搜 1,500 轮，随机乱走最多 60 步，到终点得 1 − 0.5×步数/60；16 步到达
+
+**参考**
+
+- 蒙特卡洛树搜索（维基百科）：https://en.wikipedia.org/wiki/Monte_Carlo_tree_search
+- 洛斯阿拉莫斯实验室，蒙特卡洛方法的诞生：https://discover.lanl.gov/publications/actinide-research-quarterly/first-quarter-2023/hitting-the-jackpot-the-birth-of-the-monte-carlo-method/
+- MuZero（维基百科）：https://en.wikipedia.org/wiki/MuZero
+- rStar-Math 论文：https://arxiv.org/abs/2501.04519
+- 场景源码与互动网页：https://github.com/Memkits/desk （site/mcts/、sources/mcts/）
+
+**章节**
+
+''']
+for s in TL['scenes']:
+    t = 0 if s is TL['scenes'][0] else s['start']; o.append(f"{int(t//60):02d}:{int(t%60):02d} {s['title'].split(' ', 1)[1] if s['chapter'] else '开场'}\n")
+o.append('''
+**标签**：蒙特卡洛树搜索　MCTS　UCB　多臂老虎机　AlphaGo　AlphaZero　博弈树　强化学习　算法科普　AI 生成
+''')
+os.makedirs('final', exist_ok=True); open('final/标题与描述.md', 'w').write(''.join(o)); print('ok')

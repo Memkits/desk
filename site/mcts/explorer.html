@@ -1,0 +1,109 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>蒙特卡洛树搜索 · 互动实验</title>
+<style>
+:root{--bg:#070A12;--panel:#0E1424;--line:#1F2940;--line2:#2C3854;--fg:#E9EEF7;--fg2:#A3AEC3;--fg3:#66728C;--b:#5CB4FF;--o:#FFB25C;--g:#5FE0A0;--gold:#FFD27A;--r:#FF7A93;--p:#C79BFF}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 "Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+header{padding:20px 20px 6px;max-width:1200px;margin:auto}h1{margin:0;font-size:24px}header p{margin:6px 0 0;color:var(--fg2)}
+nav.tabs{display:flex;gap:8px;max-width:1200px;margin:12px auto 0;padding:0 20px;flex-wrap:wrap}nav.tabs button{background:var(--panel);color:var(--fg2);border:1px solid var(--line2);border-radius:999px;padding:7px 16px;font:inherit;cursor:pointer}nav.tabs button.on{background:var(--fg);color:var(--bg);font-weight:700}
+main{max-width:1200px;margin:auto;padding:16px 20px 40px}section{display:none}section.on{display:block}
+.row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.ctl button,.ctl select{background:#131B2E;color:var(--fg);border:1px solid var(--line2);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}.ctl button:hover{border-color:var(--gold)}.ctl button.pri{background:var(--gold);color:#0B1020;border-color:var(--gold);font-weight:700}
+.muted{color:var(--fg3)}.small{font-size:13px}canvas{display:block;max-width:100%;border-radius:10px}
+.ttt{display:grid;grid-template-columns:repeat(3,92px);grid-template-rows:repeat(3,92px);gap:6px}.ttt div{background:#131B2E;border-radius:10px;display:flex;align-items:center;justify-content:center;font:800 54px/1 system-ui;cursor:pointer;position:relative}.ttt div.x{color:var(--b)}.ttt div.o{color:var(--o)}
+.ttt div small{position:absolute;bottom:5px;font:600 12px/1 ui-monospace,monospace;color:var(--fg2)}.ttt div.best{outline:3px solid var(--gold)}
+.phase{display:flex;gap:6px}.phase span{padding:3px 10px;border-radius:8px;border:1px solid var(--line2);color:var(--fg3);font-size:13px}.phase span.on{color:#0B1020;font-weight:700}
+.legend span{display:inline-block;margin-right:12px}.dotb{color:var(--b)}.doto{color:var(--o)}
+.slots{display:flex;gap:10px;flex-wrap:wrap}.slot{width:130px;text-align:center;background:#131B2E;border:2px solid var(--line2);border-radius:12px;padding:8px;cursor:pointer}.slot b{display:block;font-size:20px}.slot .w{font:700 22px ui-monospace,monospace;color:var(--gold);height:30px}
+table{border-collapse:collapse}td,th{padding:3px 8px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}th{color:var(--fg3);font-weight:500}
+</style>
+<header><h1>蒙特卡洛树搜索 · 互动实验</h1><p>视频《蒙特卡洛树搜索：边下边长的一棵树》的配套网页。所有搜索都在你的浏览器里实时运行。</p></header>
+<nav class="tabs"><button data-t="ttt" class="on">井字棋：看树一轮一轮长</button><button data-t="bandit">老虎机：试新的还是用熟的</button><button data-t="maze">迷宫：一个人的规划</button></nav>
+<main>
+<section id="ttt" class="on"><div class="row">
+ <div class="card"><div class="ttt" id="tb"></div>
+  <div class="ctl"><select id="tpos"><option value="new">空棋盘（你执叉先走）</option><option value="newo">空棋盘（电脑先走）</option><option value="A">视频局面：随机模拟会骗人</option><option value="B">视频局面：必须堵中间</option></select><button id="treset">重来</button></div>
+  <div class="ctl">每步搜索 <select id="titer"><option>50</option><option>200</option><option selected>2000</option><option>10000</option><option>50000</option></select> 轮 <button id="tmove" class="pri">电脑走</button></div>
+  <p class="small muted" id="tmsg">点格子落子。格子里的小字：电脑对这一步的盘数占比。</p></div>
+ <div class="card" style="flex:1;min-width:320px"><div class="ctl"><button id="t1">走一轮（慢动作）</button><button id="t10">+10 轮</button><button id="t100">+100 轮</button><button id="t1000">+1000 轮</button><span class="muted" id="tcount"></span></div>
+  <div class="phase" id="tph"><span>1 选择</span><span>2 扩展</span><span>3 模拟</span><span>4 回溯</span></div>
+  <canvas id="tcv" width="760" height="520"></canvas>
+  <p class="small muted">节点里的数字：赢了几分 / 一共几盘（站在走这一步的一方看，平局算半分）。只画盘数最多的几枝。<span class="dotb">■</span> 叉走的一层 <span class="doto">■</span> 圈走的一层</p></div>
+</div></section>
+<section id="bandit"><div class="card">
+ <p>四台老虎机的中奖概率是随机设的，你看不到。可以自己点机器拉，也可以让三种策略各自拉 N 次比较。</p>
+ <div class="slots" id="slots"></div>
+ <div class="ctl"><button id="breveal">揭晓真实概率</button><button id="bnew">换一组机器</button><span class="muted" id="bme"></span></div>
+ <div class="ctl">让三种策略各拉 <select id="bT"><option>1000</option><option selected>10000</option><option>50000</option></select> 次，重复 <select id="bR"><option>20</option><option selected>100</option></select> 次取平均 <button id="brun" class="pri">比较</button></div>
+ <canvas id="bcv" width="1000" height="380"></canvas>
+ <p class="small muted">纵轴：损失 = 比一直拉最好那台少中的次数。UCB 分数 = 平均中奖率 + √(2·ln 总次数 ÷ 这台的次数)。</p></div></section>
+<section id="maze"><div class="row">
+ <div class="card"><canvas id="mcv" width="520" height="400"></canvas><p class="small muted">点空格加墙，点墙拆掉。紫色机器人，金色星星是终点。</p></div>
+ <div class="card" style="flex:1;min-width:300px">
+  <div class="ctl">每步搜索 <select id="miter"><option>300</option><option selected>1500</option><option>5000</option></select> 轮 <button id="mstep" class="pri">走一步</button><button id="mrun">一直走到终点</button><button id="mreset">回到起点</button></div>
+  <p id="mmsg">每走一步之前，机器人从当前格子搜若干轮：沿树往下选，长一个新节点，再随机乱走（最多 60 步），走到终点就记分，越快分越高。绿色越亮，表示树在那个格子上花的盘数越多。</p></div>
+</div></section>
+</main>
+<script src="mcts.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { document.querySelectorAll('nav.tabs button,section').forEach(e => e.classList.remove('on')); b.classList.add('on'); $(b.dataset.t).classList.add('on'); });
+// ---------------- 井字棋 ----------------
+const POS = { new: [0,0,0,0,0,0,0,0,0], newo: [0,0,0,0,0,0,0,0,0], A: [0,0,0,1,0,0,0,0,2], B: [1,2,1,0,2,0,0,0,0] };
+let board, human, T = null, slow = null, seed = 1;
+function tReset() { board = POS[$('tpos').value].slice(); human = $('tpos').value === 'newo' ? 2 : MC.toMove(board); T = null; slow = null; tRender(); if ($('tpos').value === 'newo') setTimeout(tAI, 50); }
+function tNewTree() { T = MC.TTT(board, { seed: seed++ }); }
+function tRender() { const w = MC.winner(board), tot = T ? T.nodes[0].n : 0, share = {}; let best = -1, bn = -1;
+  if (T) T.nodes[0].kids.forEach(k => { const c = T.nodes[k]; share[c.mv] = c.n / Math.max(1, tot); if (c.n > bn) { bn = c.n; best = c.mv; } });
+  $('tb').innerHTML = board.map((v, i) => `<div data-i="${i}" class="${v === 1 ? 'x' : v === 2 ? 'o' : ''} ${!v && i === best && T && tot > 0 ? 'best' : ''}">${v === 1 ? '×' : v === 2 ? '○' : ''}${!v && share[i] != null ? `<small>${Math.round(share[i] * 100)}%</small>` : ''}</div>`).join('');
+  $('tb').querySelectorAll('div').forEach(d => d.onclick = () => tClick(+d.dataset.i));
+  $('tmsg').textContent = w ? (w === 3 ? '平局。' : (w === 1 ? '叉' : '圈') + '赢了。') + '点“重来”再下一盘。' : `轮到${MC.toMove(board) === 1 ? '叉' : '圈'}。点格子落子，或者让电脑走。`;
+  $('tcount').textContent = T ? `已搜 ${T.log.length} 轮` : '还没开始搜'; drawTree(); }
+function tClick(i) { if (board[i] || MC.winner(board)) return; board[i] = MC.toMove(board); T = null; slow = null; tRender(); if (!MC.winner(board) && $('tpos').value.startsWith('new')) setTimeout(tAI, 60); }
+function tAI() { if (MC.winner(board)) return; tNewTree(); T.run(+$('titer').value); const kids = T.nodes[0].kids.map(k => T.nodes[k]).sort((a, b) => b.n - a.n); tRender(); setTimeout(() => { board[kids[0].mv] = MC.toMove(board); T = null; tRender(); }, 700); }
+$('tmove').onclick = tAI; $('treset').onclick = tReset; $('tpos').onchange = tReset;
+const addRounds = k => { if (MC.winner(board)) return; if (!T) tNewTree(); slow = null; T.run(k); tRender(); };
+$('t10').onclick = () => addRounds(10); $('t100').onclick = () => addRounds(100); $('t1000').onclick = () => addRounds(1000);
+$('t1').onclick = () => { if (MC.winner(board)) return; if (!T) tNewTree(); const before = T.log.length; T.step(); slow = { L: T.log[before], t0: performance.now() }; anim(); };
+function anim() { tRender(); if (slow && performance.now() - slow.t0 < 4200) requestAnimationFrame(anim); else { slow = null; tRender(); } }
+function drawTree() { const cv = $('tcv'), g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); const ph = slow ? Math.min(3, Math.floor((performance.now() - slow.t0) / 1000)) : -1;
+  [...$('tph').children].forEach((s, i) => { s.classList.toggle('on', i === ph); s.style.background = i === ph ? ['#5CB4FF', '#5FE0A0', '#C79BFF', '#FFD27A'][i] : ''; });
+  if (!T) { g.fillStyle = '#66728C'; g.font = '16px sans-serif'; g.fillText('点“走一轮”或“+10 轮”开始搜索', 20, 30); return; }
+  // 选要画的节点：每层最多 6 个孩子（按盘数），深度 ≤ 3；慢动作那一轮的路径一定画
+  const keep = new Set(), path = slow ? slow.L.path : []; const rec = id => { keep.add(id); const n = T.nodes[id]; if (n.d >= 3) return; n.kids.map(k => T.nodes[k]).sort((a, b) => b.n - a.n).slice(0, n.d === 0 ? 9 : 4).forEach(c => rec(c.id)); }; rec(0); path.forEach(id => keep.add(id));
+  const pos = {}; let leaf = 0; const lay = id => { const ks = T.nodes[id].kids.filter(k => keep.has(k)).sort((a, b) => T.nodes[a].mv - T.nodes[b].mv); if (!ks.length) return pos[id] = leaf++; ks.forEach(lay); return pos[id] = (pos[ks[0]] + pos[ks[ks.length - 1]]) / 2; }; lay(0);
+  const W = cv.width - 20, X = id => 10 + (pos[id] + .5) * W / Math.max(1, leaf), Y = id => 40 + T.nodes[id].d * 150, s = Math.min(9, W / Math.max(1, leaf) / 3.6);
+  keep.forEach(id => { const n = T.nodes[id]; if (n.par < 0 || !keep.has(n.par)) return; const on = path.includes(id) && ph >= 0 && (ph >= 1 || id !== slow.L.exp); g.strokeStyle = on ? '#FFD27A' : '#2C3854'; g.lineWidth = on ? 3 : 1.2; g.beginPath(); g.moveTo(X(n.par), Y(n.par) + 1.6 * s + 4); g.lineTo(X(id), Y(id) - 1.6 * s - 4); g.stroke(); });
+  keep.forEach(id => { const n = T.nodes[id]; if (slow && id === slow.L.exp && ph < 1) return; const x = X(id), y = Y(id); mini(g, x, y, s, n.b, n.mv, path.includes(id) && ph >= 0);
+    g.fillStyle = n.pl === 1 ? '#9FD0FF' : '#FFCF94'; g.font = `600 ${Math.max(10, Math.min(13, s * 1.4))}px ui-monospace,monospace`; g.textAlign = 'center'; g.fillText(id === 0 ? `共 ${n.n} 盘` : `${+n.w.toFixed(1)}/${n.n}`, x, y + 1.6 * s + 16); });
+  if (slow && ph === 2) { const L = slow.L, n = T.nodes[L.exp]; g.fillStyle = '#C79BFF'; g.font = '14px sans-serif'; g.textAlign = 'left'; g.fillText(`模拟：从新节点乱下 ${L.seq.length} 步 → ${L.w === 3 ? '平局' : (L.w === 1 ? '叉赢' : '圈赢')}`, 10, cv.height - 12); }
+  if (slow && ph === 3) { g.fillStyle = '#FFD27A'; g.font = '14px sans-serif'; g.textAlign = 'left'; g.fillText('回溯：路上每个节点盘数 +1，赢的一方走的那几层加分（已更新）', 10, cv.height - 12); } }
+function mini(g, cx, cy, s, b, mv, hl) { g.fillStyle = '#131B2E'; g.strokeStyle = hl ? '#FFD27A' : '#2C3854'; g.lineWidth = hl ? 2.5 : 1; g.beginPath(); g.roundRect(cx - 1.6 * s, cy - 1.6 * s, 3.2 * s, 3.2 * s, 3); g.fill(); g.stroke();
+  b.forEach((v, i) => { if (!v) return; const x = cx + (i % 3 - 1) * s, y = cy + ((i / 3 | 0) - 1) * s; g.strokeStyle = v === 1 ? '#5CB4FF' : '#FFB25C'; g.lineWidth = i === mv ? 2.2 : 1.3; g.beginPath(); if (v === 1) { const r = s * .32; g.moveTo(x - r, y - r); g.lineTo(x + r, y + r); g.moveTo(x + r, y - r); g.lineTo(x - r, y + r); } else g.arc(x, y, s * .32, 0, 7); g.stroke(); }); }
+tReset();
+// ---------------- 老虎机 ----------------
+let P, me, reveal = false;
+function bNew() { const R = MC.rng(Date.now() & 0xffff); P = [0, 1, 2, 3].map(() => Math.round((.1 + R() * .7) * 100) / 100); me = { n: [0, 0, 0, 0], s: [0, 0, 0, 0] }; reveal = false; bRender(); }
+function bRender() { $('slots').innerHTML = P.map((p, i) => `<div class="slot" data-i="${i}"><b>机器 ${'ABCD'[i]}</b><div class="w">${reveal ? Math.round(p * 100) + '%' : '?'}</div><div class="small">拉了 ${me.n[i]} 次<br>中了 ${me.s[i]} 次${me.n[i] ? `（${Math.round(me.s[i] / me.n[i] * 100)}%）` : ''}</div></div>`).join('');
+  $('slots').querySelectorAll('.slot').forEach(d => d.onclick = () => { const i = +d.dataset.i; me.n[i]++; if (Math.random() < P[i]) me.s[i]++; bRender(); });
+  const N = me.n.reduce((a, b) => a + b, 0), best = Math.max(...P), reg = me.n.reduce((a, n, i) => a + n * (best - P[i]), 0); $('bme').textContent = N ? `你一共拉了 ${N} 次，中了 ${me.s.reduce((a, b) => a + b, 0)} 次；期望损失约 ${reg.toFixed(1)} 次` : ''; }
+$('breveal').onclick = () => { reveal = true; bRender(); }; $('bnew').onclick = bNew;
+$('brun').onclick = () => { const Tn = +$('bT').value, Rn = +$('bR').value, step = Tn / 200, cols = { greedy: '#A3AEC3', eps: '#FF7A93', ucb: '#FFD27A' }, names = { greedy: '贪心', eps: '每十次试一次', ucb: 'UCB' }, out = {};
+  for (const a of ['greedy', 'eps', 'ucb']) { const acc = new Float64Array(201); for (let r = 0; r < Rn; r++) MC.bandit(P, Tn, a, 7 + r * 13).forEach((h, i) => { if ((i + 1) % step === 0) acc[(i + 1) / step] += h.reg; }); out[a] = Array.from(acc, v => v / Rn); }
+  const cv = $('bcv'), g = cv.getContext('2d'), W = cv.width, H = cv.height, mx = Math.max(...Object.values(out).map(a => Math.max(...a))) * 1.05 || 1; g.clearRect(0, 0, W, H);
+  g.strokeStyle = '#1F2940'; g.fillStyle = '#66728C'; g.font = '13px ui-monospace,monospace'; for (let k = 0; k <= 4; k++) { const y = H - 30 - (H - 50) * k / 4; g.beginPath(); g.moveTo(60, y); g.lineTo(W - 120, y); g.stroke(); g.fillText(Math.round(mx * k / 4), 10, y + 4); g.fillText(Math.round(Tn * k / 4), 60 + (W - 180) * k / 4 - 10, H - 8); }
+  for (const a in out) { g.strokeStyle = cols[a]; g.lineWidth = a === 'ucb' ? 3.5 : 2; g.beginPath(); out[a].forEach((v, i) => { const x = 60 + (W - 180) * i / 200, y = H - 30 - (H - 50) * v / mx; i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); } const ly = Object.keys(out).map(a => [a, H - 30 - (H - 50) * out[a][200] / mx + 4]).sort((p, q) => p[1] - q[1]); for (let i = 1; i < ly.length; i++) ly[i][1] = Math.max(ly[i][1], ly[i - 1][1] + 18); ly.forEach(([a, y]) => { g.fillStyle = cols[a]; g.font = '600 14px sans-serif'; g.fillText(`${names[a]} ${out[a][200].toFixed(0)}`, W - 112, y); }); };
+bNew();
+// ---------------- 迷宫 ----------------
+const G0 = ['#############', '#...........#', '#.....S.....#', '#...........#', '#..#######..#', '#..#.....#..#', '#..#..G..#..#', '#..##...##..#', '#...........#', '#############'];
+let grid = G0.map(r => [...r]), Z, rob, trail, heat = null, mseed = 400;
+function mBuild() { Z = MC.Maze(grid.map(r => r.join(''))); }
+function mReset() { mBuild(); rob = Z.S; trail = [rob]; heat = null; mDraw(); $('mmsg').textContent = '每走一步之前，机器人从当前格子搜若干轮：沿树往下选，长一个新节点，再随机乱走（最多 60 步），走到终点就记分，越快分越高。绿色越亮，表示树在那个格子上花的盘数越多。'; }
+function mStep() { if (rob === Z.G) return false; const T = MC.MazeMCTS(Z, rob, { seed: mseed++, h: 60 }).run(+$('miter').value); heat = new Float64Array(Z.W * Z.H); T.nodes.forEach(n => heat[n.p] += n.n); const best = T.nodes[0].kids.map(i => T.nodes[i]).sort((a, b) => b.n - a.n)[0]; const hits = T.log.filter(L => L.r > 0).length; rob = best.p; trail.push(rob); mDraw(); $('mmsg').textContent = `第 ${trail.length - 1} 步。这一步之前的搜索里，有 ${hits} 次随机乱走碰到了终点。` + (rob === Z.G ? ' 到了！' : ''); return rob !== Z.G; }
+function mDraw() { const cv = $('mcv'), g = cv.getContext('2d'), s = 40; cv.width = Z.W * s; cv.height = Z.H * s; const mx = heat ? Math.max(...heat) : 1;
+  for (let y = 0; y < Z.H; y++) for (let x = 0; x < Z.W; x++) { const i = y * Z.W + x; g.fillStyle = Z.wall[i] ? '#2A3550' : heat && heat[i] ? `rgba(95,224,160,${.06 + .75 * Math.sqrt(heat[i] / mx)})` : '#111827'; g.beginPath(); g.roundRect(x * s + 1, y * s + 1, s - 2, s - 2, 5); g.fill(); }
+  const c = p => [(p % Z.W + .5) * s, ((p / Z.W | 0) + .5) * s]; g.strokeStyle = '#C79BFF'; g.lineWidth = 4; g.beginPath(); trail.forEach((p, i) => { const [x, y] = c(p); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  let [x, y] = c(Z.G); g.fillStyle = '#FFD27A'; g.font = '28px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('★', x, y + 1); [x, y] = c(rob); g.fillStyle = '#C79BFF'; g.beginPath(); g.arc(x, y, s * .32, 0, 7); g.fill(); }
+$('mcv').onclick = e => { const r = $('mcv').getBoundingClientRect(), s = r.width / Z.W, x = Math.floor((e.clientX - r.left) / s), y = Math.floor((e.clientY - r.top) / s); if (x <= 0 || y <= 0 || x >= Z.W - 1 || y >= Z.H - 1) return; const ch = grid[y][x]; if (ch === 'S' || ch === 'G') return; const i = y * Z.W + x; if (i === rob) return; grid[y][x] = ch === '#' ? '.' : '#'; mBuild(); heat = null; mDraw(); };
+$('mstep').onclick = mStep; $('mreset').onclick = mReset; $('mrun').onclick = () => { let k = 0; const go = () => { if (mStep() && ++k < 80) setTimeout(go, 120); }; go(); };
+mReset();
+</script></html>

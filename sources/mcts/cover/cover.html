@@ -1,0 +1,30 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+canvas{position:absolute;inset:0}
+.t{position:absolute;left:5.5%;top:12%;max-width:50%}
+.v .t{left:7%;right:7%;top:5%;max-width:none}
+.k{display:inline-block;font:700 38px "Noto Sans CJK SC";color:#0b0f18;background:#FFD27A;padding:8px 22px;border-radius:12px}
+.name{font:800 120px/1.16 "Noto Sans CJK SC";margin-top:28px;text-shadow:0 6px 30px #000}
+.name span{color:#FFD27A}
+.sub{font:600 36px/1.6 "Noto Sans CJK SC";margin-top:26px;color:#C9D4EA;text-shadow:0 2px 12px #000}
+.v .name{font-size:118px}.v .k{font-size:40px}
+.r43 .t{left:5%;max-width:52%}.r43 .name{font-size:96px}.r43 .sub{font-size:30px}.r43 .k{font-size:32px}
+</style>
+<body><canvas id="c"></canvas>
+<div class="t"><div class="k">算法讲解 · 多个案例</div><div class="name">蒙特卡洛<br><span>树搜索</span></div><div class="sub" id="sub"></div></div>
+<script src="../mcts.js"></script><script>
+const W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+sub.innerHTML = (V ? ['边下边长的一棵树', '选择 · 扩展 · 模拟 · 回溯'] : ['边下边长的一棵树', '选择 · 扩展 · 模拟 · 回溯', '井字棋 · 老虎机 · 迷宫 · AlphaGo']).map(x => `<div>${x}</div>`).join('');
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+const T = MC.TTT(new Array(9).fill(0), { seed: 11 }).run(10000);
+const pos = new Map(); const rec = (id, a0, a1) => { const nd = T.nodes[id]; pos.set(id, [(a0 + a1) / 2, nd.d]); if (nd.d >= 6) return; const ks = nd.kids.filter(k => T.nodes[k].n > 0), tot = ks.reduce((s, k) => s + T.nodes[k].n, 0); let a = a0; ks.sort((p, q) => T.nodes[p].mv - T.nodes[q].mv).forEach(k => { const da = (a1 - a0) * T.nodes[k].n / tot; rec(k, a, a + da); a += da; }); }; rec(0, -Math.PI, Math.PI);
+const bg = g.createRadialGradient(W * .7, H * .5, 0, W * .7, H * .5, Math.max(W, H) * .8); bg.addColorStop(0, '#16233f'); bg.addColorStop(1, '#070A12'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+const [cx, cy, rs] = V ? [W * .5, H * .68, 78] : R43 ? [W * .78, H * .55, 74] : [W * .74, H * .52, 84];
+pos.forEach(([an, d], id) => { const nd = T.nodes[id]; if (!id) return; const p = pos.get(nd.par); g.strokeStyle = nd.pl === 1 ? 'rgba(92,180,255,.5)' : 'rgba(255,178,92,.5)'; g.lineWidth = .6 + Math.min(4, Math.log10(1 + nd.n) * .9); g.beginPath(); g.moveTo(cx + Math.cos(p[0]) * p[1] * rs, cy + Math.sin(p[0]) * p[1] * rs); g.lineTo(cx + Math.cos(an) * d * rs, cy + Math.sin(an) * d * rs); g.stroke(); });
+g.fillStyle = '#fff'; g.beginPath(); g.arc(cx, cy, 12, 0, 7); g.fill();
+// 文字下方压暗
+const sh = g.createLinearGradient(0, 0, V ? 0 : W * .6, V ? H * .5 : 0); sh.addColorStop(0, 'rgba(7,10,18,.85)'); sh.addColorStop(1, 'rgba(7,10,18,0)'); g.fillStyle = sh; g.fillRect(0, 0, V ? W : W * .6, V ? H * .5 : H);
+document.fonts.load('800 40px "Noto Sans CJK SC"', document.body.innerText).then(() => requestAnimationFrame(() => setTimeout(() => window.ready = true, 300)));
+</script></body></html>
