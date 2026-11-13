@@ -367,7 +367,7 @@ let key = 'life', game = G.life, st, shown, hist = [], ui = { hover: -1, sel: 0,
 const tabs = $('tabs'); ORDER.forEach(k => { const b = document.createElement('button'); b.innerHTML = G[k].name + (G[k].bad ? '<span class="bad">不成立</span>' : ''); b.onclick = () => choose(k); b.id = 'tab_' + k; tabs.appendChild(b); });
 function choose(k) { key = k; game = G[k]; ORDER.forEach(q => $('tab_' + q).classList.toggle('on', q === k)); $('gname').textContent = game.name; $('verdict').textContent = game.verdict; $('rules').innerHTML = game.rules.map(r => `<p>${r}</p>`).join(''); $('pass').hidden = !game.pass;
   $('opt').innerHTML = game.opts ? `<select id="optsel">${game.opts.map(([v, n]) => `<option value="${v}"${opt[k] === v ? ' selected' : ''}>${n}</option>`).join('')}</select>` : ''; if (game.opts) $('optsel').onchange = e => { opt[k] = e.target.value; fresh(); };
-  history.replaceState(null, '', '#' + k); fresh(); }
+  try { history.replaceState(null, '', location.href.split('#')[0] + '#' + k); } catch (e) {} fresh(); }
 function fresh() { if (cancel) cancel(); token++; busy = false; st = game.init(opt[key]); shown = st; hist = []; ui.sel = 0; ui.hover = -1; next(); }
 const mode = () => +$('mode').value, isHuman = tm => mode() === 0 || mode() === (tm === 1 ? 2 : 1);
 function render() { ui.human = !busy && !game.over(st) && isHuman(st.tm); game.draw(shown, ui);

@@ -1146,7 +1146,7 @@ button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
 
   // ---------- 标签页 ----------
   function showTab(t) { ['a', 'r', 'w'].forEach(k => $('tab-' + k).setAttribute('aria-selected', k === t)); $('sec-a1').hidden = t !== 'a'; $('sec-a2').hidden = t !== 'a'; $('sec-r').hidden = t !== 'r'; $('sec-w').hidden = t !== 'w'; if (t === 'r') rx.ensure(); if (t === 'w') WHY.ensure(); }
-  $('tab-a').onclick = () => { history.replaceState(null, '', '#atoms'); showTab('a'); }; $('tab-r').onclick = () => { history.replaceState(null, '', '#reactions'); showTab('r'); }; $('tab-w').onclick = () => { history.replaceState(null, '', '#why'); showTab('w'); };
+  $('tab-a').onclick = () => { try { history.replaceState(null, '', location.href.split('#')[0] + '#atoms'); } catch (e) {} showTab('a'); }; $('tab-r').onclick = () => { try { history.replaceState(null, '', location.href.split('#')[0] + '#reactions'); } catch (e) {} showTab('r'); }; $('tab-w').onclick = () => { try { history.replaceState(null, '', location.href.split('#')[0] + '#why'); } catch (e) {} showTab('w'); };
   // ---------- 化学反应 ----------
   const rx = (() => {
     const ECOL = { H: '#F2F4F8', B: '#FF9EC4', C: '#A9B4C2', N: '#6FA8FF', O: '#FF6B6B', F: '#9BE15D', Na: '#C49BFF', Cl: '#5FD39A', Br: '#E0894B', Fe: '#FFB25C', Zn: '#9FC3F0', Cu: '#F0A060' };
