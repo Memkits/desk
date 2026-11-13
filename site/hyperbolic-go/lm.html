@@ -32,6 +32,11 @@ details{margin-top:18px;background:var(--panel);border:1px solid var(--line);bor
 summary{cursor:pointer;font-weight:700}
 li{color:var(--fg2);margin:4px 0}
 .lg{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-right:4px}
+.guide{border:2px solid #2a78d6;border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.55;margin-bottom:10px}
+.guide div{margin:2px 0}.guide b{display:inline-block;min-width:3em;margin-right:.5em;color:#2a78d6}
+#now{font-weight:600;color:#2a78d6;margin:6px 0 8px;min-height:1.4em}
+.c.tip{outline:3px solid #2e9e5b;outline-offset:1px;animation:tip 1.1s ease-in-out infinite;position:relative;z-index:1}
+@keyframes tip{50%{outline-color:transparent}}
 </style>
 <main>
 <h1>线与膜<small>三维里的六贯棋 · 原型</small></h1>
@@ -39,13 +44,15 @@ li{color:var(--fg2);margin:4px 0}
 <div class="wrap">
  <div class="view"><canvas id="cv" width="1040" height="900"></canvas><div class="hint">拖动旋转 · 在右边分层棋盘上落子</div></div>
  <div class="side">
+  <div class="guide" id="guide"></div>
   <div class="bar">
    <label>你执 <select id="me"><option value="1">线方（蓝）</option><option value="2">膜方（橙）</option><option value="0">双方都自己下</option></select></label>
    <label>电脑 <select id="lv"><option value="1000">弱</option><option value="4000" selected>中</option><option value="16000">强</option></select></label>
    <label>线方先摆 <select id="hc"><option>0</option><option>1</option><option>2</option><option selected>3</option><option>4</option></select> 子</label>
-   <button id="new">新开一局</button><button id="undo">悔棋</button>
+   <button id="new">新开一局</button><button id="hint">帮我走一步</button><button id="undo">悔棋</button>
   </div>
   <div id="status"></div>
+  <div id="now"></div>
   <div class="layers" id="layers"></div>
  </div>
 </div>
@@ -91,6 +98,17 @@ function reset() { gen++; HC = +$('hc').value; me = +$('me').value; b = new Uint
 function place(c) { b[c] = who(hist.length); hist.push(c); if (lineWin(b)) over = 1; else if (!lineCan(b)) over = 2; }
 function click(c) { if (over || busy || b[c]) return; const p = who(hist.length); if (me && p !== me) return; place(c); refresh(); next(); }
 function next() { if (over) return; const p = who(hist.length); if (!me || p === me) return; busy = true; refresh(); const g0 = gen; setTimeout(() => { if (g0 !== gen) return; place(aiMove()); busy = false; refresh(); next(); }, 30); }
+const GUIDE = { 1: ['用蓝格从第 1 层（底面）一路连到第 5 层（顶面）。', '在右边五张分层棋盘里点任意一个空格，放一颗蓝子。每回合 1 子。', '上下两层同一位置的格子是相连的，所以最快的路是一根竖直的柱子。电脑会来堵，要多留几条路。'],
+  2: ['用橙格织成一张没有洞的膜，把底面和顶面完全隔开。', '在右边五张分层棋盘里点空格，放一颗橙子。每回合连下 2 子。', '最省的膜是把某一层整层铺满（25 格）。先堵蓝方最高的那几颗子的正上方。'],
+  0: ['蓝方要从底面连到顶面，橙方要把两面完全隔开。', '两个人轮流在右边的分层棋盘里点空格。蓝方每回合 1 子，橙方每回合 2 子。', '左边的立体图可以拖动旋转，用来看清膜上有没有洞。'] };
+function showGuide() { const t = GUIDE[me]; $('guide').innerHTML = `<div><b>目标</b>${t[0]}</div><div><b>怎么下</b>${t[1]}</div><div><b>提示</b>${t[2]}</div>`; }
+function tipCell() { if (over || busy || hist.length >= 6) return -1; const p = who(hist.length); if (me && p !== me) return -1; const w = winCells(b); if (w.length) return w[0];
+  const ord = [[2, 2], [2, 1], [1, 2], [3, 2], [2, 3], [1, 1], [3, 3], [1, 3], [3, 1]];
+  if (p === 1) { for (const [x, y] of ord) for (let z = 0; z < 5; z++) { const c = cid(x, y, z); if (!b[c]) { if (z === 0 || b[cid(x, y, z - 1)] === 1) return c; break; } if (b[c] !== 1) break; } }
+  else { let top = -1; for (let c = 0; c < V; c++) if (b[c] === 1) { const z = c / 25 | 0; if (z > top) top = z; } const z = Math.min(4, Math.max(2, top + 1)); for (let c = 0; c < V; c++) if (b[c] === 1 && (c / 25 | 0) === top && top < 4 && !b[c + 25]) return c + 25; for (const [x, y] of ord) if (!b[cid(x, y, z)]) return cid(x, y, z); }
+  for (let c = 0; c < V; c++) if (!b[c]) return c; return -1; }
+function nowText() { if (over) return '这一局结束了。点“新开一局”再来一盘。'; if (busy) return '电脑正在想，稍等一下。'; const p = who(hist.length); return (me ? '现在该你下：' : `现在该${p === 1 ? '蓝方' : '橙方'}下：`) + '点右边任意一个空格' + (tipCell() >= 0 ? '，比如绿框闪动的那一格。' : '。') + (p === 2 ? '橙方每回合连下 2 子。' : ''); }
+function hintMove() { if (over || busy) return; const p = who(hist.length); if (me && p !== me) return; busy = true; refresh(); const g0 = gen; setTimeout(() => { if (g0 !== gen) return; busy = false; place(aiMove()); refresh(); next(); }, 30); }
 function undo() { if (busy || !hist.length) return; gen++; do { b[hist.pop()] = 0; } while (hist.length && me && who(hist.length) !== me); over = 0; refresh(); next(); }
 let hi = {};
 function refresh() { hi = {}; const st = $('status'); st.className = '';
@@ -99,6 +117,7 @@ function refresh() { hi = {}; const st = $('status'); st.className = '';
   else { const p = who(hist.length), left = p === 2 ? (who(hist.length + 1) === 2 ? 2 : 1) : (hist.length < HC ? HC - hist.length : 1); st.textContent = (busy ? '电脑思考中… ' : '') + `第 ${hist.length + 1} 手，轮到${p === 1 ? '线方（蓝）' : '膜方（橙）'}${hist.length < HC ? `，让子还剩 ${left} 手` : p === 2 ? `，这回合还剩 ${left} 子` : ''}`; }
   const last = hist[hist.length - 1];
   for (let c = 0; c < V; c++) { const e = cells[c]; let k = 'c'; if (b[c]) k += ' s' + b[c]; if (c === last) k += ' last'; if (hi.path && hi.path.has(c)) k += ' path'; if (hi.mem) { if (b[c] === 2) k += hi.mem.has(c) ? ' mem' : ' dim'; else if (!b[c] && hi.flood.has(c)) k += ' flood'; } e.className = k; e.disabled = !!b[c] || !!over; }
+  const tc = tipCell(); if (tc >= 0) cells[tc].className += ' tip'; $('now').textContent = nowText(); $('hint').disabled = !!over || busy || !!(me && who(hist.length) !== me); showGuide();
   draw(); }
 // ---------- 立体视图 ----------
 const cv = $('cv'), g = cv.getContext('2d'); let yaw = .7, pit = .42;
@@ -124,6 +143,6 @@ function draw() { const W = cv.width, H = cv.height, s = 104, P = mkP(W / 2, H /
 let drag = null; cv.onpointerdown = e => { drag = [e.clientX, e.clientY, yaw, pit]; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; };
 cv.onpointermove = e => { if (!drag) return; yaw = drag[2] + (e.clientX - drag[0]) * .01; pit = Math.max(-1.2, Math.min(1.4, drag[3] + (e.clientY - drag[1]) * .008)); draw(); };
 cv.onpointerup = cv.onpointercancel = () => { drag = null; cv.style.cursor = 'grab'; };
-$('new').onclick = reset; $('undo').onclick = undo; $('me').onchange = reset; $('hc').onchange = reset;
+$('new').onclick = reset; $('undo').onclick = undo; $('hint').onclick = hintMove; $('me').onchange = reset; $('hc').onchange = reset;
 reset();
 </script>

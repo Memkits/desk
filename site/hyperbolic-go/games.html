@@ -33,21 +33,34 @@ select,.btn{font:inherit;font-size:15px;padding:5px 10px;border-radius:8px;borde
 .rules{font-size:15px;color:var(--ink2);border-top:1px solid var(--rule);padding-top:10px}
 .rules p{margin:0 0 6px}.rules b{color:var(--ink)}
 .verdict{font-size:14px;padding:8px 10px;border-left:4px solid var(--acc);background:var(--bg)}
+.stage{position:relative}
+.guide{border:2px solid var(--acc);border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.55}
+.guide div{margin:2px 0}.guide b{display:inline-block;min-width:3em;margin-right:.5em;color:var(--acc)}
+.now{font-size:15px;font-weight:600;color:var(--acc);min-height:1.6em}
+#tip{position:absolute;pointer-events:none;width:0;height:0;display:none}
+#tip i{position:absolute;left:-26px;top:-26px;width:52px;height:52px;border-radius:50%;border:4px solid var(--ok);animation:tip 1.1s ease-in-out infinite}
+#tip span{position:absolute;left:-60px;top:32px;width:120px;text-align:center;font-size:14px;font-weight:700;color:#fff;background:var(--ok);border-radius:8px;padding:1px 0;white-space:nowrap}
+@keyframes tip{0%,100%{transform:scale(.75);opacity:1}50%{transform:scale(1.25);opacity:.45}}
+.start{background:var(--card);border:1px solid var(--rule);padding:10px 16px;margin:0 0 16px;font-size:15px}
+.start b{color:var(--acc)}
 .foot{margin-top:28px;font-size:14px;color:var(--ink2)}
 </style>
 <div class="wrap">
 <h1>新游戏实验室</h1>
 <p class="lead">十二个规则很短的双人游戏原型。前四个是“生长结构”一轮的新尝试：没有固定棋盘，双方轮流让一个结构长出来。后八个来自“<a href="beyond/index.html?ep=1">棋盘之外</a>”和更早的新棋类探索。蓝方先行。可以和电脑下，也可以两个人轮流下。电脑用的是不带任何游戏知识的蒙特卡洛搜索，水平有限。标了“不成立”的游戏有明显缺陷，放在这里是为了让你亲手验证。</p>
+<div class="start"><b>第一次来：</b>① 在下面选一个游戏　② 看蓝框里的“怎么下”　③ 点棋盘上绿色闪动的圈，走出第一步。不知道下哪儿，就点“帮我走一步”。你是蓝方，电脑是橙方。</div>
 <div class="tabs" id="tabs"></div>
 <div class="main">
-<div class="stage"><canvas id="cv" width="1440" height="1440"></canvas></div>
+<div class="stage"><canvas id="cv" width="1440" height="1440"></canvas><div id="tip"><i></i><span>点这里试试</span></div></div>
 <div class="side">
 <h2 id="gname"></h2>
+<div class="guide" id="guide"></div>
 <div class="status" id="status"></div>
+<div class="now" id="now"></div>
 <div class="score" id="score"></div>
 <div class="row"><label>对手</label><select id="mode"><option value="2">我执蓝（先手），电脑执橙</option><option value="1">我执橙（后手），电脑执蓝</option><option value="0">两个人轮流下</option><option value="3">电脑对电脑</option></select></div>
 <div class="row"><label>电脑</label><select id="lvl"><option value="250">快（约 0.25 秒）</option><option value="900" selected>中（约 1 秒）</option><option value="3000">强（约 3 秒）</option></select><span id="opt"></span></div>
-<div class="row"><button class="btn" id="new">新的一局</button><button class="btn" id="undo">悔棋</button><button class="btn" id="pass" hidden>停一手</button></div>
+<div class="row"><button class="btn" id="new">新的一局</button><button class="btn" id="hint">帮我走一步</button><button class="btn" id="undo">悔棋</button><button class="btn" id="pass" hidden>停一手</button></div>
 <div class="verdict" id="verdict"></div>
 <div class="rules" id="rules"></div>
 </div>
@@ -361,11 +374,35 @@ function think(game, root, ms, done) { const nodes = [{ m: null, v: 0, w: 0, kid
   function chunk() { if (stop) return; const t1 = performance.now(); while (performance.now() - t1 < 14) once(); if (performance.now() - t0 < ms) return void (handle = setTimeout(chunk, 0)); let best = nodes[0].kids[0]; for (const k of nodes[0].kids) if (k.v > best.v) best = k; done(best.m, best.w / Math.max(1, best.v), iters); }
   let handle = setTimeout(chunk, 0); return () => { stop = true; clearTimeout(handle); }; }
 
+// ---------- 操作引导：目标 / 怎么点 / 小提示 ----------
+const GUIDE = {
+  twig: ['结束时，你的节点比对方多。', '点一个小点，你的树就朝那里长出一段新枝。', '把枝伸到对方前面去挡路，围出只有自己能长的空地。'],
+  coral: ['结束时，你颜色的圆比对方多。', '点一个虚线圆，在那里贴上一个你的圆。', '新圆贴着的对方圆，如果被你的圆贴得更多，就会变成你的颜色。'],
+  flow: ['流进杯子的水，你的得分比对方高。', '点一段虚线，修一段水渠。水渠只能从已经有水的节点往下接。', '水进杯子时，最后那一段是谁修的水就归谁；越靠右的杯子越值钱。'],
+  tower: ['砖放完后，墙上剩下的砖比对方多。', '点一个虚线框，砌一块砖。', '砖上的数字是压力，超过 3 就碎。可以往对方的砖上加码把它压碎。'],
+  life: ['各下 20 手后，你的活细胞比对方多。', '点任意一个空格，放一个你的细胞。放下后全盘自动演化一代。', '放在自己两三个细胞旁边容易活下来；孤零零的一个会马上死掉。'],
+  cont: ['所有节点都有主时，你的节点比对方多。', '点一个空心的节点占领它。除了开局第一手，每回合要连点两次。', '一个空节点旁边有你两个节点，它会自动归你。'],
+  sky: ['积木放完后，更多的列最上面一块是你的。', '点一个虚线框，放一块积木。', '一列归最后盖到顶上的人，所以别太早把一列盖到快满。'],
+  half: ['终局时，你的棋子加上你围住的空点比对方多。', '点一个交叉点落子。打叉的点不能下，不想下可以点“停一手”。', '对方一颗子的邻点有一半以上是你的子，它就被吃掉。'],
+  vine: ['让对方先无处可下。', '点一个交叉点落子。打叉的点是你现在不能下的。', '新子最多只能挨着一颗自己的子，所以要给自己多留能下的地方。'],
+  sw: ['先让 4 个包裹走进你颜色的终点。', '点一个节点，扳动它的道岔（粗线换到另一条出路），包裹随后自动走两步。', '不能扳对方刚扳过的那个节点。'],
+  sand: ['各下 25 手后，你占的格子比对方多。', '点一个空格或自己颜色的格子，往里加一粒沙。', '一格满 4 粒就崩塌，把上下左右四格染成你的颜色。'],
+  seesaw: ['别让横梁在你手里翻倒，也别落到无处可放。', '先点下方一个自己的砝码，再点横梁上的一个空位。', '重的砝码放在靠中间的位置更安全。'] };
+// 开局前几手，在棋盘上找一个现在点了就能走的位置，放一个闪动的圈
+let tipKey = null, tipPos = null;
+function findTip() { const k = st, sel = ui.sel; if (tipKey && tipKey[0] === k && tipKey[1] === sel) return tipPos; tipKey = [k, sel]; tipPos = null; const hits = [];
+  for (let y = 18; y < L; y += 18) for (let x = 18; x < L; x += 18) { const u = { sel, cand: ui.cand, hover: -1 }; let m; try { m = game.hit(x, y, st, u); } catch (e) { m = null; } if (m === null || m === undefined) continue; hits.push([x, y, m === 'sel' ? 's' + u.sel : m]); }
+  if (!hits.length) return null; const num = hits.filter(h => typeof h[2] === 'number'), pool = num.length ? num : hits; let best = pool[0], bd = 1e9; for (const h of pool) { const d = Math.hypot(h[0] - L / 2, h[1] - L * .55); if (d < bd) { bd = d; best = h; } }
+  const same = pool.filter(h => h[2] === best[2] && Math.hypot(h[0] - best[0], h[1] - best[1]) < 70); tipPos = [same.reduce((a, h) => a + h[0], 0) / same.length, same.reduce((a, h) => a + h[1], 0) / same.length, typeof best[2] === 'number']; return tipPos; }
+function showTip() { const el = $('tip'), on = ui.human && shown === st && hist.length < 4 && mode() !== 3; const t = on ? findTip() : null; if (!t) return void (el.style.display = 'none');
+  const k = cv.clientWidth / L; el.style.display = 'block'; el.style.left = cv.offsetLeft + t[0] * k + 'px'; el.style.top = cv.offsetTop + t[1] * k + 'px'; el.lastChild.textContent = t[2] ? '点这里试试' : '先点这里'; }
+function nowText() { if (game.over(st) && shown === st) return '这一局结束了。点“新的一局”再来一盘，或者换一个游戏。'; if (mode() === 3) return '电脑对电脑演示中。想自己下，把“对手”改成“我执蓝”。'; if (!isHuman(st.tm)) return '电脑正在想，稍等一下。'; if (busy) return ''; if (key === 'seesaw' && ui.sel) return '现在该你下：再点横梁上的一个空位。'; return '现在该你下：' + GUIDE[key][1]; }
+
 // ---------- 界面 ----------
 const ORDER = ['twig', 'coral', 'flow', 'tower', 'life', 'cont', 'sky', 'half', 'vine', 'sw', 'sand', 'seesaw'];
 let key = 'life', game = G.life, st, shown, hist = [], ui = { hover: -1, sel: 0, human: true }, busy = false, cancel = null, opt = {}, token = 0;
 const tabs = $('tabs'); ORDER.forEach(k => { const b = document.createElement('button'); b.innerHTML = G[k].name + (G[k].bad ? '<span class="bad">不成立</span>' : ''); b.onclick = () => choose(k); b.id = 'tab_' + k; tabs.appendChild(b); });
-function choose(k) { key = k; game = G[k]; ORDER.forEach(q => $('tab_' + q).classList.toggle('on', q === k)); $('gname').textContent = game.name; $('verdict').textContent = game.verdict; $('rules').innerHTML = game.rules.map(r => `<p>${r}</p>`).join(''); $('pass').hidden = !game.pass;
+function choose(k) { key = k; game = G[k]; ORDER.forEach(q => $('tab_' + q).classList.toggle('on', q === k)); $('gname').textContent = game.name; $('guide').innerHTML = `<div><b>目标</b>${GUIDE[k][0]}</div><div><b>怎么下</b>${GUIDE[k][1]}</div><div><b>提示</b>${GUIDE[k][2]}</div>`; $('verdict').textContent = game.verdict; $('rules').innerHTML = game.rules.map(r => `<p>${r}</p>`).join(''); $('pass').hidden = !game.pass;
   $('opt').innerHTML = game.opts ? `<select id="optsel">${game.opts.map(([v, n]) => `<option value="${v}"${opt[k] === v ? ' selected' : ''}>${n}</option>`).join('')}</select>` : ''; if (game.opts) $('optsel').onchange = e => { opt[k] = e.target.value; fresh(); };
   try { history.replaceState(null, '', location.href.split('#')[0] + '#' + k); } catch (e) {} fresh(); }
 function fresh() { if (cancel) cancel(); token++; busy = false; st = game.init(opt[key]); shown = st; hist = []; ui.sel = 0; ui.hover = -1; next(); }
@@ -374,7 +411,7 @@ function render() { ui.human = !busy && !game.over(st) && isHuman(st.tm); game.d
   const sc = game.score(shown); $('score').innerHTML = sc[0] === null ? '' : `<span><i style="background:${COL.p[1]}"></i>${sc[0]}</span><span><i style="background:${COL.p[2]}"></i>${sc[1]}</span><span style="font-weight:500;font-size:15px;color:var(--ink2);align-self:center">${sc[2]}</span>`;
   let s; if (game.over(st) && shown === st) { const r = game.result(st); s = r === 0 ? '终局：平局' : `终局：${PN[r > 0 ? 1 : 2]}获胜`; } else if (busy && !isHuman(st.tm)) s = `${PN[st.tm]}（电脑）思考中…`; else s = `轮到${PN[st.tm]}${isHuman(st.tm) ? '' : '（电脑）'}`;
   $('status').innerHTML = `<span style="color:${game.over(st) ? 'inherit' : COL.p[st.tm]}">${s}</span>` + (sc[3] ? `<span style="font-weight:500;color:var(--ink2);font-size:14px">　${sc[3]}</span>` : '');
-  $('undo').disabled = !hist.length || busy; $('pass').disabled = !ui.human; }
+  $('undo').disabled = !hist.length || busy; $('pass').disabled = !ui.human; $('hint').disabled = !ui.human; $('now').textContent = nowText(); showTip(); }
 // 落子：先依次显示中间状态，再落定
 function commit(m, after) { const my = token, rec = [], t = game.clone(st); t.last = undefined; game.play(t, m, rec); if (m >= 0 || m === -1) t.last = rec.length ? rec[0].last : m; hist.push(st); st = t; ui.sel = 0; busy = true;
   const seqs = rec.concat([t]); let i = 0; const step = () => { if (my !== token) return; shown = seqs[i++]; render(); if (i < seqs.length) setTimeout(step, key === 'sw' ? 420 : 300); else { busy = false; after(); } }; step(); }
@@ -389,6 +426,8 @@ cv.addEventListener('mouseleave', () => { if (ui.hover !== -1) { ui.hover = -1; 
 $('new').onclick = fresh;
 $('undo').onclick = () => { if (busy || !hist.length) return; token++; do st = hist.pop(); while (hist.length && !isHuman(st.tm)); next(); };
 $('pass').onclick = () => { if (ui.human) commit(-1, next); };
+$('hint').onclick = () => { if (!ui.human) return; const legal = game.legal(st), my = token; if (!legal.length) return; busy = true; render(); $('now').textContent = '电脑在替你想一步…'; cancel = think(game, st, +$('lvl').value, m => { if (my !== token) return; cancel = null; busy = false; commit(m, next); }); };
+addEventListener('resize', () => showTip());
 $('mode').onchange = () => { if (cancel) cancel(); token++; busy = false; next(); };
 choose(ORDER.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'life');
 </script>
