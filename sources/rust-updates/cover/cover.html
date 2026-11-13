@@ -1,0 +1,37 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<style>
+html,body{margin:0;background:#070A12;overflow:hidden;font-family:"Noto Sans CJK SC",sans-serif;color:#fff}
+.bg{position:absolute;inset:0;background:radial-gradient(ellipse at 75% 55%,#2a1a1a 0,#0d1120 45%,#070A12 75%)}
+.code{position:absolute;right:4%;top:50%;transform:translateY(-50%) rotate(-4deg);width:48%;background:#0B1020;border:2px solid #2C3854;border-radius:22px;padding:28px 30px;box-shadow:0 30px 90px rgba(0,0,0,.7)}
+.code .h{display:flex;gap:10px;margin-bottom:18px}.code .h i{width:16px;height:16px;border-radius:50%;background:#FF6B6B}.code .h i:nth-child(2){background:#FFD27A}.code .h i:nth-child(3){background:#5FD39A}
+.code div.l{font:600 30px/1.6 "DejaVu Sans Mono",monospace;white-space:pre;color:#D6DEEE;padding-left:14px;border-radius:6px}
+.code .d{background:rgba(255,107,107,.16);box-shadow:inset 6px 0 0 #FF6B6B;color:#FFB3BC;text-decoration:line-through;text-decoration-color:rgba(255,107,107,.7)}
+.code .a{background:rgba(95,211,154,.16);box-shadow:inset 6px 0 0 #5FD39A;color:#B6F7D3}
+.code .k{color:#C79BFF}.code .a .k{color:#C79BFF}
+.t{position:absolute;left:6%;top:11%;max-width:46%;z-index:2}
+.k1{display:inline-block;font:800 40px "Noto Sans CJK SC";color:#0b0f18;background:#F4845F;padding:8px 24px;border-radius:12px}
+.name{font:900 128px/1.12 "Noto Serif CJK SC",serif;margin-top:30px;text-shadow:0 6px 30px #000}
+.name span{color:#F4845F}
+.ver{font:900 64px "DejaVu Sans Mono",monospace;color:#FFD27A;margin-top:26px;text-shadow:0 4px 20px #000}
+.sub{font:700 36px/1.55 "Noto Sans CJK SC";margin-top:22px;color:#E9EEF7;text-shadow:0 2px 12px #000}
+.r43 .t{max-width:60%}.r43 .name{font-size:110px}.r43 .code{width:56%;right:-5%;top:70%}.r43 .code div.l{font-size:26px}
+.v .t{left:8%;right:8%;top:6%;max-width:none}.v .name{font-size:150px}.v .code{width:92%;right:4%;top:70%}.v .sub{font-size:40px}
+</style>
+<body><div class="bg"></div>
+<div class="code"><div class="h"><i></i><i></i><i></i></div>
+<div class="l d">  <b class="k">if let</b> Some(u) = user {</div>
+<div class="l d">    <b class="k">if let</b> Some(a) = u.age {</div>
+<div class="l a">  <b class="k">if let</b> Some(u) = user</div>
+<div class="l a">    &amp;&amp; <b class="k">let</b> Some(a) = u.age</div>
+<div class="l a">    &amp;&amp; a &gt;= 18</div>
+<div class="l d">  v.push(x); v.last_mut().unwrap()</div>
+<div class="l a">  v.push_mut(x)</div>
+<div class="l d">  <b class="k">type</b> Err = Infallible;</div>
+<div class="l a">  <b class="k">type</b> Err = !;</div>
+</div>
+<div class="t"><div class="k1">版本更新 · 代码对照</div><div class="name"><span>Rust</span><br>这两年</div><div class="ver">1.85 → 1.100</div><div class="sub">22 段旧写法改新写法 · 实测编译</div></div>
+<script>
+const W = innerWidth, H = innerHeight, V = H > W, R43 = !V && W / H < 1.5;
+if (V) document.body.classList.add('v'); if (R43) document.body.classList.add('r43');
+document.fonts.ready.then(() => window.ready = true);
+</script></body></html>

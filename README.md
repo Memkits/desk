@@ -8,6 +8,7 @@ AI 协作制作的讲解视频与调研资料：网页代码、图片素材、�
 | --- | --- |
 | `site/mcts/` | 《蒙特卡洛树搜索：边下边长的一棵树》的场景代码（`index.html?ep=1`）与互动演示 `explorer.html`（井字棋对弈与逐轮慢放、老虎机策略对比、迷宫搜索热图，算法在 `mcts.js`）；稿子、字幕、封面与工具在 `sources/mcts/` |
 | `site/hyperbolic-go/` | 《双层围棋》介绍视频的场景代码（`index.html?ep=1`）与可玩的网页版 `play.html`（立体/并排/单层三种视图、气数标注、电脑对手）；对局解说视频的场景代码在 `game/`（`game/index.html?ep=1`，three.js 3D 棋盘 `board3d.js`）；稿子、字幕、调研文档、模拟程序 `sim/`（含自对弈引擎 `go2.cpp`）与工具在 `sources/hyperbolic-go/`，对局解说的在 `sources/hyperbolic-go/game/`；《棋盘之外：六个新的双人游戏》的场景代码在 `beyond/`（`beyond/index.html?ep=1`），模拟器 `sim/uni.cpp`；《会生长的棋局：四个没有棋盘的双人游戏》的场景代码在 `grow/`（`grow/index.html?ep=1`，`gg.js` 是从 `games.html` 抽出的规则代码）；《走进棋盘：借助 VR 才下得了的智力博弈》的场景代码在 `vr/`（`vr/index.html?ep=1`），新游戏“线与膜”的自对弈测试程序是 `sources/hyperbolic-go/vr/lm.mjs`；`lm.html` 是“线与膜”的可玩网页（可旋转的立体视图、分层落子、电脑对手、让子）；`games.html` 是十二个新游戏原型的可玩网页（生长结构一轮的枝战、珊瑚、分水、危楼，以及生命对决、蔓延、天际线、过半棋、藤棋、道岔、沙堆、跷跷板，带蒙特卡洛电脑对手） |
+| `site/rust-updates/` | 《Rust 这两年：从 1.85 到 1.100》版本更新代码对照的场景代码（`index.html?ep=1`）；稿子、实测代码 `ex/`、字幕与工具在 `sources/rust-updates/` |
 | `site/ue-agent/` | 《AI 智能体进驻虚幻引擎》新闻解读的场景代码（`index.html?ep=1`）；稿子、字幕与工具在 `sources/ue-agent/` |
 | `site/deploy-flow/` | 《软件部署流程》四集的场景代码（`index.html?ep=1/2/3/4`）；稿子、字幕、封面与工具在 `sources/deploy-flow/` |
 | `site/emperors-new-mind/` | 《皇帝新脑·导读》四集的场景代码（`index.html?ep=1/2/3/4`）；稿子、字幕、章节对照表与工具在 `sources/emperors-new-mind/` |

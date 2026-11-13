@@ -1,0 +1,7 @@
+//>
+# Cargo.toml
+[package]
+name = "shop"
+version = "0.3.0"
+edition = "2021"
+//<
